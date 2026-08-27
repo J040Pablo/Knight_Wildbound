@@ -1,0 +1,187 @@
+using System.Collections;
+using UnityEngine;
+
+namespace Roguelite.Player
+{
+    [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(PlayerStats))]
+    public class PlayerController : MonoBehaviour
+    {
+        [Header("Camera Reference")]
+        [SerializeField] private ThirdPersonCamera cam;
+
+        private CharacterController characterController;
+        private PlayerStats playerStats;
+
+        // Gravity & Velocity
+        private Vector3 verticalVelocity;
+        private Vector3 externalKnockback;
+        private const float GRAVITY = -19.6f;
+
+        // State Flags
+        public bool IsSprinting { get; private set; }
+        public bool IsDodging { get; private set; }
+        public bool IsGrounded => characterController.isGrounded;
+
+        private float dodgeTimer = 0f;
+
+        private void Awake()
+        {
+            characterController = GetComponent<CharacterController>();
+            playerStats = GetComponent<PlayerStats>();
+        }
+
+        private void Start()
+        {
+            if (cam == null)
+            {
+                cam = FindFirstObjectByType<ThirdPersonCamera>();
+            }
+        }
+
+        private void Update()
+        {
+            if (playerStats.IsDead) return;
+
+            dodgeTimer -= Time.deltaTime;
+
+            HandleGroundedState();
+            HandleDodgeInput();
+
+            if (!IsDodging)
+            {
+                HandleMovement();
+                HandleJumpInput();
+            }
+
+            ApplyKnockbackDecay();
+        }
+
+        private void HandleGroundedState()
+        {
+            if (characterController.isGrounded && verticalVelocity.y < 0)
+            {
+                verticalVelocity.y = -2f; // Snap to ground
+            }
+        }
+
+        private void HandleMovement()
+        {
+            float moveX = Input.GetAxisRaw("Horizontal");
+            float moveZ = Input.GetAxisRaw("Vertical");
+            Vector3 inputDir = new Vector3(moveX, 0, moveZ).normalized;
+
+            // Handle Sprint
+            bool wantsSprint = Input.GetKey(KeyCode.LeftShift) && inputDir.magnitude > 0.1f;
+            IsSprinting = wantsSprint && playerStats.ConsumeStamina(15f * Time.deltaTime);
+
+            float speedMultiplier = playerStats.CharacterData.baseMoveSpeed * playerStats.MoveSpeedMultiplier;
+            if (IsSprinting)
+            {
+                speedMultiplier *= playerStats.CharacterData.sprintSpeedMultiplier;
+            }
+
+            Vector3 moveDirection = Vector3.zero;
+
+            if (inputDir.magnitude > 0.1f)
+            {
+                Vector3 forward = cam != null ? cam.GetForwardVector() : transform.forward;
+                Vector3 right = cam != null ? cam.GetRightVector() : transform.right;
+
+                moveDirection = (forward * inputDir.z + right * inputDir.x).normalized;
+
+                if (moveDirection.sqrMagnitude > 0.001f)
+                {
+                    Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
+                }
+            }
+
+            // Apply gravity
+            verticalVelocity.y += GRAVITY * Time.deltaTime;
+
+            // Combine final displacement
+            Vector3 finalMove = (moveDirection * speedMultiplier) + verticalVelocity + externalKnockback;
+            characterController.Move(finalMove * Time.deltaTime);
+        }
+
+        private void HandleJumpInput()
+        {
+            if (Input.GetButtonDown("Jump") && characterController.isGrounded)
+            {
+                if (playerStats.ConsumeStamina(10f))
+                {
+                    verticalVelocity.y = playerStats.CharacterData.jumpForce;
+                }
+            }
+        }
+
+        private void HandleDodgeInput()
+        {
+            if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.LeftAlt))
+            {
+                if (dodgeTimer <= 0 && !IsDodging && playerStats.ConsumeStamina(playerStats.CharacterData.dodgeStaminaCost))
+                {
+                    StartCoroutine(PerformDodgeRoll());
+                }
+            }
+        }
+
+        private IEnumerator PerformDodgeRoll()
+        {
+            IsDodging = true;
+            playerStats.IsInvulnerable = true;
+            dodgeTimer = playerStats.CharacterData.dodgeCooldown;
+
+            Vector3 dodgeDir = transform.forward;
+            float moveX = Input.GetAxisRaw("Horizontal");
+            float moveZ = Input.GetAxisRaw("Vertical");
+
+            if (Mathf.Abs(moveX) > 0.1f || Mathf.Abs(moveZ) > 0.1f)
+            {
+                Vector3 forward = cam != null ? cam.GetForwardVector() : transform.forward;
+                Vector3 right = cam != null ? cam.GetRightVector() : transform.right;
+                dodgeDir = (forward * moveZ + right * moveX).normalized;
+                transform.rotation = Quaternion.LookRotation(dodgeDir);
+            }
+
+            float duration = 0.4f;
+            float elapsed = 0f;
+            float speed = playerStats.CharacterData.dodgeDistance / duration;
+
+            while (elapsed < duration)
+            {
+                characterController.Move(dodgeDir * speed * Time.deltaTime);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            playerStats.IsInvulnerable = false;
+            IsDodging = false;
+        }
+
+        public void ResetVelocity()
+        {
+            verticalVelocity = Vector3.zero;
+            externalKnockback = Vector3.zero;
+        }
+
+        public void ApplyKnockback(Vector3 force)
+        {
+            externalKnockback += force;
+        }
+
+        private void ApplyKnockbackDecay()
+        {
+            if (externalKnockback.magnitude > 0.1f)
+            {
+                characterController.Move(externalKnockback * Time.deltaTime);
+                externalKnockback = Vector3.Lerp(externalKnockback, Vector3.zero, Time.deltaTime * 8f);
+            }
+            else
+            {
+                externalKnockback = Vector3.zero;
+            }
+        }
+    }
+}
