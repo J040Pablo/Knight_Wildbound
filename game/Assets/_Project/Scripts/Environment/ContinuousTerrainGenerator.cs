@@ -283,19 +283,11 @@ namespace Roguelite.Environment
 
         private static Material GetDefaultTerrainMaterial()
         {
-            // 1. Detect active Render Pipeline
-            var pipelineAsset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline;
-            string pipelineName = pipelineAsset != null ? pipelineAsset.GetType().Name : "Built-in Render Pipeline";
-            Debug.Log($"[RENDER PIPELINE] Current active pipeline: {pipelineName}");
-
-            // 2. Load standard Built-in 3D shader baseline (NO custom HLSL / URP shaders!)
+            // Load standard Built-in 3D shader baseline
             Shader shader = Shader.Find("Standard")
                          ?? Shader.Find("Mobile/Diffuse")
                          ?? Shader.Find("Legacy Shaders/Diffuse")
                          ?? Shader.Find("Unlit/Color");
-
-            bool found = shader != null;
-            Debug.Log($"[SHADER DEBUG]\nRequested: Built-in Standard\nFound: {found}\nShader name actually loaded: {(found ? shader.name : "null")}");
 
             if (shader == null)
             {
@@ -321,8 +313,6 @@ namespace Roguelite.Environment
             if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", 0f);
             if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0f);
             if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", Color.black);
-
-            Debug.Log($"[MATERIAL TRACE]\nTime: {Time.time:F2}s\nGameObject: Chunk Generation Template\nShader: {shader.name}\nColor: {richGreen}\nSource Script: ContinuousTerrainGenerator.GetDefaultTerrainMaterial");
 
             return mat;
         }

@@ -196,6 +196,7 @@ namespace Roguelite.Environment
             worldParent = root.transform;
 
             SetupGlobalSunLight();
+            StylizedSkyManager.InitializeSky();
 
             // Pre-register structure foundations for flat bases
             FlattenTerrainUnderStructure(new Vector3(0, 0, 15f), 45f, 0f);               // Ruins Courtyard
@@ -277,57 +278,8 @@ namespace Roguelite.Environment
                     if (r.material.HasProperty("_Glossiness")) r.material.SetFloat("_Glossiness", 0f);
                     if (r.material.HasProperty("_Smoothness")) r.material.SetFloat("_Smoothness", 0f);
                     if (r.material.HasProperty("_EmissionColor")) r.material.SetColor("_EmissionColor", Color.black);
-
-                    Color emi = r.material.HasProperty("_EmissionColor") ? r.material.GetColor("_EmissionColor") : Color.black;
-                    float metallic = r.material.HasProperty("_Metallic") ? r.material.GetFloat("_Metallic") : 0f;
-                    float smoothness = r.material.HasProperty("_Smoothness") ? r.material.GetFloat("_Smoothness") : 0f;
-
-                    Debug.Log($"[BASELINE TERRAIN]\nObject: {chunkName}\nShader: {r.material.shader.name}\nColor: {r.material.color}\nEmission: {emi}\nMetallic: {metallic}\nSmoothness: {smoothness}");
                 }
             }
-
-            CreateColorTestObjects();
-        }
-
-        private void CreateColorTestObjects()
-        {
-            // Section 5: Temporary Red Test Object beside player spawn (0, 0.5, 8.0)
-            GameObject redTest = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            redTest.name = "TerrainColorTest";
-            redTest.transform.position = new Vector3(3f, 1f, 8f);
-            redTest.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-            Renderer rRed = redTest.GetComponent<Renderer>();
-            rRed.material.shader = Shader.Find("Standard");
-            rRed.material.color = Color.red;
-            if (rRed.material.HasProperty("_BaseColor")) rRed.material.SetColor("_BaseColor", Color.red);
-            if (rRed.material.HasProperty("_Metallic")) rRed.material.SetFloat("_Metallic", 0f);
-            if (rRed.material.HasProperty("_Smoothness")) rRed.material.SetFloat("_Smoothness", 0f);
-
-            // Section 16: Control Tree Test (Trunk: Brown, Leaves: Green) beside player
-            GameObject testTree = new GameObject("TreeColorTest");
-            testTree.transform.position = new Vector3(-3f, 0f, 8f);
-
-            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            trunk.name = "TestTrunk";
-            trunk.transform.SetParent(testTree.transform, false);
-            trunk.transform.localPosition = new Vector3(0, 1.5f, 0);
-            trunk.transform.localScale = new Vector3(0.5f, 1.5f, 0.5f);
-            Renderer rTrunk = trunk.GetComponent<Renderer>();
-            rTrunk.material.shader = Shader.Find("Standard");
-            Color woodBrown = new Color(0.463f, 0.318f, 0.227f, 1.0f);
-            rTrunk.material.color = woodBrown;
-
-            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            leaves.name = "TestLeaves";
-            leaves.transform.SetParent(testTree.transform, false);
-            leaves.transform.localPosition = new Vector3(0, 3.5f, 0);
-            leaves.transform.localScale = new Vector3(2.5f, 2.0f, 2.5f);
-            Renderer rLeaves = leaves.GetComponent<Renderer>();
-            rLeaves.material.shader = Shader.Find("Standard");
-            Color leafGreen = new Color(0.306f, 0.580f, 0.275f, 1.0f);
-            rLeaves.material.color = leafGreen;
-
-            Debug.Log($"[COLOR TEST] Spawned TerrainColorTest (RED) and TreeColorTest (BROWN/GREEN) at spawn.");
         }
 
         private void SetupGlobalSunLight()

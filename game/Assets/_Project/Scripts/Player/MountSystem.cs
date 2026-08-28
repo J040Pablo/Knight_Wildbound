@@ -158,7 +158,6 @@ namespace Roguelite.Player
         {
             if (UI.MasteryScreenUI.IsAnyMenuOpen)
             {
-                Debug.Log("[Horse] Input Blocked By Menu");
                 return;
             }
 
