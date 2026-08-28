@@ -13,9 +13,21 @@ namespace Roguelite.Environment
             BuildContinuousRunWorld();
         }
 
+        /// <summary>
+        /// Multi-harmonic Perlin path offset calculator for organic, natural winding forest trails.
+        /// </summary>
+        public static float GetForestPathXOffset(float z)
+        {
+            if (z < 80f) return 0f;
+            float zRel = z - 80f;
+            float wave1 = Mathf.Sin(zRel * 0.03f) * 12f;
+            float wave2 = Mathf.Sin(zRel * 0.011f) * 8f;
+            float perlin = (Mathf.PerlinNoise(zRel * 0.02f, 0.5f) - 0.5f) * 10f;
+            return wave1 + wave2 + perlin;
+        }
+
         public void BuildContinuousRunWorld()
         {
-            // Set up overall directional sun light
             SetupGlobalSunLight();
 
             // 1. RUINS REGION (Z: -20 to 35)
@@ -27,11 +39,14 @@ namespace Roguelite.Environment
             // 3. FOREST BIOME REGION (Z: 80 to 330)
             BuildForestBiomeRegion();
 
-            // 4. HOLLOW TREE BOSS ARENA REGION (Z: 330 to 420)
+            // 4. THEMATIC DARK TRANSITION CORRIDOR (Z: 330 to 353)
+            BuildDarkTransitionCorridor();
+
+            // 5. HOLLOW TREE BOSS ARENA REGION (Z: 353 to 430)
             BuildBossArenaRegion();
 
-            // 5. ENCOMPASSING CONTINUOUS WORLD BOUNDARY
-            CreateWorldBoundary(new Vector3(0, 5f, 200f), new Vector3(60f, 30f, 460f));
+            // 6. CONTINUOUS WORLD BOUNDARY (Expanded X size 160m to prevent mini-arena collisions)
+            CreateWorldBoundary(new Vector3(0, 5f, 200f), new Vector3(160f, 30f, 480f));
 
             // Apply starting region settings (Ruins)
             var startingRegion = GameObject.Find("RegionTrigger_Ruins")?.GetComponent<BiomeRegionTrigger>();
@@ -65,14 +80,12 @@ namespace Roguelite.Environment
         // ==========================================
         private void BuildRuinsRegion()
         {
-            // Ground Cobblestone
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             ground.name = "RuinsGround";
             ground.tag = "Ground";
             ground.transform.position = new Vector3(0, -0.5f, 10f);
             ground.transform.localScale = new Vector3(35f, 0.5f, 45f);
 
-            // FIX: Destroy height-inflated primitive CapsuleCollider and attach BoxCollider for accurate flat ground physics
             Collider primCol = ground.GetComponent<Collider>();
             if (primCol != null) DestroyImmediate(primCol);
             ground.AddComponent<BoxCollider>();
@@ -80,7 +93,7 @@ namespace Roguelite.Environment
             Renderer gR = ground.GetComponent<Renderer>();
             if (gR != null) gR.material.color = new Color(0.42f, 0.40f, 0.38f); // Ancient stone grey
 
-            // Ruined Pillars & Archways
+            // Ruined Pillars
             for (int i = 0; i < 8; i++)
             {
                 float x = (i % 2 == 0 ? -1 : 1) * 9f;
@@ -99,6 +112,8 @@ namespace Roguelite.Environment
             campfire.name = "RuinsCampfire";
             campfire.transform.position = new Vector3(0, 0.1f, 0);
             campfire.transform.localScale = new Vector3(1.5f, 0.2f, 1.5f);
+            Collider cfCol = campfire.GetComponent<Collider>();
+            if (cfCol != null) DestroyImmediate(cfCol);
             Renderer cR = campfire.GetComponent<Renderer>();
             if (cR != null) cR.material.color = new Color(0.3f, 0.2f, 0.1f);
 
@@ -115,7 +130,8 @@ namespace Roguelite.Environment
             crown.transform.parent = kingObj.transform;
             crown.transform.localPosition = new Vector3(0, 1.1f, 0);
             crown.transform.localScale = new Vector3(0.6f, 0.2f, 0.6f);
-            Destroy(crown.GetComponent<Collider>());
+            Collider crCol = crown.GetComponent<Collider>();
+            if (crCol != null) DestroyImmediate(crCol);
             Renderer crR = crown.GetComponent<Renderer>();
             if (crR != null) crR.material.color = new Color(1.0f, 0.85f, 0.0f);
 
@@ -126,7 +142,7 @@ namespace Roguelite.Environment
             CreateWeaponPedestal(new Vector3(0f, 0f, 11f), CharacterType.Mage);
             CreateWeaponPedestal(new Vector3(4f, 0f, 10f), CharacterType.Druid);
 
-            // Player Spawn Point node inside Ruins (Center of Platform)
+            // Player Spawn Point node inside Ruins
             CreatePlayerSpawnPoint("RuinsPlayerSpawn", new Vector3(0, 0.5f, 8.0f), Quaternion.identity);
 
             // Ruins Exit Gate to Horse Area & Forest
@@ -152,7 +168,6 @@ namespace Roguelite.Environment
             Renderer pR = pedestal.GetComponent<Renderer>();
             if (pR != null) pR.material.color = new Color(0.35f, 0.32f, 0.30f);
 
-            // Weapon Pickup Object
             GameObject weaponObj = GameObject.CreatePrimitive(classType == CharacterType.Knight ? PrimitiveType.Cube : PrimitiveType.Cylinder);
             weaponObj.name = $"WeaponPickup_{classType}";
             weaponObj.transform.position = pos + new Vector3(0, 1.2f, 0);
@@ -179,7 +194,6 @@ namespace Roguelite.Environment
         // ==========================================
         private void BuildHorseAreaRegion()
         {
-            // Meadow Ground
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "HorseAreaGround";
             ground.tag = "Ground";
@@ -188,13 +202,9 @@ namespace Roguelite.Environment
             Renderer gR = ground.GetComponent<Renderer>();
             if (gR != null) gR.material.color = new Color(0.28f, 0.48f, 0.22f); // Lush Meadow green
 
-            // Horse Spawn Point node
             CreateHorseSpawnPoint("HorseMeadowSpawn", new Vector3(-6f, 0f, 55f), Quaternion.identity);
-
-            // Friendly Horse resting area
             CreateFriendlyHorse(new Vector3(-6f, 0f, 55f));
 
-            // Horse Meadow Region Trigger
             CreateRegionTrigger("RegionTrigger_HorseMeadow", "Horse Valley", new Vector3(0, 5f, 57.5f), new Vector3(30f, 20f, 45f),
                 new Color(1.0f, 0.92f, 0.7f), 1.2f, new Color(0.45f, 0.45f, 0.4f), 0.010f, new Color(0.5f, 0.5f, 0.4f));
         }
@@ -219,100 +229,109 @@ namespace Roguelite.Environment
         private void BuildForestBiomeRegion()
         {
             float forestStart = 80f;
-            float forestLength = 250f;
+            float forestEnd = 330f;
+            float stepZ = 10f;
 
-            // Dirt Path Ground
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            ground.name = "ForestRoadGround";
-            ground.tag = "Ground";
-            ground.transform.position = new Vector3(0, -0.5f, forestStart + forestLength / 2f);
-            ground.transform.localScale = new Vector3(20f, 0.5f, forestLength);
-            Renderer gR = ground.GetComponent<Renderer>();
-            if (gR != null) gR.material.color = new Color(0.38f, 0.28f, 0.18f); // Autumn dirt path
-
-            // Crooked Autumn Trees & Pumpkins along the road
-            for (float z = forestStart; z < forestStart + forestLength; z += 12f)
+            // Generate Organic Winding Path Slabs
+            for (float z = forestStart; z <= forestEnd; z += stepZ)
             {
-                CreateAutumnTree(new Vector3(-8.5f, 0, z));
-                CreateAutumnTree(new Vector3(8.5f, 0, z + 6f));
+                float xOffset = GetForestPathXOffset(z);
+                float xNext = GetForestPathXOffset(z + stepZ);
+                float xMid = (xOffset + xNext) / 2f;
 
-                if ((int)z % 24 == 0)
+                GameObject pathSlab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                pathSlab.name = $"ForestPathSlab_{z}";
+                pathSlab.tag = "Ground";
+                pathSlab.transform.position = new Vector3(xMid, -0.5f, z + stepZ / 2f);
+                pathSlab.transform.localScale = new Vector3(22f, 0.5f, stepZ + 0.2f);
+                Renderer gR = pathSlab.GetComponent<Renderer>();
+                if (gR != null) gR.material.color = new Color(0.38f, 0.28f, 0.18f); // Warm autumn dirt
+
+                // Slanted Autumn Trees & Organic Props along road margins (leaving right-side mini-arena entrances clear)
+                CreateAutumnTree(new Vector3(xMid - 9.5f, 0, z), Random.Range(-10f, 10f));
+
+                if (Mathf.Abs(z - 130f) > 8f && Mathf.Abs(z - 200f) > 8f && Mathf.Abs(z - 275f) > 8f)
                 {
-                    CreatePumpkinProp(new Vector3(-7.0f, 0.4f, z + 4f));
-                    CreatePumpkinProp(new Vector3(7.0f, 0.4f, z + 10f));
+                    CreateAutumnTree(new Vector3(xMid + 9.5f, 0, z + 5f), Random.Range(-10f, 10f));
+                }
+
+                if ((int)z % 20 == 0)
+                {
+                    CreatePumpkinProp(new Vector3(xMid - 7.5f, 0.4f, z + 3f));
+                    CreateLanternProp(new Vector3(xMid + 7.5f, 0f, z + 8f));
+                }
+                if ((int)z % 30 == 0)
+                {
+                    CreateMushroomsProp(new Vector3(xMid + 6.5f, 0.1f, z + 4f));
+                    CreateBrokenFenceProp(new Vector3(xMid - 8.0f, 0f, z + 6f));
                 }
             }
 
-            // Encounters along the route
-            // 1. Easy Encounter (Z = 130)
-            CreateEncounterZone(new Vector3(0, 0, 130), EncounterDifficulty.Easy, new Vector3(0, 1.5f, 150));
+            // Side Mini-Arenas (Main road is NEVER blocked)
+            // 1. Easy Mini-Arena (Z = 130)
+            CreateSideMiniArena(130f, EncounterDifficulty.Easy);
 
             // Safe Stop Horse (Z = 165)
-            CreateFriendlyHorse(new Vector3(-5f, 0, 165));
+            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(165f) - 5f, 0, 165f));
 
-            // 2. Medium Encounter (Z = 200)
-            CreateEncounterZone(new Vector3(0, 0, 200), EncounterDifficulty.Medium, new Vector3(0, 1.5f, 220));
+            // 2. Medium Mini-Arena (Z = 200)
+            CreateSideMiniArena(200f, EncounterDifficulty.Medium);
 
             // Safe Stop Horse (Z = 240)
-            CreateFriendlyHorse(new Vector3(5f, 0, 240));
+            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(240f) + 5f, 0, 240f));
 
-            // 3. Hard Encounter (Z = 275)
-            CreateEncounterZone(new Vector3(0, 0, 275), EncounterDifficulty.Hard, new Vector3(0, 1.5f, 295));
+            // 3. Hard Mini-Arena (Z = 275)
+            CreateSideMiniArena(275f, EncounterDifficulty.Hard);
 
             // Forest Region Trigger
-            CreateRegionTrigger("RegionTrigger_AutumnForest", "Autumn Forest", new Vector3(0, 5f, forestStart + forestLength / 2f), new Vector3(30f, 20f, forestLength),
+            CreateRegionTrigger("RegionTrigger_AutumnForest", "Autumn Forest", new Vector3(0, 5f, 205f), new Vector3(60f, 20f, 250f),
                 new Color(1.0f, 0.85f, 0.65f), 1.15f, new Color(0.45f, 0.35f, 0.3f), 0.020f, new Color(0.45f, 0.35f, 0.3f));
         }
 
-        private void CreateAutumnTree(Vector3 pos)
+        private void CreateSideMiniArena(float mainZ, EncounterDifficulty diff)
         {
-            GameObject tree = new GameObject("AutumnTree");
-            tree.transform.position = pos;
+            float mainX = GetForestPathXOffset(mainZ);
 
-            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            trunk.name = "Trunk";
-            trunk.transform.parent = tree.transform;
-            trunk.transform.localPosition = new Vector3(0, 1.5f, 0);
-            trunk.transform.localScale = new Vector3(0.6f, 1.5f, 0.6f);
-            Renderer tR = trunk.GetComponent<Renderer>();
-            if (tR != null) tR.material.color = new Color(0.35f, 0.22f, 0.12f);
+            // Arena clearing offset 25m off to the right of main road
+            Vector3 arenaCenter = new Vector3(mainX + 25f, 0, mainZ);
 
-            GameObject foliage = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            foliage.name = "Foliage";
-            foliage.transform.parent = tree.transform;
-            foliage.transform.localPosition = new Vector3(0, 3.8f, 0);
-            foliage.transform.localScale = new Vector3(2.8f, 1.2f, 2.8f);
-            Renderer fR = foliage.GetComponent<Renderer>();
-            if (fR != null) fR.material.color = new Color(0.85f, 0.42f, 0.10f);
-        }
+            // Connector path slab from main road to side arena
+            GameObject connectorGround = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            connectorGround.name = $"MiniArenaConnectorGround_{diff}";
+            connectorGround.tag = "Ground";
+            connectorGround.transform.position = new Vector3(mainX + 12.5f, -0.5f, mainZ);
+            connectorGround.transform.localScale = new Vector3(20f, 0.5f, 10f);
+            Renderer cR = connectorGround.GetComponent<Renderer>();
+            if (cR != null) cR.material.color = new Color(0.35f, 0.25f, 0.16f);
 
-        private void CreatePumpkinProp(Vector3 pos)
-        {
-            GameObject p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            p.name = "AutumnPumpkinProp";
-            p.transform.position = pos;
-            p.transform.localScale = new Vector3(0.9f, 0.75f, 0.9f);
-            Renderer r = p.GetComponent<Renderer>();
-            if (r != null) r.material.color = new Color(0.92f, 0.45f, 0.08f);
-        }
+            // Mini-Arena circular ground clearing
+            GameObject arenaGround = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            arenaGround.name = $"MiniArenaGround_{diff}";
+            arenaGround.tag = "Ground";
+            arenaGround.transform.position = arenaCenter + new Vector3(0, -0.5f, 0);
+            arenaGround.transform.localScale = new Vector3(24f, 0.5f, 24f);
+            Collider aCol = arenaGround.GetComponent<Collider>();
+            if (aCol != null) DestroyImmediate(aCol);
+            arenaGround.AddComponent<BoxCollider>();
+            Renderer aR = arenaGround.GetComponent<Renderer>();
+            if (aR != null) aR.material.color = new Color(0.32f, 0.22f, 0.14f);
 
-        private void CreateEncounterZone(Vector3 centerPos, EncounterDifficulty diff, Vector3 gatePos)
-        {
+            // Entrance gate positioned on the side connector path ONLY (main road stays unblocked!)
+            GameObject gate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            gate.name = $"SideGate_{diff}";
+            gate.transform.position = new Vector3(mainX + 12f, 2.0f, mainZ);
+            gate.transform.localScale = new Vector3(1.0f, 4.0f, 10f);
+            Renderer gR = gate.GetComponent<Renderer>();
+            if (gR != null) gR.material.color = new Color(0.45f, 0.25f, 0.12f);
+            gate.SetActive(false); // Initially open
+
+            // Encounter Zone Volume inside the side arena clearing
             GameObject zoneObj = new GameObject($"EncounterZone_{diff}");
-            zoneObj.transform.position = centerPos;
+            zoneObj.transform.position = arenaCenter;
 
             BoxCollider box = zoneObj.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(18f, 6f, 30f);
-
-            // Forward Wooden Gate Barrier
-            GameObject gate = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            gate.name = $"ForwardGate_{diff}";
-            gate.transform.position = gatePos;
-            gate.transform.localScale = new Vector3(16f, 4f, 0.8f);
-            Renderer gR = gate.GetComponent<Renderer>();
-            if (gR != null) gR.material.color = new Color(0.45f, 0.25f, 0.12f);
-            gate.SetActive(false); // Initially unlocked until zone starts
+            box.size = new Vector3(22f, 6f, 22f);
 
             var encZone = zoneObj.AddComponent<EncounterZone>();
 
@@ -324,20 +343,174 @@ namespace Roguelite.Environment
         }
 
         // ==========================================
-        // 4. HOLLOW TREE BOSS ARENA REGION (Z: 330 to 420)
+        // 4. THEMATIC DARK TRANSITION CORRIDOR (Z: 330 to 353)
+        // ==========================================
+        private void BuildDarkTransitionCorridor()
+        {
+            float startZ = 330f;
+            float endZ = 353f;
+            float length = endZ - startZ;
+            float startX = GetForestPathXOffset(startZ);
+
+            // Transition Ground
+            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ground.name = "DarkTransitionGround";
+            ground.tag = "Ground";
+            ground.transform.position = new Vector3(startX / 2f, -0.5f, startZ + length / 2f);
+            ground.transform.localScale = new Vector3(22f, 0.5f, length + 2f);
+            Renderer gR = ground.GetComponent<Renderer>();
+            if (gR != null) gR.material.color = new Color(0.2f, 0.15f, 0.15f); // Dark scorched earth
+
+            // Giant Corrupted Roots crossing the path horizontally
+            for (float z = startZ + 5f; z < endZ; z += 8f)
+            {
+                GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                root.name = "CorruptedCrossingRoot";
+                root.transform.position = new Vector3(Random.Range(-2f, 2f), 0.2f, z);
+                root.transform.localScale = new Vector3(0.5f, 8f, 0.5f);
+                root.transform.rotation = Quaternion.Euler(0, Random.Range(70f, 110f), 85f);
+                Collider rCol = root.GetComponent<Collider>();
+                if (rCol != null) DestroyImmediate(rCol);
+                Renderer rR = root.GetComponent<Renderer>();
+                if (rR != null) rR.material.color = new Color(0.18f, 0.10f, 0.08f);
+            }
+
+            // Dead Leafless Trees along corridor
+            CreateDeadCorruptedTree(new Vector3(startX - 9f, 0, startZ + 6f));
+            CreateDeadCorruptedTree(new Vector3(startX + 9f, 0, startZ + 14f));
+
+            // Dark Corridor Region Trigger
+            CreateRegionTrigger("RegionTrigger_DarkCorridor", "Sombreness Pass", new Vector3(0, 5f, startZ + length / 2f), new Vector3(30f, 20f, length),
+                new Color(0.6f, 0.3f, 0.3f), 0.8f, new Color(0.2f, 0.1f, 0.15f), 0.035f, new Color(0.25f, 0.1f, 0.15f));
+        }
+
+        private void CreateDeadCorruptedTree(Vector3 pos)
+        {
+            GameObject tree = new GameObject("DeadCorruptedTree");
+            tree.transform.position = pos;
+
+            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "Trunk";
+            trunk.transform.parent = tree.transform;
+            trunk.transform.localPosition = new Vector3(0, 2.0f, 0);
+            trunk.transform.localScale = new Vector3(0.8f, 2.0f, 0.8f);
+            trunk.transform.localRotation = Quaternion.Euler(Random.Range(-12f, 12f), Random.Range(0, 360), Random.Range(-12f, 12f));
+            Collider tCol = trunk.GetComponent<Collider>();
+            if (tCol != null) DestroyImmediate(tCol);
+            Renderer tR = trunk.GetComponent<Renderer>();
+            if (tR != null) tR.material.color = new Color(0.15f, 0.10f, 0.08f);
+        }
+
+        private void CreateAutumnTree(Vector3 pos, float slantAngle)
+        {
+            GameObject tree = new GameObject("AutumnTree");
+            tree.transform.position = pos;
+
+            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "Trunk";
+            trunk.transform.parent = tree.transform;
+            trunk.transform.localPosition = new Vector3(0, 1.5f, 0);
+            trunk.transform.localScale = new Vector3(0.6f, 1.5f, 0.6f);
+            trunk.transform.localRotation = Quaternion.Euler(slantAngle, Random.Range(0, 360), slantAngle * 0.5f);
+            Collider tCol = trunk.GetComponent<Collider>();
+            if (tCol != null) DestroyImmediate(tCol);
+            Renderer tR = trunk.GetComponent<Renderer>();
+            if (tR != null) tR.material.color = new Color(0.35f, 0.22f, 0.12f);
+
+            GameObject foliage = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            foliage.name = "Foliage";
+            foliage.transform.parent = tree.transform;
+            foliage.transform.localPosition = new Vector3(0, 3.8f, 0);
+            foliage.transform.localScale = new Vector3(2.8f, 1.2f, 2.8f);
+            Collider fCol = foliage.GetComponent<Collider>();
+            if (fCol != null) DestroyImmediate(fCol);
+            Renderer fR = foliage.GetComponent<Renderer>();
+            if (fR != null) fR.material.color = new Color(0.85f, 0.42f, 0.10f);
+        }
+
+        private void CreatePumpkinProp(Vector3 pos)
+        {
+            GameObject p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            p.name = "AutumnPumpkinProp";
+            p.transform.position = pos;
+            p.transform.localScale = new Vector3(0.9f, 0.75f, 0.9f);
+            Collider col = p.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = p.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.92f, 0.45f, 0.08f);
+        }
+
+        private void CreateMushroomsProp(Vector3 pos)
+        {
+            GameObject shroom = new GameObject("MushroomProp");
+            shroom.transform.position = pos;
+
+            GameObject cap = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            cap.transform.parent = shroom.transform;
+            cap.transform.localPosition = new Vector3(0, 0.3f, 0);
+            cap.transform.localScale = new Vector3(0.6f, 0.3f, 0.6f);
+            Collider col = cap.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = cap.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.85f, 0.2f, 0.15f); // Red cap with white spot theme
+        }
+
+        private void CreateLanternProp(Vector3 pos)
+        {
+            GameObject lantern = new GameObject("GlowingLanternProp");
+            lantern.transform.position = pos;
+
+            GameObject post = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            post.transform.parent = lantern.transform;
+            post.transform.localPosition = new Vector3(0, 1.2f, 0);
+            post.transform.localScale = new Vector3(0.15f, 1.2f, 0.15f);
+            Collider pCol = post.GetComponent<Collider>();
+            if (pCol != null) DestroyImmediate(pCol);
+            Renderer pR = post.GetComponent<Renderer>();
+            if (pR != null) pR.material.color = new Color(0.2f, 0.18f, 0.15f);
+
+            GameObject lamp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            lamp.transform.parent = lantern.transform;
+            lamp.transform.localPosition = new Vector3(0, 2.2f, 0);
+            lamp.transform.localScale = new Vector3(0.4f, 0.4f, 0.4f);
+            Collider lCol = lamp.GetComponent<Collider>();
+            if (lCol != null) DestroyImmediate(lCol);
+            Renderer lR = lamp.GetComponent<Renderer>();
+            if (lR != null) lR.material.color = new Color(1.0f, 0.85f, 0.2f); // Warm yellow glowing lantern
+        }
+
+        private void CreateBrokenFenceProp(Vector3 pos)
+        {
+            GameObject fence = new GameObject("BrokenFenceProp");
+            fence.transform.position = pos;
+
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject plank = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                plank.transform.parent = fence.transform;
+                plank.transform.localPosition = new Vector3(i * 0.8f, 0.4f, 0);
+                plank.transform.localScale = new Vector3(0.12f, 0.8f, 0.12f);
+                plank.transform.localRotation = Quaternion.Euler(0, 0, Random.Range(-15f, 15f));
+                Collider pCol = plank.GetComponent<Collider>();
+                if (pCol != null) DestroyImmediate(pCol);
+                Renderer pR = plank.GetComponent<Renderer>();
+                if (pR != null) pR.material.color = new Color(0.35f, 0.22f, 0.12f);
+            }
+        }
+
+        // ==========================================
+        // 5. HOLLOW TREE BOSS ARENA REGION (Z: 353 to 430)
         // ==========================================
         private void BuildBossArenaRegion()
         {
-            Vector3 arenaCenter = new Vector3(0, 0, 375f);
+            Vector3 arenaCenter = new Vector3(0, 0, 385f);
 
-            // Arena Ground Glade
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             ground.name = "BossArenaGround";
             ground.tag = "Ground";
             ground.transform.position = arenaCenter + new Vector3(0, -0.5f, 0);
-            ground.transform.localScale = new Vector3(45f, 0.5f, 45f);
+            ground.transform.localScale = new Vector3(50f, 0.5f, 50f);
 
-            // FIX: Destroy height-inflated primitive CapsuleCollider and attach BoxCollider for accurate flat ground physics
             Collider primCol = ground.GetComponent<Collider>();
             if (primCol != null) DestroyImmediate(primCol);
             ground.AddComponent<BoxCollider>();
@@ -350,10 +523,9 @@ namespace Roguelite.Environment
             for (int i = 0; i < treeRingCount; i++)
             {
                 float angle = (i / (float)treeRingCount) * Mathf.PI * 2f;
-                // Leave entrance open at angle around PI (back side facing z = 330)
-                if (Mathf.Abs(angle - Mathf.PI) < 0.35f) continue;
+                if (Mathf.Abs(angle - Mathf.PI) < 0.35f) continue; // Entrance open facing z = 353
 
-                Vector3 pos = arenaCenter + new Vector3(Mathf.Cos(angle) * 22f, 0, Mathf.Sin(angle) * 22f);
+                Vector3 pos = arenaCenter + new Vector3(Mathf.Cos(angle) * 24f, 0, Mathf.Sin(angle) * 24f);
 
                 GameObject giantTree = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 giantTree.name = $"BossBoundaryTree_{i}";
@@ -363,12 +535,11 @@ namespace Roguelite.Environment
                 if (r != null) r.material.color = new Color(0.2f, 0.1f, 0.12f);
             }
 
-            // TOWERING LANDMARK HOLLOW TREE (Visible from distant Forest)
-            BuildDistantHollowTreeLandmark(arenaCenter + new Vector3(0, 0, 10f));
+            BuildDistantHollowTreeLandmark(arenaCenter + new Vector3(0, 0, 12f));
 
             // Spawn Hollow Tree Boss at Center of Arena
             GameObject bossObj = new GameObject("TheHollowTreeBoss");
-            bossObj.transform.position = arenaCenter + new Vector3(0, 0, 10f);
+            bossObj.transform.position = arenaCenter + new Vector3(0, 0, 12f);
 
             CharacterController cc = bossObj.AddComponent<CharacterController>();
             cc.height = 4.0f;
@@ -376,40 +547,40 @@ namespace Roguelite.Environment
             cc.center = new Vector3(0, 2.0f, 0);
 
             HollowTreeBossAI bossAI = bossObj.AddComponent<HollowTreeBossAI>();
-            bossAI.enabled = true; // Ready for fight
+            bossAI.enabled = true;
 
-            // Boss Activation Trigger Volume at entrance of arena (Z = 335)
+            // Boss Activation Trigger Volume at entrance of arena (Z = 354)
             GameObject bossTriggerObj = new GameObject("BossActivationTriggerVolume");
-            bossTriggerObj.transform.position = new Vector3(0, 2f, 335f);
+            bossTriggerObj.transform.position = new Vector3(0, 2f, 354f);
             BoxCollider bossBox = bossTriggerObj.AddComponent<BoxCollider>();
             bossBox.isTrigger = true;
-            bossBox.size = new Vector3(24f, 8f, 10f);
+            bossBox.size = new Vector3(26f, 8f, 10f);
             bossTriggerObj.AddComponent<BossActivationTrigger>();
 
             // Boss Arena Region Trigger
-            CreateRegionTrigger("RegionTrigger_HollowGlade", "The Hollow Glade", arenaCenter + new Vector3(0, 5f, 0), new Vector3(50f, 20f, 60f),
+            CreateRegionTrigger("RegionTrigger_HollowGlade", "The Hollow Glade", arenaCenter + new Vector3(0, 5f, 0), new Vector3(55f, 20f, 65f),
                 new Color(0.85f, 0.35f, 0.35f), 0.9f, new Color(0.35f, 0.15f, 0.25f), 0.035f, new Color(0.35f, 0.15f, 0.25f));
         }
 
         private void BuildDistantHollowTreeLandmark(Vector3 pos)
         {
-            // Colossal visual landmark trunk towering 30 meters high
             GameObject landmarkTrunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             landmarkTrunk.name = "HollowTreeLandmark_Trunk";
             landmarkTrunk.transform.position = pos + new Vector3(0, 15f, 0);
             landmarkTrunk.transform.localScale = new Vector3(5.5f, 15f, 5.5f);
-            Destroy(landmarkTrunk.GetComponent<Collider>());
+            Collider tCol = landmarkTrunk.GetComponent<Collider>();
+            if (tCol != null) DestroyImmediate(tCol);
             Renderer tR = landmarkTrunk.GetComponent<Renderer>();
             if (tR != null) tR.material.color = new Color(0.28f, 0.16f, 0.10f);
 
-            // Colossal glowing autumn canopy
             GameObject landmarkCanopy = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             landmarkCanopy.name = "HollowTreeLandmark_Canopy";
             landmarkCanopy.transform.position = pos + new Vector3(0, 32f, 0);
             landmarkCanopy.transform.localScale = new Vector3(18f, 4f, 18f);
-            Destroy(landmarkCanopy.GetComponent<Collider>());
+            Collider cCol = landmarkCanopy.GetComponent<Collider>();
+            if (cCol != null) DestroyImmediate(cCol);
             Renderer cR = landmarkCanopy.GetComponent<Renderer>();
-            if (cR != null) cR.material.color = new Color(0.95f, 0.40f, 0.05f); // Glowing vibrant orange foliage
+            if (cR != null) cR.material.color = new Color(0.95f, 0.40f, 0.05f);
         }
 
         // ==========================================

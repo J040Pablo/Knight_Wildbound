@@ -7,6 +7,7 @@ namespace Roguelite.Player
         [Header("Target Settings")]
         public Transform target;
         [SerializeField] private float heightOffset = 1.3f;
+        [SerializeField] private float mountedHeightOffset = 2.6f;
         [SerializeField] private float rightOffset = 1.8f;
 
         [Header("Distance & Angles")]
@@ -24,6 +25,8 @@ namespace Roguelite.Player
         [Header("Smoothing & Collision")]
         public float smoothSpeed = 14f;
         [SerializeField] private LayerMask collisionLayers;
+
+        public bool IsMounted { get; set; } = false;
 
         private Vector3 currentVelocity;
 
@@ -60,8 +63,11 @@ namespace Roguelite.Player
 
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
 
+            // Dynamic height offset based on mounted state
+            float activeHeight = IsMounted ? mountedHeightOffset : heightOffset;
+
             // Pivot point calculated with right and height offset for Over-The-Shoulder view
-            Vector3 targetPivot = target.position + Vector3.up * heightOffset;
+            Vector3 targetPivot = target.position + Vector3.up * activeHeight;
             Vector3 shoulderOffset = rotation * Vector3.right * rightOffset;
             Vector3 pivotWithShoulder = targetPivot + shoulderOffset;
 
@@ -70,15 +76,29 @@ namespace Roguelite.Player
 
             // Camera Obstacle Collision Avoidance
             float currentDistance = distance;
-            Ray ray = new Ray(targetPivot, desiredCamPos - targetPivot);
+            Ray ray = new Ray(targetPivot, (desiredCamPos - targetPivot).normalized);
             float maxRayDist = Vector3.Distance(targetPivot, desiredCamPos);
 
-            if (Physics.SphereCast(ray, 0.35f, out RaycastHit hit, maxRayDist, collisionLayers))
+            // SphereCast all hits to properly ignore Player, Horse, and rider children
+            RaycastHit[] hits = Physics.SphereCastAll(ray, 0.35f, maxRayDist, collisionLayers);
+            float closestHitDist = maxRayDist;
+
+            foreach (var hit in hits)
             {
-                if (!hit.collider.isTrigger && hit.collider.gameObject.tag != "Player" && !hit.collider.name.EndsWith("Ground"))
+                if (hit.collider == null || hit.collider.isTrigger) continue;
+
+                // Explicitly ignore Player, Horse, and target hierarchy
+                if (IsIgnoredCameraCollider(hit.collider)) continue;
+
+                if (hit.distance < closestHitDist)
                 {
-                    currentDistance = Mathf.Clamp(hit.distance - 0.2f, minDistance, distance);
+                    closestHitDist = hit.distance;
                 }
+            }
+
+            if (closestHitDist < maxRayDist)
+            {
+                currentDistance = Mathf.Clamp(closestHitDist - 0.2f, minDistance, distance);
             }
 
             Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentDistance);
@@ -87,12 +107,35 @@ namespace Roguelite.Player
             transform.position = Vector3.SmoothDamp(transform.position, finalCamPos, ref currentVelocity, 1.0f / smoothSpeed);
 
             // Aim look target centered on shoulder line ahead so reticle aligns to screen center
-            Vector3 lookTarget = pivotWithShoulder + (rotation * Vector3.forward * 20.0f);
+            Vector3 lookTarget = targetPivot + (rotation * Vector3.forward * 30.0f);
             Vector3 lookDir = lookTarget - transform.position;
             if (lookDir.sqrMagnitude > 0.001f)
             {
                 transform.rotation = Quaternion.LookRotation(lookDir.normalized, Vector3.up);
             }
+        }
+
+        private bool IsIgnoredCameraCollider(Collider col)
+        {
+            if (col == null) return true;
+
+            // Check tag
+            if (col.CompareTag("Player")) return true;
+
+            // Check name patterns
+            string colName = col.gameObject.name.ToLower();
+            if (colName.Contains("player") || colName.Contains("horse") || colName.Contains("saddle") || colName.Contains("leg"))
+            {
+                return true;
+            }
+
+            // Check hierarchy relative to current target
+            if (target != null && (col.transform == target || col.transform.IsChildOf(target) || target.IsChildOf(col.transform)))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public Vector3 GetForwardVector()

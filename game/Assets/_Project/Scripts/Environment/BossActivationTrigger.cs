@@ -1,5 +1,6 @@
-using UnityEngine;
 using System;
+using UnityEngine;
+using Roguelite.Core;
 using Roguelite.Enemy;
 using Roguelite.Wave;
 
@@ -15,13 +16,14 @@ namespace Roguelite.Environment
         private void Awake()
         {
             IsBossActivated = false;
+            hasTriggered = false;
         }
 
         private void OnTriggerEnter(Collider other)
         {
             if (hasTriggered) return;
 
-            if (other.CompareTag("Player") || other.GetComponent<Roguelite.Player.PlayerController>() != null)
+            if (PlayerDetectionUtility.IsPlayerCollider(other))
             {
                 TriggerBossFight();
             }
@@ -29,6 +31,8 @@ namespace Roguelite.Environment
 
         public void TriggerBossFight()
         {
+            if (hasTriggered) return;
+
             hasTriggered = true;
             IsBossActivated = true;
 
@@ -51,6 +55,11 @@ namespace Roguelite.Environment
         public static void ResetState()
         {
             IsBossActivated = false;
+            BossActivationTrigger[] triggers = FindObjectsByType<BossActivationTrigger>(FindObjectsSortMode.None);
+            foreach (var t in triggers)
+            {
+                if (t != null) t.hasTriggered = false;
+            }
         }
     }
 }

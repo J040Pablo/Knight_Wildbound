@@ -64,11 +64,12 @@ namespace Roguelite.Player
             player.transform.localPosition = new Vector3(0, -0.2f, 0); // Sitting socket alignment
             player.transform.localRotation = Quaternion.identity;
 
-            // 3. Set camera target to horse mount
+            // 3. Set camera target to horse mount and raise aim height
             if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();
             if (tpCam != null)
             {
                 tpCam.target = transform;
+                tpCam.IsMounted = true;
             }
         }
 
@@ -80,24 +81,41 @@ namespace Roguelite.Player
             mountedPlayer = null;
             horseController.SetMountedState(false);
 
-            // 1. Unparent player and position safely next to horse
+            // 1. Unparent player
             player.transform.SetParent(null);
-            Vector3 dismountPos = transform.position + transform.right * 1.5f + Vector3.up * 0.2f;
-            player.transform.position = dismountPos;
+
+            // 2. Validate dismount position safely next to horse
+            Vector3 candidatePos = transform.position + transform.right * 1.5f + Vector3.up * 0.2f;
+            Vector3 safeDismountPos = candidatePos;
+
+            if (PlayerSpawnManager.Instance != null && PlayerSpawnManager.Instance.ValidatePlayerPosition(candidatePos, 0.5f, out Vector3 validGroundPos))
+            {
+                safeDismountPos = validGroundPos;
+            }
+            else if (Physics.Raycast(candidatePos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
+            {
+                safeDismountPos = hit.point + Vector3.up * 0.1f;
+            }
+
+            player.transform.position = safeDismountPos;
             player.transform.rotation = transform.rotation;
 
-            // 2. Re-enable player controller
+            // Force PhysX transform sync before re-enabling CharacterController
+            Physics.SyncTransforms();
+
+            // 3. Re-enable player controllers
             CharacterController pCC = player.GetComponent<CharacterController>();
             if (pCC != null) pCC.enabled = true;
 
             PlayerController pCtrl = player.GetComponent<PlayerController>();
             if (pCtrl != null) pCtrl.enabled = true;
 
-            // 3. Restore camera target to player
+            // 4. Restore camera target to player and reset aim height
             if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();
             if (tpCam != null)
             {
                 tpCam.target = player.transform;
+                tpCam.IsMounted = false;
             }
         }
 
@@ -114,8 +132,13 @@ namespace Roguelite.Player
                 Camera mainCam = Camera.main;
                 horseController.ProcessMovementInput(inputDir, sprint, mainCam);
 
-                // Dismount is handled exclusively via InteractionSystem (E key) to avoid
-                // double-handling the same keypress in the same frame.
+                // Jump Input Forwarding
+                if (Input.GetButtonDown("Jump"))
+                {
+                    horseController.TryJump();
+                }
+
+                // Dismount is handled exclusively via InteractionSystem (E key)
             }
         }
     }

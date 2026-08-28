@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Roguelite.Core;
 using Roguelite.Enemy;
 
 namespace Roguelite.Wave
@@ -26,13 +28,14 @@ namespace Roguelite.Wave
         public int EnemiesRemaining => activeEnemies.Count;
 
         private List<EnemyBase> activeEnemies = new List<EnemyBase>();
+        private List<Vector3> spawnedEnemyPositions = new List<Vector3>();
 
         public event Action<EncounterZone> OnEncounterStarted;
         public event Action<EncounterZone> OnEncounterCompleted;
 
         private void OnTriggerEnter(Collider other)
         {
-            if (!IsActive && !IsCompleted && other.CompareTag("Player"))
+            if (!IsActive && !IsCompleted && PlayerDetectionUtility.IsPlayerCollider(other))
             {
                 StartEncounter();
             }
@@ -42,7 +45,7 @@ namespace Roguelite.Wave
         {
             IsActive = true;
 
-            // Lock forward path
+            // Lock entrance/gate for the side mini-arena only (leaving main path completely clear)
             if (forwardGate != null)
             {
                 forwardGate.SetActive(true);
@@ -53,8 +56,6 @@ namespace Roguelite.Wave
 
             OnEncounterStarted?.Invoke(this);
         }
-
-        private List<Vector3> spawnedEnemyPositions = new List<Vector3>();
 
         private void SpawnEnemiesForDifficulty()
         {
@@ -75,14 +76,12 @@ namespace Roguelite.Wave
             switch (difficulty)
             {
                 case EncounterDifficulty.Easy:
-                    // Slimes + Pumpkin enemies (tutorial combat)
                     SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, false);
                     SpawnEnemy<PumpkinEnemyAI>(spawnPoints[1 % spawnPoints.Count].position, false);
                     SpawnEnemy<SlimeAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     break;
 
                 case EncounterDifficulty.Medium:
-                    // Goblins + Wolves + Pumpkins
                     SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, false);
                     SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
                     SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
@@ -90,7 +89,6 @@ namespace Roguelite.Wave
                     break;
 
                 case EncounterDifficulty.Hard:
-                    // Elite Pumpkin + Wolves + Goblins + Slimes
                     var elitePumpkin = SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, true);
                     if (elitePumpkin != null) elitePumpkin.SetEliteStatus(true);
 
@@ -122,6 +120,10 @@ namespace Roguelite.Wave
             enemyObj.name = $"EncounterEnemy_{typeof(T).Name}";
             enemyObj.transform.position = validSpawnPos;
 
+            // Remove primitive collider immediately before adding CharacterController
+            Collider pCol = enemyObj.GetComponent<Collider>();
+            if (pCol != null) DestroyImmediate(pCol);
+
             CharacterController cc = enemyObj.AddComponent<CharacterController>();
             cc.height = 1.8f;
             cc.radius = 0.45f;
@@ -152,7 +154,7 @@ namespace Roguelite.Wave
             IsActive = false;
             IsCompleted = true;
 
-            // Unlock forward gate
+            // Unlock mini-arena gate
             if (forwardGate != null)
             {
                 forwardGate.SetActive(false);

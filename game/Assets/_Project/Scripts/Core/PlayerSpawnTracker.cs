@@ -117,10 +117,7 @@ namespace Roguelite.Core
 
         private void Update()
         {
-            if (isTracking)
-            {
-                Debug.Log($"[TRACKER_UPDATE] pos: {transform.position}");
-            }
+            // Per-frame tracking log removed per user requirement to avoid console spam
         }
 
         private void LateUpdate()

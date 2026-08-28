@@ -112,6 +112,11 @@ namespace Roguelite.Player
         {
             if (IsDead || IsInvulnerable) return;
 
+            if (damageInfo.amount > 0f)
+            {
+                Debug.Log($"[DAMAGE SOURCE] Attacker: '{damageInfo.attacker?.name ?? "NULL"}', Amount: {damageInfo.amount:F1}, Knockback: {damageInfo.knockbackForce:F1}, IsCrit: {damageInfo.isCritical}");
+            }
+
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);
             OnHealthChanged?.Invoke(CurrentHP, MaxHP);
 

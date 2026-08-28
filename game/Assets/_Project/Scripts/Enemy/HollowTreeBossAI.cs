@@ -48,7 +48,8 @@ namespace Roguelite.Enemy
             trunk.transform.parent = transform;
             trunk.transform.localPosition = new Vector3(0, 1.8f, 0);
             trunk.transform.localScale = new Vector3(1.2f, 1.8f, 1.2f);
-            Destroy(trunk.GetComponent<Collider>());
+            Collider tCol = trunk.GetComponent<Collider>();
+            if (tCol != null) DestroyImmediate(tCol);
             meshRenderer = trunk.GetComponent<Renderer>();
             if (meshRenderer != null)
             {
@@ -62,7 +63,8 @@ namespace Roguelite.Enemy
             face.transform.parent = transform;
             face.transform.localPosition = new Vector3(0, 2.3f, 0.55f);
             face.transform.localScale = new Vector3(0.7f, 0.4f, 0.15f);
-            Destroy(face.GetComponent<Collider>());
+            Collider fCol = face.GetComponent<Collider>();
+            if (fCol != null) DestroyImmediate(fCol);
             Renderer fR = face.GetComponent<Renderer>();
             if (fR != null) fR.material.color = new Color(0.95f, 0.7f, 0.1f); // Glowing amber eyes
 
@@ -72,7 +74,8 @@ namespace Roguelite.Enemy
             canopy.transform.parent = transform;
             canopy.transform.localPosition = new Vector3(0, 3.6f, 0);
             canopy.transform.localScale = new Vector3(3.0f, 1.2f, 3.0f);
-            Destroy(canopy.GetComponent<Collider>());
+            Collider cCol = canopy.GetComponent<Collider>();
+            if (cCol != null) DestroyImmediate(cCol);
             Renderer cR = canopy.GetComponent<Renderer>();
             if (cR != null) cR.material.color = new Color(0.85f, 0.35f, 0.08f); // Autumn orange leaves
         }
@@ -80,7 +83,8 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking) return;
+            // Strict check: Boss must be activated by trigger before attacking or running state logic
+            if (!Environment.BossActivationTrigger.IsBossActivated || IsDead || playerTransform == null || playerStats.IsDead || isAttacking) return;
 
             // Check Phase 2 Transition
             if (!isPhase2 && CurrentHP <= MaxHP * 0.5f)
@@ -143,11 +147,11 @@ namespace Roguelite.Enemy
             // Face player
             Vector3 lookDir = (playerTransform.position - transform.position).normalized;
             lookDir.y = 0;
-            if (lookDir.magnitude > 0.1f) transform.rotation = Quaternion.LookRotation(lookDir);
+            if (lookDir.sqrMagnitude > 0.001f) transform.rotation = Quaternion.LookRotation(lookDir.normalized, Vector3.up);
 
             yield return new WaitForSeconds(0.4f);
 
-            if (!IsDead && playerStats != null && !playerStats.IsDead)
+            if (!IsDead && Environment.BossActivationTrigger.IsBossActivated && playerStats != null && !playerStats.IsDead)
             {
                 float dist = Vector3.Distance(transform.position, playerTransform.position);
                 if (dist <= 8.5f)
@@ -178,7 +182,8 @@ namespace Roguelite.Enemy
             // Telegraph marker
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             marker.name = "RootStrikeTelegraph";
-            Destroy(marker.GetComponent<Collider>());
+            Collider mCol = marker.GetComponent<Collider>();
+            if (mCol != null) DestroyImmediate(mCol);
             marker.transform.position = rootPos + new Vector3(0, 0.05f, 0);
             marker.transform.localScale = new Vector3(3f, 0.02f, 3f);
             Renderer mR = marker.GetComponent<Renderer>();
@@ -187,14 +192,15 @@ namespace Roguelite.Enemy
             yield return new WaitForSeconds(1.0f);
             Destroy(marker);
 
-            if (!IsDead && playerStats != null && !playerStats.IsDead)
+            if (!IsDead && Environment.BossActivationTrigger.IsBossActivated && playerStats != null && !playerStats.IsDead)
             {
                 // Erupt Root Spike
                 GameObject rootSpike = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
                 rootSpike.name = "EruptedRoot";
                 rootSpike.transform.position = rootPos + new Vector3(0, 1.2f, 0);
                 rootSpike.transform.localScale = new Vector3(0.8f, 2.5f, 0.8f);
-                Destroy(rootSpike.GetComponent<Collider>());
+                Collider sCol = rootSpike.GetComponent<Collider>();
+                if (sCol != null) DestroyImmediate(sCol);
                 Renderer rR = rootSpike.GetComponent<Renderer>();
                 if (rR != null) rR.material.color = new Color(0.25f, 0.15f, 0.08f);
 
@@ -226,7 +232,8 @@ namespace Roguelite.Enemy
             // Telegraph Circle expanding
             GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             indicator.name = "BossSlamTelegraph";
-            Destroy(indicator.GetComponent<Collider>());
+            Collider iCol = indicator.GetComponent<Collider>();
+            if (iCol != null) DestroyImmediate(iCol);
             indicator.transform.position = transform.position + new Vector3(0, 0.05f, 0);
             indicator.transform.localScale = new Vector3(groundSlamRadius * 2f, 0.02f, groundSlamRadius * 2f);
 
@@ -236,7 +243,7 @@ namespace Roguelite.Enemy
             yield return new WaitForSeconds(1.1f);
             Destroy(indicator);
 
-            if (!IsDead && playerStats != null && !playerStats.IsDead)
+            if (!IsDead && Environment.BossActivationTrigger.IsBossActivated && playerStats != null && !playerStats.IsDead)
             {
                 float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
                 if (distToPlayer <= groundSlamRadius)
@@ -270,6 +277,9 @@ namespace Roguelite.Enemy
                 GameObject saplingObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 saplingObj.name = "CorruptedSapling";
                 saplingObj.transform.position = spawnPos;
+
+                Collider col = saplingObj.GetComponent<Collider>();
+                if (col != null) DestroyImmediate(col);
 
                 CharacterController cc = saplingObj.AddComponent<CharacterController>();
                 cc.height = 1.6f;

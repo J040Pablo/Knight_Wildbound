@@ -39,11 +39,16 @@ namespace Roguelite.Player
             }
         }
 
+        [Header("Debug Controls")]
+        [SerializeField] private bool enableDebugLogs = false;
+
         private void Update()
         {
             if (playerStats.IsDead) return;
 
-            Debug.Log($"[PLAYER_UPDATE] START pos: {transform.position}");
+#if UNITY_EDITOR
+            if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] START pos: {transform.position}");
+#endif
 
             dodgeTimer -= Time.deltaTime;
 
@@ -58,15 +63,26 @@ namespace Roguelite.Player
 
             ApplyKnockbackDecay();
 
-            Debug.Log($"[PLAYER_UPDATE] END pos: {transform.position}");
+#if UNITY_EDITOR
+            if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] END pos: {transform.position}");
+#endif
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
-            if (hit != null && hit.gameObject != null)
+            if (hit == null || hit.collider == null) return;
+
+            if (hit.normal.y < 0.7f)
+            {
+                Debug.Log($"[COLLISION DEBUG] Name={hit.collider.name} | Tag={hit.collider.tag} | Layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}");
+            }
+
+#if UNITY_EDITOR
+            if (enableDebugLogs && hit.gameObject != null)
             {
                 Debug.LogWarning($"[PLAYER_HIT] Collided with: '{hit.gameObject.name}', Tag: '{hit.gameObject.tag}', Layer: '{LayerMask.LayerToName(hit.gameObject.layer)}', HitPoint: {hit.point}");
             }
+#endif
         }
 
         private void HandleGroundedState()
@@ -154,7 +170,10 @@ namespace Roguelite.Player
                 Vector3 forward = cam != null ? cam.GetForwardVector() : transform.forward;
                 Vector3 right = cam != null ? cam.GetRightVector() : transform.right;
                 dodgeDir = (forward * moveZ + right * moveX).normalized;
-                transform.rotation = Quaternion.LookRotation(dodgeDir);
+                if (dodgeDir.sqrMagnitude > 0.001f)
+                {
+                    transform.rotation = Quaternion.LookRotation(dodgeDir.normalized, Vector3.up);
+                }
             }
 
             float duration = 0.4f;

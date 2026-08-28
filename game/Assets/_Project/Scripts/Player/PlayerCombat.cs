@@ -82,8 +82,21 @@ namespace Roguelite.Player
             Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
             LayerMask mask = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
 
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f, mask))
+            RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            Vector3 playerPos = transform.position;
+            Vector3 camToPlayer = playerPos - mainCam.transform.position;
+            float playerDistAlongRay = Vector3.Dot(camToPlayer, mainCam.transform.forward);
+
+            foreach (var hit in hits)
             {
+                if (hit.collider == null || hit.collider.isTrigger) continue;
+                if (IsIgnoredAimCollider(hit.collider)) continue;
+
+                // Ignore hits behind or too close to the player along the camera ray
+                if (hit.distance < playerDistAlongRay - 0.2f) continue;
+
                 return hit.point;
             }
 
@@ -92,12 +105,37 @@ namespace Roguelite.Player
 
         public Vector3 GetReticleAimDirection()
         {
+            Camera mainCam = Camera.main;
+            Vector3 camForward = mainCam != null ? mainCam.transform.forward : transform.forward;
+            camForward.y = 0;
+            if (camForward.sqrMagnitude < 0.001f) camForward = transform.forward;
+            camForward.Normalize();
+
             Vector3 targetPos = GetReticleTargetWorldPosition();
-            Vector3 dir = (targetPos - transform.position);
+            MountSystem mount = GetComponent<MountSystem>();
+            if (mount == null) mount = GetComponentInParent<MountSystem>();
+
+            Vector3 origin = (mount != null && mount.IsPlayerMounted) ? transform.position + Vector3.up * 2.2f : transform.position + Vector3.up * 1.2f;
+            Vector3 dir = (targetPos - origin);
             dir.y = 0;
 
-            if (dir.sqrMagnitude < 0.001f) return transform.forward;
+            // Absolute safety check: If direction points backwards relative to camera view (dot < 0), fallback to camera forward
+            if (dir.sqrMagnitude < 0.001f || Vector3.Dot(dir.normalized, camForward) < 0.0f)
+            {
+                return camForward;
+            }
+
             return dir.normalized;
+        }
+
+        private bool IsIgnoredAimCollider(Collider col)
+        {
+            if (col == null) return true;
+            if (col.CompareTag("Player")) return true;
+            string n = col.gameObject.name.ToLower();
+            if (n.Contains("player") || n.Contains("horse") || n.Contains("saddle")) return true;
+            if (col.transform == transform || col.transform.IsChildOf(transform) || transform.IsChildOf(col.transform)) return true;
+            return false;
         }
 
         private void HandleCombatInputs()
@@ -125,7 +163,7 @@ namespace Roguelite.Player
                 // Rotate player character toward reticle aim direction
                 if (aimDir.sqrMagnitude > 0.001f)
                 {
-                    transform.rotation = Quaternion.LookRotation(aimDir);
+                    transform.rotation = Quaternion.LookRotation(aimDir.normalized, Vector3.up);
                 }
 
                 if (currentChargeTime >= weaponData.chargeTimeRequired)

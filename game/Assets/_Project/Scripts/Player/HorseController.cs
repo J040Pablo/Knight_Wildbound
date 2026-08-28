@@ -20,6 +20,9 @@ namespace Roguelite.Player
         [SerializeField] private float gallopSpeed = 17.0f;
         [SerializeField] private float turnSpeed = 10.0f;
 
+        [Header("Jump Settings")]
+        [SerializeField] private float jumpForce = 9.5f;
+
         [Header("Mount Socket")]
         [SerializeField] private Transform mountSocket;
 
@@ -53,7 +56,8 @@ namespace Roguelite.Player
             body.transform.parent = transform;
             body.transform.localPosition = new Vector3(0, 1.1f, 0);
             body.transform.localScale = new Vector3(1.0f, 1.0f, 2.2f);
-            Destroy(body.GetComponent<Collider>());
+            Collider bCol = body.GetComponent<Collider>();
+            if (bCol != null) DestroyImmediate(bCol);
             Renderer bR = body.GetComponent<Renderer>();
             if (bR != null) bR.material.color = new Color(0.45f, 0.25f, 0.12f); // Chestnut brown
 
@@ -64,7 +68,8 @@ namespace Roguelite.Player
             neck.transform.localPosition = new Vector3(0, 1.8f, 0.9f);
             neck.transform.localScale = new Vector3(0.6f, 1.1f, 0.7f);
             neck.transform.localRotation = Quaternion.Euler(25f, 0, 0);
-            Destroy(neck.GetComponent<Collider>());
+            Collider nCol = neck.GetComponent<Collider>();
+            if (nCol != null) DestroyImmediate(nCol);
             Renderer hR = neck.GetComponent<Renderer>();
             if (hR != null) hR.material.color = new Color(0.40f, 0.22f, 0.10f);
 
@@ -74,7 +79,8 @@ namespace Roguelite.Player
             saddle.transform.parent = transform;
             saddle.transform.localPosition = new Vector3(0, 1.65f, 0.1f);
             saddle.transform.localScale = new Vector3(0.85f, 0.2f, 0.85f);
-            Destroy(saddle.GetComponent<Collider>());
+            Collider sCol = saddle.GetComponent<Collider>();
+            if (sCol != null) DestroyImmediate(sCol);
             Renderer sR = saddle.GetComponent<Renderer>();
             if (sR != null) sR.material.color = new Color(0.2f, 0.15f, 0.1f); // Dark leather
 
@@ -98,7 +104,8 @@ namespace Roguelite.Player
             leg.transform.parent = transform;
             leg.transform.localPosition = localPos;
             leg.transform.localScale = new Vector3(0.25f, 0.5f, 0.25f);
-            Destroy(leg.GetComponent<Collider>());
+            Collider lCol = leg.GetComponent<Collider>();
+            if (lCol != null) DestroyImmediate(lCol);
             Renderer r = leg.GetComponent<Renderer>();
             if (r != null) r.material.color = new Color(0.35f, 0.20f, 0.10f);
             return leg.transform;
@@ -109,8 +116,17 @@ namespace Roguelite.Player
             IsMounted = mounted;
         }
 
+        public void TryJump()
+        {
+            if (characterController.isGrounded)
+            {
+                verticalVelocity.y = jumpForce;
+            }
+        }
+
         public void ProcessMovementInput(Vector3 inputDir, bool wantsSprint, Camera mainCam)
         {
+            Vector3 horizontalMove = Vector3.zero;
             float speed = 0f;
 
             if (inputDir.magnitude > 0.1f)
@@ -141,13 +157,11 @@ namespace Roguelite.Player
 
                 if (moveDir.sqrMagnitude > 0.001f)
                 {
-                    Quaternion targetRot = Quaternion.LookRotation(moveDir);
+                    Quaternion targetRot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
                     transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * turnSpeed);
                 }
 
-                characterController.Move(moveDir * speed * Time.deltaTime);
-
-                // Animate leg swings
+                horizontalMove = moveDir * speed;
                 AnimateLegs(speed);
             }
             else
@@ -156,13 +170,16 @@ namespace Roguelite.Player
                 ResetLegs();
             }
 
-            // Apply gravity
+            // Ground snapping & gravity calculation
             if (characterController.isGrounded && verticalVelocity.y < 0)
             {
                 verticalVelocity.y = -2f;
             }
             verticalVelocity.y += GRAVITY * Time.deltaTime;
-            characterController.Move(verticalVelocity * Time.deltaTime);
+
+            // SINGLE CharacterController.Move call per frame to avoid PhysX double-call issues
+            Vector3 totalVelocity = horizontalMove + verticalVelocity;
+            characterController.Move(totalVelocity * Time.deltaTime);
         }
 
         private void AnimateLegs(float speed)
