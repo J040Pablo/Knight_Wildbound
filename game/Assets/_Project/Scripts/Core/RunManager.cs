@@ -96,14 +96,7 @@ namespace Roguelite.Core
                 GameSessionManager.Instance.ResetSession();
             }
 
-            if (SceneTransitionManager.Instance != null)
-            {
-                SceneTransitionManager.Instance.LoadScene(SceneTransitionManager.SCENE_RUINS);
-            }
-            else
-            {
-                SceneManager.LoadScene(SceneTransitionManager.SCENE_RUINS);
-            }
+            SceneManager.LoadScene("01_Run");
         }
 
         public void ReturnToMainMenu()

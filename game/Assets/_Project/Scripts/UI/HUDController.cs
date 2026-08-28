@@ -13,6 +13,9 @@ namespace Roguelite.UI
         private InteractionSystem interactionSystem;
         private RunManager runManager;
         private HollowTreeBossAI activeBoss;
+        private MountSystem activeMount;
+
+        private Texture2D reticleTexture;
 
         private void Start()
         {
@@ -20,6 +23,47 @@ namespace Roguelite.UI
             playerCombat = FindFirstObjectByType<PlayerCombat>();
             interactionSystem = FindFirstObjectByType<InteractionSystem>();
             runManager = FindFirstObjectByType<RunManager>();
+
+            CreateReticleTexture();
+        }
+
+        private void CreateReticleTexture()
+        {
+            int size = 16;
+            reticleTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            reticleTexture.filterMode = FilterMode.Bilinear;
+            reticleTexture.wrapMode = TextureWrapMode.Clamp;
+
+            float center = size / 2f;
+            float outerRadius = 4f;   // Outer edge of black outline ring
+            float innerRadius = 2.2f; // Outer edge of white circle center
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dist = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(center, center));
+
+                    if (dist <= innerRadius)
+                    {
+                        // Solid white center dot with soft anti-aliased edge
+                        float alpha = Mathf.Clamp01((innerRadius - dist) + 0.5f);
+                        reticleTexture.SetPixel(x, y, new Color(1.0f, 1.0f, 1.0f, alpha));
+                    }
+                    else if (dist <= outerRadius)
+                    {
+                        // Thin black outline ring with anti-aliasing
+                        float alpha = Mathf.Clamp01((outerRadius - dist) + 0.5f);
+                        reticleTexture.SetPixel(x, y, new Color(0.0f, 0.0f, 0.0f, alpha));
+                    }
+                    else
+                    {
+                        // Fully transparent background
+                        reticleTexture.SetPixel(x, y, Color.clear);
+                    }
+                }
+            }
+            reticleTexture.Apply();
         }
 
         private void Update()
@@ -27,6 +71,11 @@ namespace Roguelite.UI
             if (activeBoss == null)
             {
                 activeBoss = FindFirstObjectByType<HollowTreeBossAI>();
+            }
+
+            if (activeMount == null)
+            {
+                activeMount = FindFirstObjectByType<MountSystem>();
             }
         }
 
@@ -37,6 +86,26 @@ namespace Roguelite.UI
             DrawHUD();
             DrawDialogueBox();
             DrawInteractionPrompt();
+            DrawCenterReticle();
+        }
+
+        private void DrawCenterReticle()
+        {
+            // Do not draw reticle if dialogue is active
+            if (DialogueSystem.Instance != null && DialogueSystem.Instance.IsDialogueActive) return;
+
+            if (reticleTexture == null)
+            {
+                CreateReticleTexture();
+            }
+
+            float drawSize = 10f; // Minimal, crisp 10px reticle diameter on screen
+            float centerX = Screen.width / 2f;
+            float centerY = Screen.height / 2f;
+
+            Rect reticleRect = new Rect(centerX - drawSize / 2f, centerY - drawSize / 2f, drawSize, drawSize);
+            GUI.color = Color.white;
+            GUI.DrawTexture(reticleRect, reticleTexture);
         }
 
         private void DrawHUD()
@@ -72,7 +141,7 @@ namespace Roguelite.UI
             }
 
             // Top-Right: Run Time & Encounter Info Box
-            GUI.Box(new Rect(Screen.width - 230, 15, 215, 80), "");
+            GUI.Box(new Rect(Screen.width - 230, 15, 215, 104), "");
             if (runManager != null)
             {
                 int mins = (int)(runManager.RunTimeSeconds / 60);
@@ -80,7 +149,7 @@ namespace Roguelite.UI
                 GUI.Label(new Rect(Screen.width - 220, 22, 205, 24), $"⏱️ Time: {mins:D2}:{secs:D2}");
             }
 
-            // Active Encounter Status
+            // Active Encounter Status or Region Name
             if (EncounterManager.Instance != null && EncounterManager.Instance.ActiveZone != null)
             {
                 var zone = EncounterManager.Instance.ActiveZone;
@@ -88,12 +157,20 @@ namespace Roguelite.UI
             }
             else
             {
-                string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"📍 Area: {sceneName}");
+                string regionName = Environment.BiomeRegionTrigger.CurrentRegionName;
+                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"📍 Area: {regionName}");
+            }
+
+            // Mounted Status Indicator
+            if (activeMount != null && activeMount.IsPlayerMounted)
+            {
+                GUI.color = new Color(0.85f, 0.65f, 0.2f);
+                GUI.Label(new Rect(Screen.width - 220, 74, 205, 24), "🐴 Mounted");
+                GUI.color = Color.white;
             }
 
             // Top-Center: Hollow Tree Boss Health Bar
-            if (activeBoss != null && !activeBoss.IsDead)
+            if (activeBoss != null && !activeBoss.IsDead && Environment.BossActivationTrigger.IsBossActivated)
             {
                 float bossHpRatio = activeBoss.MaxHP > 0 ? activeBoss.CurrentHP / activeBoss.MaxHP : 0;
                 float barWidth = Mathf.Min(550, Screen.width - 100);
@@ -104,7 +181,7 @@ namespace Roguelite.UI
                 DrawBar(bossRect, bossHpRatio, bossColor, $"👑 THE HOLLOW TREE [{phaseText}] — HP: {Mathf.CeilToInt(activeBoss.CurrentHP)} / {Mathf.CeilToInt(activeBoss.MaxHP)}");
             }
 
-            // Center Banner Notification (Encounter events / Zone cleared)
+            // Center Banner Notification
             if (EncounterManager.Instance != null && EncounterManager.Instance.StatusBannerTimer > 0)
             {
                 GUI.color = Color.yellow;

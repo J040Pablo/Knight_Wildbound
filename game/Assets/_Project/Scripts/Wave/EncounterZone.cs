@@ -54,9 +54,12 @@ namespace Roguelite.Wave
             OnEncounterStarted?.Invoke(this);
         }
 
+        private List<Vector3> spawnedEnemyPositions = new List<Vector3>();
+
         private void SpawnEnemiesForDifficulty()
         {
             activeEnemies.Clear();
+            spawnedEnemyPositions.Clear();
 
             // Fallback spawn points if none assigned
             if (spawnPoints.Count == 0)
@@ -94,7 +97,7 @@ namespace Roguelite.Wave
                     SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
                     SpawnEnemy<WolfAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     SpawnEnemy<GoblinAI>(spawnPoints[3 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[0 % spawnPoints.Count].position + Vector3.right * 2f, false);
+                    SpawnEnemy<GoblinAI>(spawnPoints[0 % spawnPoints.Count].position + Vector3.right * 3f, false);
                     break;
             }
         }
@@ -102,23 +105,18 @@ namespace Roguelite.Wave
         private T SpawnEnemy<T>(Vector3 position, bool isElite) where T : EnemyBase
         {
             Vector3 validSpawnPos = position;
+            Vector3 playerPos = Vector3.zero;
 
-            // Validate spawn position against ground & obstacles
+            GameObject playerObj = GameObject.FindWithTag("Player");
+            if (playerObj != null) playerPos = playerObj.transform.position;
+
+            // Validate spawn position against ground, obstacles, player distance (10m) & anti-stacking (2m)
             if (Roguelite.Core.SpawnManager.Instance != null)
             {
-                if (Roguelite.Core.SpawnManager.Instance.ValidateSpawnPosition(position, 0.6f, out Vector3 validatedPos))
-                {
-                    validSpawnPos = validatedPos;
-                }
-                else
-                {
-                    // Fallback downward raycast
-                    if (Physics.Raycast(position + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
-                    {
-                        validSpawnPos = hit.point + Vector3.up * 0.1f;
-                    }
-                }
+                validSpawnPos = Roguelite.Core.SpawnManager.Instance.GetValidEnemySpawnPosition(position, playerPos, spawnedEnemyPositions, 0.6f);
             }
+
+            spawnedEnemyPositions.Add(validSpawnPos);
 
             GameObject enemyObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             enemyObj.name = $"EncounterEnemy_{typeof(T).Name}";

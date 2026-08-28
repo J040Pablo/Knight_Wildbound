@@ -74,6 +74,32 @@ namespace Roguelite.Player
             HandleCombatInputs();
         }
 
+        public Vector3 GetReticleTargetWorldPosition()
+        {
+            Camera mainCam = Camera.main;
+            if (mainCam == null) return transform.position + transform.forward * 10f;
+
+            Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            LayerMask mask = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
+
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, mask))
+            {
+                return hit.point;
+            }
+
+            return ray.origin + ray.direction * 50f;
+        }
+
+        public Vector3 GetReticleAimDirection()
+        {
+            Vector3 targetPos = GetReticleTargetWorldPosition();
+            Vector3 dir = (targetPos - transform.position);
+            dir.y = 0;
+
+            if (dir.sqrMagnitude < 0.001f) return transform.forward;
+            return dir.normalized;
+        }
+
         private void HandleCombatInputs()
         {
             // Attack Button (Mouse0 or Keycode J or K)
@@ -94,7 +120,14 @@ namespace Roguelite.Player
 
             if (isCharging && attackReleased)
             {
-                Vector3 aimDir = transform.forward;
+                Vector3 aimDir = GetReticleAimDirection();
+
+                // Rotate player character toward reticle aim direction
+                if (aimDir.sqrMagnitude > 0.001f)
+                {
+                    transform.rotation = Quaternion.LookRotation(aimDir);
+                }
+
                 if (currentChargeTime >= weaponData.chargeTimeRequired)
                 {
                     ExecuteChargedAttack(aimDir);

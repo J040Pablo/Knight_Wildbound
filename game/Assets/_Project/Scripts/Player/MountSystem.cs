@@ -114,11 +114,8 @@ namespace Roguelite.Player
                 Camera mainCam = Camera.main;
                 horseController.ProcessMovementInput(inputDir, sprint, mainCam);
 
-                // Handle Dismount key 'E'
-                if (Input.GetKeyDown(KeyCode.E))
-                {
-                    DismountPlayer();
-                }
+                // Dismount is handled exclusively via InteractionSystem (E key) to avoid
+                // double-handling the same keypress in the same frame.
             }
         }
     }

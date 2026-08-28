@@ -25,9 +25,10 @@ namespace Roguelite.Core
             }
             else
             {
-                // If in active adventure scene (Ruins/Forest/Boss), setup game run immediately
+                // If in active adventure scene (01_Run / GameArena), setup game run immediately.
+                // "MainScene" is the menu scene, so it must NOT be treated as a playable scene here.
                 string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-                if (currentScene.StartsWith("0") || currentScene == "MainScene" || currentScene == "GameArena")
+                if (currentScene.StartsWith("0") || currentScene == "GameArena")
                 {
                     SetupGameRunHierarchy();
                 }
@@ -46,22 +47,16 @@ namespace Roguelite.Core
                 sessionObj.AddComponent<GameSessionManager>();
             }
 
-            if (SceneTransitionManager.Instance == null)
-            {
-                GameObject transObj = new GameObject("SceneTransitionManager");
-                transObj.AddComponent<SceneTransitionManager>();
-            }
-
             if (DialogueSystem.Instance == null)
             {
                 GameObject diagObj = new GameObject("DialogueSystem");
                 diagObj.AddComponent<DialogueSystem>();
             }
 
-            if (SpawnManager.Instance == null)
+            if (PlayerSpawnManager.Instance == null)
             {
-                GameObject spawnMgrObj = new GameObject("SpawnManager");
-                spawnMgrObj.AddComponent<SpawnManager>();
+                GameObject spawnMgrObj = new GameObject("PlayerSpawnManager");
+                spawnMgrObj.AddComponent<PlayerSpawnManager>();
             }
         }
 
@@ -86,14 +81,7 @@ namespace Roguelite.Core
                 GameSessionManager.Instance.ResetSession();
             }
 
-            if (SceneTransitionManager.Instance != null)
-            {
-                SceneTransitionManager.Instance.LoadScene(SceneTransitionManager.SCENE_RUINS);
-            }
-            else
-            {
-                SetupGameRunHierarchy();
-            }
+            UnityEngine.SceneManagement.SceneManager.LoadScene("01_Run");
         }
 
         public void SetupGameRunHierarchy()
@@ -102,11 +90,25 @@ namespace Roguelite.Core
             GameObject envBuilderObj = new GameObject("SceneEnvironmentBuilder");
             SceneEnvironmentBuilder envBuilder = envBuilderObj.AddComponent<SceneEnvironmentBuilder>();
 
+            // Force PhysX spatial tree sync immediately after procedural geometry creation
+            Physics.SyncTransforms();
+
             // 2. Setup Player Character GameObject
             CharacterType selectedChar = GameSessionManager.Instance != null ? GameSessionManager.Instance.SelectedCharacter : CharacterType.Knight;
 
             GameObject playerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             playerObj.name = $"Player_{selectedChar}";
+            playerObj.tag = "Player";
+
+            // CRITICAL FIX: Immediately destroy primitive CapsuleCollider so CharacterController is the ONLY collider on playerObj!
+            Collider primitiveCollider = playerObj.GetComponent<Collider>();
+            if (primitiveCollider != null)
+            {
+                DestroyImmediate(primitiveCollider);
+            }
+
+            // Add Spawn Tracker for Debug Logging & Spheres
+            PlayerSpawnTracker tracker = playerObj.AddComponent<PlayerSpawnTracker>();
 
             // Add Player Components
             CharacterController cc = playerObj.AddComponent<CharacterController>();
@@ -120,10 +122,10 @@ namespace Roguelite.Core
             InteractionSystem interaction = playerObj.AddComponent<InteractionSystem>();
             playerObj.AddComponent<PlayerFallRecovery>();
 
-            // Delegate position placement and validation to SpawnManager
-            if (SpawnManager.Instance != null)
+            // Delegate safe player placement to PlayerSpawnManager
+            if (PlayerSpawnManager.Instance != null)
             {
-                SpawnManager.Instance.SpawnPlayer(playerObj);
+                PlayerSpawnManager.Instance.SpawnPlayer(playerObj);
             }
 
             // Character Data Setup
@@ -134,8 +136,11 @@ namespace Roguelite.Core
             if (field != null) field.SetValue(stats, cData);
             stats.RecalculateStats();
 
-            // Equip Class Visuals & Behavior
-            WeaponInteractable.SetupPlayerClassVisualsAndBehavior(playerObj, selectedChar, combat, stats);
+            // Equip Class Visuals & Behavior — only if player has selected character this run
+            if (GameSessionManager.Instance != null && GameSessionManager.Instance.HasSelectedCharacter)
+            {
+                WeaponInteractable.SetupPlayerClassVisualsAndBehavior(playerObj, selectedChar, combat, stats);
+            }
 
             // Restore saved session state if exists
             if (GameSessionManager.Instance != null)
@@ -170,6 +175,11 @@ namespace Roguelite.Core
             uiCanvasObj.AddComponent<HUDController>();
             uiCanvasObj.AddComponent<LevelUpUI>();
             uiCanvasObj.AddComponent<WinLoseUI>();
+
+            if (tracker != null)
+            {
+                tracker.LogAfterBootstrap(playerObj.transform.position);
+            }
         }
     }
 }

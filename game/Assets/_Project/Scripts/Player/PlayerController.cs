@@ -43,6 +43,8 @@ namespace Roguelite.Player
         {
             if (playerStats.IsDead) return;
 
+            Debug.Log($"[PLAYER_UPDATE] START pos: {transform.position}");
+
             dodgeTimer -= Time.deltaTime;
 
             HandleGroundedState();
@@ -55,6 +57,16 @@ namespace Roguelite.Player
             }
 
             ApplyKnockbackDecay();
+
+            Debug.Log($"[PLAYER_UPDATE] END pos: {transform.position}");
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit != null && hit.gameObject != null)
+            {
+                Debug.LogWarning($"[PLAYER_HIT] Collided with: '{hit.gameObject.name}', Tag: '{hit.gameObject.tag}', Layer: '{LayerMask.LayerToName(hit.gameObject.layer)}', HitPoint: {hit.point}");
+            }
         }
 
         private void HandleGroundedState()
@@ -92,7 +104,7 @@ namespace Roguelite.Player
 
                 if (moveDirection.sqrMagnitude > 0.001f)
                 {
-                    Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                    Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized, Vector3.up);
                     transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
                 }
             }

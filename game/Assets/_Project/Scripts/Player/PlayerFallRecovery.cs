@@ -38,30 +38,24 @@ namespace Roguelite.Player
         {
             Debug.LogWarning($"[PlayerFallRecovery] Player fell below safe Y threshold ({transform.position.y:F1} < {fallYThreshold}). Teleporting to valid spawn point.");
 
-            // 1. Temporarily disable CharacterController to allow position override
             if (characterController != null) characterController.enabled = false;
 
-            // 2. Clear any accumulated movement/velocity in PlayerController
             if (playerController != null)
             {
                 playerController.ResetVelocity();
             }
 
-            // 3. Delegate safe position lookup to SpawnManager
-            if (SpawnManager.Instance != null)
+            if (PlayerSpawnManager.Instance != null)
             {
-                SpawnManager.Instance.SpawnPlayer(gameObject);
+                PlayerSpawnManager.Instance.SpawnPlayer(gameObject);
             }
             else
             {
-                // Fallback position if SpawnManager instance is unavailable
-                transform.position = new Vector3(0, 1.0f, 0);
+                transform.position = new Vector3(0, 0.5f, 2.0f);
             }
 
-            // 4. Re-enable CharacterController
             if (characterController != null) characterController.enabled = true;
 
-            // 5. Ensure camera target remains aligned
             Camera mainCam = Camera.main;
             if (mainCam != null)
             {
