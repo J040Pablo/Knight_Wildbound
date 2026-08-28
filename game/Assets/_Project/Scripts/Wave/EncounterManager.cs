@@ -46,13 +46,13 @@ namespace Roguelite.Wave
         private void HandleZoneStarted(EncounterZone zone)
         {
             ActiveZone = zone;
-            TriggerBanner($"⚔️ {zone.Difficulty.ToString().ToUpper()} ENCOUNTER STARTED! Defeat all enemies!");
+            TriggerBanner("⚔️ ENCOUNTER STARTED! Defeat all enemies!");
         }
 
         private void HandleZoneCompleted(EncounterZone zone)
         {
             if (ActiveZone == zone) ActiveZone = null;
-            TriggerBanner($"✨ {zone.Difficulty.ToString().ToUpper()} ENCOUNTER CLEARED! Path unlocked!");
+            TriggerBanner("✨ ZONE CLEARED!");
         }
 
         public void TriggerBanner(string text)

@@ -72,12 +72,12 @@ namespace Roguelite.Player
         {
             if (hit == null || hit.collider == null) return;
 
-            if (hit.normal.y < 0.7f)
+#if UNITY_EDITOR
+            if (enableDebugLogs && hit.normal.y < 0.7f)
             {
                 Debug.Log($"[COLLISION DEBUG] Name={hit.collider.name} | Tag={hit.collider.tag} | Layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}");
             }
 
-#if UNITY_EDITOR
             if (enableDebugLogs && hit.gameObject != null)
             {
                 Debug.LogWarning($"[PLAYER_HIT] Collided with: '{hit.gameObject.name}', Tag: '{hit.gameObject.tag}', Layer: '{LayerMask.LayerToName(hit.gameObject.layer)}', HitPoint: {hit.point}");

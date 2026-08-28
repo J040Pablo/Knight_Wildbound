@@ -139,26 +139,42 @@ namespace Roguelite.Enemy
             }
         }
 
+        private float GetFlatDistanceToPlayer(Vector3 fromPos)
+        {
+            if (playerTransform == null) return 999f;
+            Vector3 pPos = playerTransform.position;
+            return Vector2.Distance(new Vector2(fromPos.x, fromPos.z), new Vector2(pPos.x, pPos.z));
+        }
+
         private IEnumerator PerformBranchSweep()
         {
             isAttacking = true;
             attackCooldownTimer = isPhase2 ? 2.5f : 3.8f;
 
             // Face player
-            Vector3 lookDir = (playerTransform.position - transform.position).normalized;
+            Vector3 lookDir = (playerTransform.position - transform.position);
             lookDir.y = 0;
-            if (lookDir.sqrMagnitude > 0.001f) transform.rotation = Quaternion.LookRotation(lookDir.normalized, Vector3.up);
+            if (lookDir.sqrMagnitude > 0.0001f)
+            {
+                lookDir.Normalize();
+                transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+            }
 
             yield return new WaitForSeconds(0.4f);
 
             if (!IsDead && Environment.BossActivationTrigger.IsBossActivated && playerStats != null && !playerStats.IsDead)
             {
-                float dist = Vector3.Distance(transform.position, playerTransform.position);
-                if (dist <= 8.5f)
+                float dist = GetFlatDistanceToPlayer(transform.position);
+                if (dist <= 9.5f)
                 {
+                    Vector3 kbDir = (playerTransform.position - transform.position);
+                    kbDir.y = 0;
+                    if (kbDir.sqrMagnitude > 0.0001f) kbDir.Normalize();
+                    else kbDir = transform.forward;
+
                     DamageInfo damage = new DamageInfo(
                         branchSweepDamage * (isPhase2 ? 1.3f : 1.0f),
-                        (playerTransform.position - transform.position).normalized,
+                        kbDir,
                         8.0f,
                         false,
                         gameObject
@@ -204,8 +220,8 @@ namespace Roguelite.Enemy
                 Renderer rR = rootSpike.GetComponent<Renderer>();
                 if (rR != null) rR.material.color = new Color(0.25f, 0.15f, 0.08f);
 
-                float dist = Vector3.Distance(rootPos, playerTransform.position);
-                if (dist <= 2.2f)
+                float dist = GetFlatDistanceToPlayer(rootPos);
+                if (dist <= 2.8f)
                 {
                     DamageInfo damage = new DamageInfo(
                         rootStrikeDamage * (isPhase2 ? 1.35f : 1.0f),
@@ -245,11 +261,14 @@ namespace Roguelite.Enemy
 
             if (!IsDead && Environment.BossActivationTrigger.IsBossActivated && playerStats != null && !playerStats.IsDead)
             {
-                float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+                float distToPlayer = GetFlatDistanceToPlayer(transform.position);
                 if (distToPlayer <= groundSlamRadius)
                 {
-                    Vector3 knockbackDir = (playerTransform.position - transform.position).normalized;
+                    Vector3 knockbackDir = (playerTransform.position - transform.position);
                     knockbackDir.y = 0.6f;
+                    if (knockbackDir.sqrMagnitude > 0.0001f) knockbackDir.Normalize();
+                    else knockbackDir = Vector3.up;
+
                     DamageInfo damage = new DamageInfo(
                         groundSlamDamage * (isPhase2 ? 1.3f : 1.0f),
                         knockbackDir,

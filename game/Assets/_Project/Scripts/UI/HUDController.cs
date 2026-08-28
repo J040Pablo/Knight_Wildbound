@@ -153,7 +153,7 @@ namespace Roguelite.UI
             if (EncounterManager.Instance != null && EncounterManager.Instance.ActiveZone != null)
             {
                 var zone = EncounterManager.Instance.ActiveZone;
-                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"⚔️ {zone.Difficulty} Encounter | Left: {zone.EnemiesRemaining}");
+                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"⚔️ Enemies Remaining: {zone.EnemiesRemaining}");
             }
             else
             {

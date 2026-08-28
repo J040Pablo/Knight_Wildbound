@@ -9,20 +9,32 @@ namespace Roguelite.Enemy
         private float attackTimer = 0f;
         private bool isCharging = false;
 
+        private float GetFlatDistanceToPlayer()
+        {
+            if (playerTransform == null) return 999f;
+            Vector3 pPos = playerTransform.position;
+            Vector3 ePos = transform.position;
+            return Vector2.Distance(new Vector2(ePos.x, ePos.z), new Vector2(pPos.x, pPos.z));
+        }
+
         protected override void Update()
         {
             base.Update();
             if (IsDead || playerTransform == null || playerStats.IsDead || isCharging) return;
 
             attackTimer -= Time.deltaTime;
-            float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float distToPlayer = GetFlatDistanceToPlayer();
 
             if (distToPlayer > enemyData.attackRange + 3.0f)
             {
                 // Fast approach
-                Vector3 moveDir = (playerTransform.position - transform.position).normalized;
+                Vector3 moveDir = (playerTransform.position - transform.position);
                 moveDir.y = 0;
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), Time.deltaTime * 12f);
+                if (moveDir.sqrMagnitude > 0.0001f)
+                {
+                    moveDir.Normalize();
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 12f);
+                }
                 characterController.Move(moveDir * enemyData.moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
             else if (attackTimer <= 0)
@@ -37,11 +49,16 @@ namespace Roguelite.Enemy
             attackTimer = enemyData.attackCooldown;
 
             // Wind-up: Face player and pause
-            Vector3 chargeDir = (playerTransform.position - transform.position).normalized;
+            Vector3 chargeDir = (playerTransform.position - transform.position);
             chargeDir.y = 0;
-            if (chargeDir != Vector3.zero)
+            if (chargeDir.sqrMagnitude > 0.0001f)
             {
-                transform.rotation = Quaternion.LookRotation(chargeDir);
+                chargeDir.Normalize();
+                transform.rotation = Quaternion.LookRotation(chargeDir, Vector3.up);
+            }
+            else
+            {
+                chargeDir = transform.forward;
             }
 
             // Wind-up telegraph pause
@@ -61,7 +78,7 @@ namespace Roguelite.Enemy
 
                 if (!hitPlayer && playerStats != null && !playerStats.IsDead)
                 {
-                    if (Vector3.Distance(transform.position, playerTransform.position) < 1.8f)
+                    if (GetFlatDistanceToPlayer() < 2.2f)
                     {
                         hitPlayer = true;
                         DamageInfo damage = new DamageInfo(

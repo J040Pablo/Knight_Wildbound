@@ -1,17 +1,23 @@
 using UnityEngine;
 using Roguelite.Core;
+using Roguelite.Combat;
 
 namespace Roguelite.Player
 {
-    public class MountSystem : MonoBehaviour, IInteractable
+    public class MountSystem : MonoBehaviour, IInteractable, IDamageable
     {
         private HorseController horseController;
         private GameObject mountedPlayer;
         private ThirdPersonCamera tpCam;
+        private CapsuleCollider mountedPlayerCollider;
 
         public bool IsPlayerMounted => mountedPlayer != null;
 
         public string InteractionPrompt => IsPlayerMounted ? "E — Dismount" : "E — Mount Horse";
+
+        public float CurrentHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().CurrentHP : 100f;
+        public float MaxHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().MaxHP : 100f;
+        public bool IsDead => mountedPlayer != null && mountedPlayer.GetComponent<PlayerStats>().IsDead;
 
         private void Awake()
         {
@@ -51,12 +57,23 @@ namespace Roguelite.Player
             mountedPlayer = player;
             horseController.SetMountedState(true);
 
-            // 1. Disable player character controller & movement physics
+            // 1. Disable player CharacterController but add/enable a CapsuleCollider for hit detection while mounted
             CharacterController pCC = player.GetComponent<CharacterController>();
             if (pCC != null) pCC.enabled = false;
 
             PlayerController pCtrl = player.GetComponent<PlayerController>();
             if (pCtrl != null) pCtrl.enabled = false;
+
+            mountedPlayerCollider = player.GetComponent<CapsuleCollider>();
+            if (mountedPlayerCollider == null)
+            {
+                mountedPlayerCollider = player.AddComponent<CapsuleCollider>();
+            }
+            mountedPlayerCollider.height = 1.8f;
+            mountedPlayerCollider.radius = 0.5f;
+            mountedPlayerCollider.center = new Vector3(0, 0.9f, 0);
+            mountedPlayerCollider.enabled = true;
+            mountedPlayerCollider.isTrigger = false;
 
             // 2. Attach player to horse mount socket
             Transform socket = horseController.MountSocket;
@@ -80,6 +97,12 @@ namespace Roguelite.Player
             GameObject player = mountedPlayer;
             mountedPlayer = null;
             horseController.SetMountedState(false);
+
+            if (mountedPlayerCollider != null)
+            {
+                Destroy(mountedPlayerCollider);
+                mountedPlayerCollider = null;
+            }
 
             // 1. Unparent player
             player.transform.SetParent(null);
@@ -119,6 +142,18 @@ namespace Roguelite.Player
             }
         }
 
+        public void TakeDamage(DamageInfo damageInfo)
+        {
+            if (IsPlayerMounted && mountedPlayer != null)
+            {
+                PlayerStats pStats = mountedPlayer.GetComponent<PlayerStats>();
+                if (pStats != null)
+                {
+                    pStats.TakeDamage(damageInfo);
+                }
+            }
+        }
+
         private void Update()
         {
             if (IsPlayerMounted && mountedPlayer != null)
@@ -137,8 +172,6 @@ namespace Roguelite.Player
                 {
                     horseController.TryJump();
                 }
-
-                // Dismount is handled exclusively via InteractionSystem (E key)
             }
         }
     }

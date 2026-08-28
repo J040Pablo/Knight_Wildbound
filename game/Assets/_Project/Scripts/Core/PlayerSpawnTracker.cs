@@ -76,48 +76,32 @@ namespace Roguelite.Core
 
         public void LogInitial(Vector3 pos)
         {
-            Debug.Log($"[SPAWN] Initial: {pos}");
             lastLoggedPos = pos;
         }
 
         public void LogAfterSpawnManager(Vector3 pos)
         {
-            Debug.Log($"[SPAWN] After SpawnManager: {pos}");
             lastLoggedPos = pos;
         }
 
         public void LogCCDetails(CharacterController cc, Vector3 posBeforeEnable, Vector3 posAfterEnable)
         {
-            if (cc != null)
-            {
-                Debug.Log($"[SPAWN] CC Config: Center={cc.center}, Radius={cc.radius:F2}, Height={cc.height:F2}");
-                Debug.Log($"[SPAWN] Position before CC enable: {posBeforeEnable}");
-                Debug.Log($"[SPAWN] Position after CC enable: {posAfterEnable}");
-            }
             lastLoggedPos = posAfterEnable;
             isTracking = true;
         }
 
         public void LogAfterBootstrap(Vector3 pos)
         {
-            Debug.Log($"[SPAWN] After Bootstrap: {pos}");
             lastLoggedPos = pos;
         }
 
         private IEnumerator Start()
         {
-            // Log position after first frame
             yield return null;
-            Debug.Log($"[SPAWN] After First Frame: {transform.position}");
-
-            // Log position after 1 second
-            yield return new WaitForSeconds(1.0f);
-            Debug.Log($"[SPAWN] After 1 Second: {transform.position}");
         }
 
         private void Update()
         {
-            // Per-frame tracking log removed per user requirement to avoid console spam
         }
 
         private void LateUpdate()
@@ -125,12 +109,6 @@ namespace Roguelite.Core
             if (createVisualDebugSpheres && blueSpherePlayerPos != null)
             {
                 blueSpherePlayerPos.transform.position = transform.position + Vector3.up * 1.0f;
-            }
-
-            if (isTracking && Vector3.Distance(transform.position, lastLoggedPos) > 0.1f)
-            {
-                Debug.LogError($"[SPAWN MOVED DETECTED] Player moved from {lastLoggedPos} to {transform.position}!\nStack Trace:\n{System.Environment.StackTrace}");
-                lastLoggedPos = transform.position;
             }
         }
     }

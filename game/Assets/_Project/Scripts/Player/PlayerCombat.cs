@@ -107,8 +107,7 @@ namespace Roguelite.Player
         {
             Camera mainCam = Camera.main;
             Vector3 camForward = mainCam != null ? mainCam.transform.forward : transform.forward;
-            camForward.y = 0;
-            if (camForward.sqrMagnitude < 0.001f) camForward = transform.forward;
+            if (camForward.sqrMagnitude < 0.0001f) camForward = transform.forward;
             camForward.Normalize();
 
             Vector3 targetPos = GetReticleTargetWorldPosition();
@@ -117,10 +116,9 @@ namespace Roguelite.Player
 
             Vector3 origin = (mount != null && mount.IsPlayerMounted) ? transform.position + Vector3.up * 2.2f : transform.position + Vector3.up * 1.2f;
             Vector3 dir = (targetPos - origin);
-            dir.y = 0;
 
             // Absolute safety check: If direction points backwards relative to camera view (dot < 0), fallback to camera forward
-            if (dir.sqrMagnitude < 0.001f || Vector3.Dot(dir.normalized, camForward) < 0.0f)
+            if (dir.sqrMagnitude < 0.0001f || Vector3.Dot(dir.normalized, camForward) < 0.0f)
             {
                 return camForward;
             }
@@ -160,10 +158,12 @@ namespace Roguelite.Player
             {
                 Vector3 aimDir = GetReticleAimDirection();
 
-                // Rotate player character toward reticle aim direction
-                if (aimDir.sqrMagnitude > 0.001f)
+                // Rotate player character horizontally toward reticle aim direction
+                Vector3 horizontalAimDir = new Vector3(aimDir.x, 0, aimDir.z);
+                if (horizontalAimDir.sqrMagnitude > 0.0001f)
                 {
-                    transform.rotation = Quaternion.LookRotation(aimDir.normalized, Vector3.up);
+                    horizontalAimDir.Normalize();
+                    transform.rotation = Quaternion.LookRotation(horizontalAimDir, Vector3.up);
                 }
 
                 if (currentChargeTime >= weaponData.chargeTimeRequired)

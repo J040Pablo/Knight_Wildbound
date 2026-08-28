@@ -77,20 +77,32 @@ namespace Roguelite.Enemy
             }
         }
 
+        private float GetFlatDistanceToPlayer()
+        {
+            if (playerTransform == null) return 999f;
+            Vector3 pPos = playerTransform.position;
+            Vector3 ePos = transform.position;
+            return Vector2.Distance(new Vector2(ePos.x, ePos.z), new Vector2(pPos.x, pPos.z));
+        }
+
         protected override void Update()
         {
             base.Update();
             if (IsDead || playerTransform == null || playerStats.IsDead || isJumping) return;
 
             attackTimer -= Time.deltaTime;
-            float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float distToPlayer = GetFlatDistanceToPlayer();
             float moveSpeed = isElite ? 4.5f : 5.5f;
 
-            if (distToPlayer > 2.2f)
+            if (distToPlayer > 2.5f)
             {
-                Vector3 moveDir = (playerTransform.position - transform.position).normalized;
+                Vector3 moveDir = (playerTransform.position - transform.position);
                 moveDir.y = 0;
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), Time.deltaTime * 8f);
+                if (moveDir.sqrMagnitude > 0.0001f)
+                {
+                    moveDir.Normalize();
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 8f);
+                }
                 characterController.Move(moveDir * moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
             else if (attackTimer <= 0)
@@ -104,8 +116,10 @@ namespace Roguelite.Enemy
             isJumping = true;
             attackTimer = jumpAttackCooldown;
 
-            Vector3 jumpDir = (playerTransform.position - transform.position).normalized;
+            Vector3 jumpDir = (playerTransform.position - transform.position);
             jumpDir.y = 0.4f;
+            if (jumpDir.sqrMagnitude > 0.0001f) jumpDir.Normalize();
+            else jumpDir = transform.forward;
 
             float duration = 0.4f;
             float elapsed = 0f;
@@ -122,13 +136,18 @@ namespace Roguelite.Enemy
             // Impact damage
             if (!IsDead && playerStats != null && !playerStats.IsDead)
             {
-                float dist = Vector3.Distance(transform.position, playerTransform.position);
-                if (dist <= 2.2f)
+                float dist = GetFlatDistanceToPlayer();
+                if (dist <= 2.8f)
                 {
                     float dmg = isElite ? 25f : 12f;
+                    Vector3 kbDir = (playerTransform.position - transform.position);
+                    kbDir.y = 0;
+                    if (kbDir.sqrMagnitude > 0.0001f) kbDir.Normalize();
+                    else kbDir = transform.forward;
+
                     DamageInfo damage = new DamageInfo(
                         dmg,
-                        (playerTransform.position - transform.position).normalized,
+                        kbDir,
                         6f,
                         false,
                         gameObject

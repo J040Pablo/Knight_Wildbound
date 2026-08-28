@@ -9,20 +9,32 @@ namespace Roguelite.Enemy
         private float attackTimer = 0f;
         private bool isAttacking = false;
 
+        private float GetFlatDistanceToPlayer()
+        {
+            if (playerTransform == null) return 999f;
+            Vector3 pPos = playerTransform.position;
+            Vector3 ePos = transform.position;
+            return Vector2.Distance(new Vector2(ePos.x, ePos.z), new Vector2(pPos.x, pPos.z));
+        }
+
         protected override void Update()
         {
             base.Update();
             if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking) return;
 
             attackTimer -= Time.deltaTime;
-            float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float distToPlayer = GetFlatDistanceToPlayer();
 
             if (distToPlayer > enemyData.attackRange)
             {
                 // Move towards player
-                Vector3 moveDir = (playerTransform.position - transform.position).normalized;
+                Vector3 moveDir = (playerTransform.position - transform.position);
                 moveDir.y = 0;
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir), Time.deltaTime * 8f);
+                if (moveDir.sqrMagnitude > 0.0001f)
+                {
+                    moveDir.Normalize();
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 8f);
+                }
                 characterController.Move(moveDir * enemyData.moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
             else if (attackTimer <= 0)
@@ -37,8 +49,10 @@ namespace Roguelite.Enemy
             attackTimer = enemyData.attackCooldown;
 
             Vector3 targetPos = playerTransform.position;
-            Vector3 leapDir = (targetPos - transform.position).normalized;
+            Vector3 leapDir = (targetPos - transform.position);
             leapDir.y = 0;
+            if (leapDir.sqrMagnitude > 0.0001f) leapDir.Normalize();
+            else leapDir = transform.forward;
 
             float leapTime = 0.5f;
             float elapsed = 0f;
@@ -61,12 +75,17 @@ namespace Roguelite.Enemy
             // Deal Damage if player is in range at landing
             if (playerStats != null && !playerStats.IsDead)
             {
-                float distAtLanding = Vector3.Distance(transform.position, playerTransform.position);
+                float distAtLanding = GetFlatDistanceToPlayer();
                 if (distAtLanding <= enemyData.attackRange + 0.8f)
                 {
+                    Vector3 kbDir = (playerTransform.position - transform.position);
+                    kbDir.y = 0;
+                    if (kbDir.sqrMagnitude > 0.0001f) kbDir.Normalize();
+                    else kbDir = transform.forward;
+
                     DamageInfo damage = new DamageInfo(
                         enemyData.attackDamage,
-                        (playerTransform.position - transform.position).normalized,
+                        kbDir,
                         4.0f,
                         false,
                         gameObject
