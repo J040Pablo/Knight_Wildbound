@@ -50,6 +50,12 @@ namespace Roguelite.Player
             if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] START pos: {transform.position}");
 #endif
 
+            // Ignore gameplay input while menu is open or in UI mode
+            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Roguelite.Core.InputStateManager.Instance != null && Roguelite.Core.InputStateManager.Instance.CurrentMode == Roguelite.Core.InputMode.UI))
+            {
+                return;
+            }
+
             dodgeTimer -= Time.deltaTime;
 
             HandleGroundedState();
@@ -176,9 +182,14 @@ namespace Roguelite.Player
                 }
             }
 
-            float duration = 0.4f;
+            // Check for Wind Dash override (Helmet N3)
+            bool isWindDash = Progression.ProgressionManager.Instance != null &&
+                              Progression.ProgressionManager.Instance.GetTier(Progression.MasteryPath.Path1) >= Progression.MasteryTier.N3;
+
+            float duration = isWindDash ? 0.3f : 0.4f;
             float elapsed = 0f;
-            float speed = playerStats.CharacterData.dodgeDistance / duration;
+            float baseDistance = playerStats.CharacterData.dodgeDistance * (isWindDash ? 1.4f : 1.0f);
+            float speed = baseDistance / duration;
 
             while (elapsed < duration)
             {

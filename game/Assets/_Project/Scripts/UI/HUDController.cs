@@ -3,6 +3,7 @@ using Roguelite.Player;
 using Roguelite.Enemy;
 using Roguelite.Wave;
 using Roguelite.Core;
+using Roguelite.Progression;
 
 namespace Roguelite.UI
 {
@@ -16,6 +17,30 @@ namespace Roguelite.UI
         private MountSystem activeMount;
 
         private Texture2D reticleTexture;
+
+        private void OnEnable()
+        {
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.OnXPChanged += HandleXPChanged;
+                ProgressionManager.Instance.OnLevelChanged += HandleLevelChanged;
+                ProgressionManager.Instance.OnMasteryUnlocked += HandleMasteryUnlocked;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (ProgressionManager.Instance != null)
+            {
+                ProgressionManager.Instance.OnXPChanged -= HandleXPChanged;
+                ProgressionManager.Instance.OnLevelChanged -= HandleLevelChanged;
+                ProgressionManager.Instance.OnMasteryUnlocked -= HandleMasteryUnlocked;
+            }
+        }
+
+        private void HandleXPChanged(int currentXP, int targetXP) { }
+        private void HandleLevelChanged(int level) { }
+        private void HandleMasteryUnlocked(MasteryPath path, MasteryTier tier) { }
 
         private void Start()
         {
@@ -89,7 +114,6 @@ namespace Roguelite.UI
 
         private void DrawCenterReticle()
         {
-            // Do not draw reticle if dialogue is active
             if (DialogueSystem.Instance != null && DialogueSystem.Instance.IsDialogueActive) return;
 
             if (reticleTexture == null)
@@ -111,15 +135,15 @@ namespace Roguelite.UI
             // ==========================================
             // BOTTOM-LEFT: Minimal Action-RPG HUD
             // ==========================================
-            float hudWidth = 230f;
-            float hudHeight = 72f;
+            float hudWidth = 240f;
+            float hudHeight = 78f;
             float posX = 20f;
             float posY = Screen.height - hudHeight - 20f;
 
             Rect bgRect = new Rect(posX, posY, hudWidth, hudHeight);
 
             // Semi-transparent dark sleek background container
-            GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.78f);
+            GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.82f);
             GUI.DrawTexture(bgRect, Texture2D.whiteTexture);
 
             // Thin accent border
@@ -128,24 +152,71 @@ namespace Roguelite.UI
 
             if (playerStats != null)
             {
-                // Level & Class Title Header
-                GUI.skin.label.fontSize = 12;
+                int level = ProgressionManager.Instance != null ? ProgressionManager.Instance.CurrentLevel : playerStats.Level;
+                ClassType currentClass = ProgressionManager.Instance != null ? ProgressionManager.Instance.CurrentClass : ClassType.Knight;
+
+                string masteryStatusText = "";
+                if (ProgressionManager.Instance != null && currentClass != ClassType.None)
+                {
+                    ClassDefinition def = ProgressionManager.Instance.GetActiveClassDefinition();
+                    string p1 = def != null ? def.GetPathAbbrev(MasteryPath.Path1) : "P1";
+                    string p2 = def != null ? def.GetPathAbbrev(MasteryPath.Path2) : "P2";
+                    string p3 = def != null ? def.GetPathAbbrev(MasteryPath.Path3) : "P3";
+
+                    string t1 = GetRomanTier(ProgressionManager.Instance.GetTier(MasteryPath.Path1));
+                    string t2 = GetRomanTier(ProgressionManager.Instance.GetTier(MasteryPath.Path2));
+                    string t3 = GetRomanTier(ProgressionManager.Instance.GetTier(MasteryPath.Path3));
+
+                    masteryStatusText = $"{p1} {t1}  |  {p2} {t2}  |  {p3} {t3}";
+                }
+                else
+                {
+                    masteryStatusText = "SELECT WEAPON IN RUINS";
+                }
+
+                // Level & Mastery Header
+                GUI.skin.label.fontSize = 11;
                 GUI.skin.label.fontStyle = FontStyle.Bold;
                 GUI.color = new Color(0.95f, 0.82f, 0.35f);
-                CharacterType cType = GameSessionManager.Instance != null ? GameSessionManager.Instance.SelectedCharacter : CharacterType.Knight;
-                GUI.Label(new Rect(posX + 10, posY + 6, hudWidth - 20, 18), $"LEVEL {playerStats.Level}  •  {cType.ToString().ToUpper()}");
+                GUI.Label(new Rect(posX + 10, posY + 5, hudWidth - 20, 16), $"LV {level}   •   {masteryStatusText}");
 
                 // 1. Thin HP Bar (Height: 10px)
                 float hpRatio = playerStats.MaxHP > 0 ? playerStats.CurrentHP / playerStats.MaxHP : 0;
-                DrawThinBar(new Rect(posX + 10, posY + 26, hudWidth - 20, 10), hpRatio, new Color(0.85f, 0.22f, 0.22f), $"{Mathf.CeilToInt(playerStats.CurrentHP)} / {Mathf.CeilToInt(playerStats.MaxHP)}");
+                DrawThinBar(new Rect(posX + 10, posY + 25, hudWidth - 20, 10), hpRatio, new Color(0.85f, 0.22f, 0.22f), $"{Mathf.CeilToInt(playerStats.CurrentHP)} / {Mathf.CeilToInt(playerStats.MaxHP)}");
 
                 // 2. Thin Stamina Bar (Height: 8px)
                 float stamRatio = playerStats.MaxStamina > 0 ? playerStats.CurrentStamina / playerStats.MaxStamina : 0;
                 DrawThinBar(new Rect(posX + 10, posY + 40, hudWidth - 20, 8), stamRatio, new Color(0.18f, 0.72f, 0.9f), "");
 
-                // 3. Thin XP Bar (Height: 4px)
-                float xpRatio = playerStats.XPToNextLevel > 0 ? (float)playerStats.CurrentXP / playerStats.XPToNextLevel : 0;
-                DrawThinBar(new Rect(posX + 10, posY + 53, hudWidth - 20, 4), xpRatio, new Color(0.92f, 0.75f, 0.15f), "");
+                // 3. Thin XP Bar (Height: 5px)
+                int curXP = ProgressionManager.Instance != null ? ProgressionManager.Instance.CurrentLevelXP : playerStats.CurrentXP;
+                int reqXP = ProgressionManager.Instance != null ? ProgressionManager.Instance.GetXPRequired(level) : playerStats.XPToNextLevel;
+                float xpRatio = reqXP > 0 ? (float)curXP / reqXP : 0;
+                DrawThinBar(new Rect(posX + 10, posY + 54, hudWidth - 20, 5), xpRatio, new Color(0.92f, 0.75f, 0.15f), "");
+
+                // 4. Bloons TD 6 Style Notification Banner when Level Up / Mastery Points are available
+                int pendingPoints = ProgressionManager.Instance != null ? ProgressionManager.Instance.PendingLevelUpCount : 0;
+                if (pendingPoints > 0)
+                {
+                    float notifWidth = 240f;
+                    float notifHeight = 36f;
+                    float notifY = posY - notifHeight - 8f;
+                    Rect notifRect = new Rect(posX, notifY, notifWidth, notifHeight);
+
+                    GUI.color = new Color(0.08f, 0.28f, 0.45f, 0.92f);
+                    GUI.DrawTexture(notifRect, Texture2D.whiteTexture);
+                    GUI.color = new Color(0.4f, 0.85f, 1.0f);
+                    GUI.Box(notifRect, "");
+
+                    GUI.skin.label.fontSize = 11;
+                    GUI.skin.label.fontStyle = FontStyle.Bold;
+                    GUI.skin.label.alignment = TextAnchor.MiddleCenter;
+                    GUI.color = Color.yellow;
+                    GUI.Label(new Rect(notifRect.x, notifRect.y + 2, notifWidth, 16), $"↑ LEVEL {level} READY  •  Points: {pendingPoints}");
+                    GUI.color = Color.cyan;
+                    GUI.Label(new Rect(notifRect.x, notifRect.y + 18, notifWidth, 15), "Press [Q] to Open Masteries");
+                    GUI.skin.label.alignment = TextAnchor.UpperLeft;
+                }
             }
 
             // ==========================================
@@ -185,18 +256,26 @@ namespace Roguelite.UI
             }
         }
 
+        private string GetRomanTier(MasteryTier tier)
+        {
+            switch (tier)
+            {
+                case MasteryTier.N1: return "I";
+                case MasteryTier.N2: return "II";
+                case MasteryTier.N3: return "III";
+                default: return "0";
+            }
+        }
+
         private void DrawThinBar(Rect rect, float fillRatio, Color fillColor, string labelText)
         {
-            // Dark track background
             GUI.color = new Color(0.1f, 0.12f, 0.15f, 0.85f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
 
-            // Fill bar
             GUI.color = fillColor;
             Rect fillRect = new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fillRatio), rect.height);
             GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
 
-            // Label (if provided)
             if (!string.IsNullOrEmpty(labelText))
             {
                 GUI.color = Color.white;

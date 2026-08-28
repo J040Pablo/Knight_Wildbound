@@ -44,7 +44,7 @@ namespace Roguelite.Enemy
             trunk.transform.localPosition = new Vector3(0, 0.7f, 0);
             trunk.transform.localScale = new Vector3(0.55f, 0.7f, 0.55f);
             Collider tCol = trunk.GetComponent<Collider>();
-            if (tCol != null) DestroyImmediate(tCol);
+            if (tCol != null) Destroy(tCol);
             Renderer tR = trunk.GetComponent<Renderer>();
             if (tR != null) tR.material.color = new Color(0.32f, 0.20f, 0.12f); // Bark brown
 
@@ -56,7 +56,7 @@ namespace Roguelite.Enemy
             leftBranch.transform.localScale = new Vector3(0.12f, 0.4f, 0.12f);
             leftBranch.transform.localRotation = Quaternion.Euler(0, 0, 65f);
             Collider lbCol = leftBranch.GetComponent<Collider>();
-            if (lbCol != null) DestroyImmediate(lbCol);
+            if (lbCol != null) Destroy(lbCol);
             Renderer lbR = leftBranch.GetComponent<Renderer>();
             if (lbR != null) lbR.material.color = new Color(0.28f, 0.18f, 0.10f);
 
@@ -67,7 +67,7 @@ namespace Roguelite.Enemy
             rightBranch.transform.localScale = new Vector3(0.12f, 0.4f, 0.12f);
             rightBranch.transform.localRotation = Quaternion.Euler(0, 0, -65f);
             Collider rbCol = rightBranch.GetComponent<Collider>();
-            if (rbCol != null) DestroyImmediate(rbCol);
+            if (rbCol != null) Destroy(rbCol);
             Renderer rbR = rightBranch.GetComponent<Renderer>();
             if (rbR != null) rbR.material.color = new Color(0.28f, 0.18f, 0.10f);
 
@@ -78,7 +78,7 @@ namespace Roguelite.Enemy
             canopy.transform.localPosition = new Vector3(0, 1.4f, 0);
             canopy.transform.localScale = new Vector3(1.1f, 0.65f, 1.1f);
             Collider cCol = canopy.GetComponent<Collider>();
-            if (cCol != null) DestroyImmediate(cCol);
+            if (cCol != null) Destroy(cCol);
             Renderer cR = canopy.GetComponent<Renderer>();
             if (cR != null) cR.material.color = new Color(0.15f, 0.42f, 0.15f); // Lush foliage green
         }

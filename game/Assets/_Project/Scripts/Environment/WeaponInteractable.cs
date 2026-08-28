@@ -46,7 +46,17 @@ namespace Roguelite.Environment
         {
             if (player == null) return;
 
-            // 1. Update GameSessionManager state
+            // Map CharacterType to ClassType
+            Progression.ClassType pClass = Progression.ClassType.Knight;
+            if (targetClass == CharacterType.Mage) pClass = Progression.ClassType.Mage;
+            else if (targetClass == CharacterType.Druid) pClass = Progression.ClassType.Druid;
+
+            // 1. Update ProgressionManager state (Permanent class selection)
+            if (Progression.ProgressionManager.Instance != null)
+            {
+                Progression.ProgressionManager.Instance.SetClass(pClass);
+            }
+
             if (GameSessionManager.Instance != null)
             {
                 GameSessionManager.Instance.SelectedCharacter = targetClass;
@@ -67,11 +77,11 @@ namespace Roguelite.Environment
                 SetupPlayerClassVisualsAndBehavior(player, targetClass, combat, stats);
             }
 
-            // 3. Disable all weapon pickups on ground so player cannot pick multiple classes
+            // 3. Deactivate all weapon pickups on ground so player cannot pick multiple classes
             WeaponInteractable[] allWeapons = FindObjectsByType<WeaponInteractable>(FindObjectsSortMode.None);
             foreach (var weapon in allWeapons)
             {
-                Destroy(weapon.gameObject);
+                weapon.gameObject.SetActive(false);
             }
 
             // 4. Unlock forest path gate in Ruins if present
@@ -84,6 +94,15 @@ namespace Roguelite.Environment
 
         public static void SetupPlayerClassVisualsAndBehavior(GameObject playerObj, CharacterType selectedChar, PlayerCombat combat, PlayerStats stats)
         {
+            Progression.ClassType pClass = Progression.ClassType.Knight;
+            if (selectedChar == CharacterType.Mage) pClass = Progression.ClassType.Mage;
+            else if (selectedChar == CharacterType.Druid) pClass = Progression.ClassType.Druid;
+
+            if (Progression.ProgressionManager.Instance != null)
+            {
+                Progression.ProgressionManager.Instance.SetClass(pClass);
+            }
+
             // Remove previous visual weapons/hats
             foreach (Transform child in playerObj.transform)
             {

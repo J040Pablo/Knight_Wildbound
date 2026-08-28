@@ -32,10 +32,6 @@ namespace Roguelite.Player
 
         private void Start()
         {
-            // Lock and hide cursor for modern 3D action gameplay
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-
             if (collisionLayers == 0)
             {
                 collisionLayers = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
@@ -46,15 +42,8 @@ namespace Roguelite.Player
         {
             if (target == null) return;
 
-            // Maintain cursor lock state
-            if (Cursor.lockState != CursorLockMode.Locked && !UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject)
-            {
-                if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                }
-            }
+            // Block mouse orbit look while menu is open or in UI mode
+            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Roguelite.Core.InputStateManager.Instance != null && Roguelite.Core.InputStateManager.Instance.CurrentMode == Roguelite.Core.InputMode.UI)) return;
 
             // Mouse orbit look input
             yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
@@ -106,13 +95,7 @@ namespace Roguelite.Player
             // Smooth Damping follow
             transform.position = Vector3.SmoothDamp(transform.position, finalCamPos, ref currentVelocity, 1.0f / smoothSpeed);
 
-            // Aim look target centered on shoulder line ahead so reticle aligns to screen center
-            Vector3 lookTarget = targetPivot + (rotation * Vector3.forward * 30.0f);
-            Vector3 lookDir = lookTarget - transform.position;
-            if (lookDir.sqrMagnitude > 0.001f)
-            {
-                transform.rotation = Quaternion.LookRotation(lookDir.normalized, Vector3.up);
-            }
+            transform.rotation = rotation;
         }
 
         private bool IsIgnoredCameraCollider(Collider col)

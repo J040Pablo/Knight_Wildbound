@@ -58,7 +58,7 @@ namespace Roguelite.Enemy
             trunk.transform.localPosition = new Vector3(0, 1.8f, 0);
             trunk.transform.localScale = new Vector3(1.2f, 1.8f, 1.2f);
             Collider tCol = trunk.GetComponent<Collider>();
-            if (tCol != null) DestroyImmediate(tCol);
+            if (tCol != null) Destroy(tCol);
             meshRenderer = trunk.GetComponent<Renderer>();
             if (meshRenderer != null)
             {
@@ -73,7 +73,7 @@ namespace Roguelite.Enemy
             face.transform.localPosition = new Vector3(0, 2.3f, 0.55f);
             face.transform.localScale = new Vector3(0.7f, 0.4f, 0.15f);
             Collider fCol = face.GetComponent<Collider>();
-            if (fCol != null) DestroyImmediate(fCol);
+            if (fCol != null) Destroy(fCol);
             Renderer fR = face.GetComponent<Renderer>();
             if (fR != null) fR.material.color = new Color(0.95f, 0.7f, 0.1f); // Glowing amber eyes
 
@@ -84,7 +84,7 @@ namespace Roguelite.Enemy
             canopy.transform.localPosition = new Vector3(0, 3.6f, 0);
             canopy.transform.localScale = new Vector3(3.0f, 1.2f, 3.0f);
             Collider cCol = canopy.GetComponent<Collider>();
-            if (cCol != null) DestroyImmediate(cCol);
+            if (cCol != null) Destroy(cCol);
             Renderer cR = canopy.GetComponent<Renderer>();
             if (cR != null) cR.material.color = new Color(0.85f, 0.35f, 0.08f); // Autumn orange leaves
         }
@@ -123,6 +123,12 @@ namespace Roguelite.Enemy
                         break;
                 }
             }
+        }
+
+        protected override void ApplyKnockbackDecay()
+        {
+            // Giant rooted tree boss is immune to knockback displacement
+            knockbackVelocity = Vector3.zero;
         }
 
         public override void TakeDamage(DamageInfo damageInfo)
@@ -208,7 +214,7 @@ namespace Roguelite.Enemy
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             marker.name = "RootStrikeTelegraph";
             Collider mCol = marker.GetComponent<Collider>();
-            if (mCol != null) DestroyImmediate(mCol);
+            if (mCol != null) Destroy(mCol);
             marker.transform.position = rootPos + new Vector3(0, 0.05f, 0);
             marker.transform.localScale = new Vector3(3f, 0.02f, 3f);
             Renderer mR = marker.GetComponent<Renderer>();
@@ -225,16 +231,21 @@ namespace Roguelite.Enemy
                 rootSpike.transform.position = rootPos + new Vector3(0, 1.2f, 0);
                 rootSpike.transform.localScale = new Vector3(0.8f, 2.5f, 0.8f);
                 Collider sCol = rootSpike.GetComponent<Collider>();
-                if (sCol != null) DestroyImmediate(sCol);
+                if (sCol != null) Destroy(sCol);
                 Renderer rR = rootSpike.GetComponent<Renderer>();
                 if (rR != null) rR.material.color = new Color(0.25f, 0.15f, 0.08f);
 
                 float dist = GetFlatDistanceToPlayer(rootPos);
                 if (dist <= 2.8f)
                 {
+                    Vector3 kbDir = (playerTransform.position - rootPos);
+                    kbDir.y = 0;
+                    if (kbDir.sqrMagnitude > 0.0001f) kbDir.Normalize();
+                    else kbDir = transform.forward;
+
                     DamageInfo damage = new DamageInfo(
                         rootStrikeDamage * (isPhase2 ? 1.35f : 1.0f),
-                        Vector3.up,
+                        kbDir,
                         10.0f,
                         false,
                         gameObject
@@ -258,7 +269,7 @@ namespace Roguelite.Enemy
             GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             indicator.name = "BossSlamTelegraph";
             Collider iCol = indicator.GetComponent<Collider>();
-            if (iCol != null) DestroyImmediate(iCol);
+            if (iCol != null) Destroy(iCol);
             indicator.transform.position = transform.position + new Vector3(0, 0.05f, 0);
             indicator.transform.localScale = new Vector3(groundSlamRadius * 2f, 0.02f, groundSlamRadius * 2f);
 
@@ -274,9 +285,9 @@ namespace Roguelite.Enemy
                 if (distToPlayer <= groundSlamRadius)
                 {
                     Vector3 knockbackDir = (playerTransform.position - transform.position);
-                    knockbackDir.y = 0.6f;
+                    knockbackDir.y = 0;
                     if (knockbackDir.sqrMagnitude > 0.0001f) knockbackDir.Normalize();
-                    else knockbackDir = Vector3.up;
+                    else knockbackDir = transform.forward;
 
                     DamageInfo damage = new DamageInfo(
                         groundSlamDamage * (isPhase2 ? 1.3f : 1.0f),
@@ -307,7 +318,7 @@ namespace Roguelite.Enemy
                 saplingObj.transform.position = spawnPos;
 
                 Collider col = saplingObj.GetComponent<Collider>();
-                if (col != null) DestroyImmediate(col);
+                if (col != null) Destroy(col);
 
                 CharacterController cc = saplingObj.AddComponent<CharacterController>();
                 cc.height = 1.6f;
@@ -337,6 +348,11 @@ namespace Roguelite.Enemy
             // Give XP
             if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
             if (playerStats != null) playerStats.AddXP(250);
+
+            if (Progression.ProgressionManager.Instance != null)
+            {
+                Progression.ProgressionManager.Instance.AddXP(250);
+            }
 
             // Trigger Victory state in RunManager
             RunManager runManager = FindFirstObjectByType<RunManager>();

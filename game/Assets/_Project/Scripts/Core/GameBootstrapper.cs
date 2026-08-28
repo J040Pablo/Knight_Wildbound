@@ -58,6 +58,18 @@ namespace Roguelite.Core
                 GameObject spawnMgrObj = new GameObject("PlayerSpawnManager");
                 spawnMgrObj.AddComponent<PlayerSpawnManager>();
             }
+
+            if (ProgressionManager.Instance == null)
+            {
+                GameObject progObj = new GameObject("ProgressionManager");
+                progObj.AddComponent<ProgressionManager>();
+            }
+
+            if (InputStateManager.Instance == null)
+            {
+                GameObject inputObj = new GameObject("InputStateManager");
+                inputObj.AddComponent<InputStateManager>();
+            }
         }
 
         public void ShowMainMenu()
@@ -139,6 +151,11 @@ namespace Roguelite.Core
             // Equip Class Visuals & Behavior — only if player has selected character this run
             if (GameSessionManager.Instance != null && GameSessionManager.Instance.HasSelectedCharacter)
             {
+                ClassType pClass = ClassType.Knight;
+                if (selectedChar == CharacterType.Mage) pClass = ClassType.Mage;
+                else if (selectedChar == CharacterType.Druid) pClass = ClassType.Druid;
+
+                ProgressionManager.Instance.SetClass(pClass);
                 WeaponInteractable.SetupPlayerClassVisualsAndBehavior(playerObj, selectedChar, combat, stats);
             }
 
@@ -173,7 +190,7 @@ namespace Roguelite.Core
             // 5. Setup UI System
             GameObject uiCanvasObj = new GameObject("UIManager");
             uiCanvasObj.AddComponent<HUDController>();
-            uiCanvasObj.AddComponent<LevelUpUI>();
+            uiCanvasObj.AddComponent<MasteryScreenUI>();
             uiCanvasObj.AddComponent<WinLoseUI>();
 
             if (tracker != null)

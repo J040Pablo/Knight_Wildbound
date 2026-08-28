@@ -156,6 +156,12 @@ namespace Roguelite.Player
 
         private void Update()
         {
+            if (UI.MasteryScreenUI.IsAnyMenuOpen)
+            {
+                Debug.Log("[Horse] Input Blocked By Menu");
+                return;
+            }
+
             if (IsPlayerMounted && mountedPlayer != null)
             {
                 // Handle Horse Movement Inputs while mounted

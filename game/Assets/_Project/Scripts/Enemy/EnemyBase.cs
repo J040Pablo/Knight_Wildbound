@@ -26,7 +26,7 @@ namespace Roguelite.Enemy
         protected bool isAttacking = false;
         protected float attackTimer = 0f;
 
-        private Vector3 knockbackVelocity;
+        protected Vector3 knockbackVelocity;
 
         public event Action<EnemyBase> OnEnemyDied;
 
@@ -128,6 +128,7 @@ namespace Roguelite.Enemy
         {
             if (knockbackVelocity.magnitude > 0.1f)
             {
+                knockbackVelocity.y = 0f; // Force horizontal knockback only
                 characterController.Move(knockbackVelocity * Time.deltaTime);
                 knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.deltaTime * 8f);
             }
@@ -138,12 +139,16 @@ namespace Roguelite.Enemy
             if (IsDead) return;
             IsDead = true;
 
-            // Give XP to player
+            // Give XP to player & ProgressionManager
             int xp = (enemyData != null) ? enemyData.xpReward : 10;
             if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
             if (playerStats != null)
             {
                 playerStats.AddXP(xp);
+            }
+            else if (Progression.ProgressionManager.Instance != null)
+            {
+                Progression.ProgressionManager.Instance.AddXP(xp);
             }
 
             OnEnemyDied?.Invoke(this);

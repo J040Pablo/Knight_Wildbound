@@ -44,7 +44,7 @@ namespace Roguelite.Enemy
             body.transform.localPosition = new Vector3(0, 0.4f, 0);
             body.transform.localScale = new Vector3(0.5f, 0.4f, 0.5f);
             Collider bCol = body.GetComponent<Collider>();
-            if (bCol != null) DestroyImmediate(bCol);
+            if (bCol != null) Destroy(bCol);
             Renderer bR = body.GetComponent<Renderer>();
             if (bR != null) bR.material.color = new Color(0.25f, 0.45f, 0.18f); // Forest green tunic
 
@@ -55,7 +55,7 @@ namespace Roguelite.Enemy
             head.transform.localPosition = new Vector3(0, 0.9f, 0);
             head.transform.localScale = new Vector3(0.38f, 0.38f, 0.38f);
             Collider hCol = head.GetComponent<Collider>();
-            if (hCol != null) DestroyImmediate(hCol);
+            if (hCol != null) Destroy(hCol);
             Renderer hR = head.GetComponent<Renderer>();
             if (hR != null) hR.material.color = new Color(0.95f, 0.78f, 0.65f); // Peach skin
 
@@ -66,7 +66,7 @@ namespace Roguelite.Enemy
             hat.transform.localPosition = new Vector3(0, 1.25f, 0);
             hat.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
             Collider hatCol = hat.GetComponent<Collider>();
-            if (hatCol != null) DestroyImmediate(hatCol);
+            if (hatCol != null) Destroy(hatCol);
             Renderer hatR = hat.GetComponent<Renderer>();
             if (hatR != null) hatR.material.color = new Color(0.9f, 0.15f, 0.12f); // Pointy red hat
         }

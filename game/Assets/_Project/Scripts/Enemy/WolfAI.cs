@@ -45,7 +45,7 @@ namespace Roguelite.Enemy
             body.transform.localPosition = new Vector3(0, 0.5f, 0);
             body.transform.localScale = new Vector3(0.7f, 0.5f, 1.4f);
             Collider bCol = body.GetComponent<Collider>();
-            if (bCol != null) DestroyImmediate(bCol);
+            if (bCol != null) Destroy(bCol);
             Renderer bR = body.GetComponent<Renderer>();
             if (bR != null) bR.material.color = new Color(0.18f, 0.12f, 0.22f); // Corrupted dark violet
 
@@ -62,7 +62,7 @@ namespace Roguelite.Enemy
             head.transform.localPosition = new Vector3(0, 0.65f, 0.8f);
             head.transform.localScale = new Vector3(0.48f, 0.45f, 0.55f);
             Collider hCol = head.GetComponent<Collider>();
-            if (hCol != null) DestroyImmediate(hCol);
+            if (hCol != null) Destroy(hCol);
             Renderer hR = head.GetComponent<Renderer>();
             if (hR != null) hR.material.color = new Color(0.12f, 0.08f, 0.16f);
 
@@ -73,7 +73,7 @@ namespace Roguelite.Enemy
             eyeL.transform.localPosition = new Vector3(-0.18f, 0.1f, 0.22f);
             eyeL.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
             Collider eLCol = eyeL.GetComponent<Collider>();
-            if (eLCol != null) DestroyImmediate(eLCol);
+            if (eLCol != null) Destroy(eLCol);
             Renderer elR = eyeL.GetComponent<Renderer>();
             if (elR != null) elR.material.color = new Color(1.0f, 0.9f, 0.1f); // Bright yellow glow
 
@@ -83,7 +83,7 @@ namespace Roguelite.Enemy
             eyeR.transform.localPosition = new Vector3(0.18f, 0.1f, 0.22f);
             eyeR.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
             Collider eRCol = eyeR.GetComponent<Collider>();
-            if (eRCol != null) DestroyImmediate(eRCol);
+            if (eRCol != null) Destroy(eRCol);
             Renderer erR = eyeR.GetComponent<Renderer>();
             if (erR != null) erR.material.color = new Color(1.0f, 0.9f, 0.1f);
         }
@@ -96,7 +96,7 @@ namespace Roguelite.Enemy
             leg.transform.localPosition = localPos;
             leg.transform.localScale = new Vector3(0.16f, 0.25f, 0.16f);
             Collider col = leg.GetComponent<Collider>();
-            if (col != null) DestroyImmediate(col);
+            if (col != null) Destroy(col);
             Renderer r = leg.GetComponent<Renderer>();
             if (r != null) r.material.color = new Color(0.15f, 0.10f, 0.18f);
         }

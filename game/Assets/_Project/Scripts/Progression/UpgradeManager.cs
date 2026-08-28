@@ -18,20 +18,11 @@ namespace Roguelite.Progression
         private void Start()
         {
             playerStats = FindFirstObjectByType<PlayerStats>();
-            if (playerStats != null)
-            {
-                playerStats.OnLevelUp += HandlePlayerLevelUp;
-            }
-
             InitializeDefaultPoolIfEmpty();
         }
 
         private void OnDestroy()
         {
-            if (playerStats != null)
-            {
-                playerStats.OnLevelUp -= HandlePlayerLevelUp;
-            }
         }
 
         private void InitializeDefaultPoolIfEmpty()

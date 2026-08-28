@@ -65,6 +65,10 @@ namespace Roguelite.Player
 
         public void RecalculateStats()
         {
+            if (characterData == null)
+            {
+                characterData = ScriptableObject.CreateInstance<CharacterData>();
+            }
             float prevMaxHP = MaxHP;
             MaxHP = (characterData.baseMaxHP + ExtraMaxHP);
             MaxStamina = characterData.baseMaxStamina * MaxStaminaMultiplier;
@@ -130,13 +134,23 @@ namespace Roguelite.Player
         {
             if (IsDead) return;
 
-            CurrentXP += amount;
-            while (CurrentXP >= XPToNextLevel)
+            if (Progression.ProgressionManager.Instance != null)
             {
-                CurrentXP -= XPToNextLevel;
-                Level++;
-                XPToNextLevel = Mathf.RoundToInt(XPToNextLevel * 1.35f);
-                OnLevelUp?.Invoke();
+                Progression.ProgressionManager.Instance.AddXP(amount);
+                CurrentXP = Progression.ProgressionManager.Instance.CurrentLevelXP;
+                Level = Progression.ProgressionManager.Instance.CurrentLevel;
+                XPToNextLevel = Progression.ProgressionManager.Instance.GetXPRequired(Level);
+            }
+            else
+            {
+                CurrentXP += amount;
+                while (CurrentXP >= XPToNextLevel)
+                {
+                    CurrentXP -= XPToNextLevel;
+                    Level++;
+                    XPToNextLevel = Mathf.RoundToInt(XPToNextLevel * 1.35f);
+                    OnLevelUp?.Invoke();
+                }
             }
             OnXPChanged?.Invoke(CurrentXP, XPToNextLevel, Level);
         }

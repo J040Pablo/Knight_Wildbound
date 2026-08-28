@@ -121,9 +121,9 @@ namespace Roguelite.Wave
             enemyObj.name = $"EncounterEnemy_{typeof(T).Name}";
             enemyObj.transform.position = validSpawnPos;
 
-            // Remove primitive collider immediately before adding CharacterController
+            // Remove primitive collider before adding CharacterController
             Collider pCol = enemyObj.GetComponent<Collider>();
-            if (pCol != null) DestroyImmediate(pCol);
+            if (pCol != null) Destroy(pCol);
 
             CharacterController cc = enemyObj.AddComponent<CharacterController>();
             cc.height = 1.8f;

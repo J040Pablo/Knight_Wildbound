@@ -46,6 +46,16 @@ namespace Roguelite.Player
             {
                 enemyLayerMask = ~0; // Default to everything if unassigned
             }
+
+            if (GetComponent<SpecialAbilitySystem>() == null)
+            {
+                gameObject.AddComponent<SpecialAbilitySystem>();
+            }
+
+            if (GetComponent<ClassVisuals>() == null)
+            {
+                gameObject.AddComponent<ClassVisuals>();
+            }
         }
 
         public void SetCombatBehavior(ICombatBehavior behavior)
@@ -60,6 +70,7 @@ namespace Roguelite.Player
         private void Update()
         {
             if (playerStats.IsDead || (playerController != null && playerController.IsDodging)) return;
+            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Roguelite.Core.InputStateManager.Instance != null && Roguelite.Core.InputStateManager.Instance.CurrentMode == Roguelite.Core.InputMode.UI)) return;
 
             if (activeBehavior == null)
             {

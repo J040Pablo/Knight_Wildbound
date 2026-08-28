@@ -57,7 +57,7 @@ namespace Roguelite.Player
             body.transform.localPosition = new Vector3(0, 1.1f, 0);
             body.transform.localScale = new Vector3(1.0f, 1.0f, 2.2f);
             Collider bCol = body.GetComponent<Collider>();
-            if (bCol != null) DestroyImmediate(bCol);
+            if (bCol != null) Destroy(bCol);
             Renderer bR = body.GetComponent<Renderer>();
             if (bR != null) bR.material.color = new Color(0.45f, 0.25f, 0.12f); // Chestnut brown
 
@@ -69,7 +69,7 @@ namespace Roguelite.Player
             neck.transform.localScale = new Vector3(0.6f, 1.1f, 0.7f);
             neck.transform.localRotation = Quaternion.Euler(25f, 0, 0);
             Collider nCol = neck.GetComponent<Collider>();
-            if (nCol != null) DestroyImmediate(nCol);
+            if (nCol != null) Destroy(nCol);
             Renderer hR = neck.GetComponent<Renderer>();
             if (hR != null) hR.material.color = new Color(0.40f, 0.22f, 0.10f);
 
@@ -80,7 +80,7 @@ namespace Roguelite.Player
             saddle.transform.localPosition = new Vector3(0, 1.65f, 0.1f);
             saddle.transform.localScale = new Vector3(0.85f, 0.2f, 0.85f);
             Collider sCol = saddle.GetComponent<Collider>();
-            if (sCol != null) DestroyImmediate(sCol);
+            if (sCol != null) Destroy(sCol);
             Renderer sR = saddle.GetComponent<Renderer>();
             if (sR != null) sR.material.color = new Color(0.2f, 0.15f, 0.1f); // Dark leather
 
@@ -105,7 +105,7 @@ namespace Roguelite.Player
             leg.transform.localPosition = localPos;
             leg.transform.localScale = new Vector3(0.25f, 0.5f, 0.25f);
             Collider lCol = leg.GetComponent<Collider>();
-            if (lCol != null) DestroyImmediate(lCol);
+            if (lCol != null) Destroy(lCol);
             Renderer r = leg.GetComponent<Renderer>();
             if (r != null) r.material.color = new Color(0.35f, 0.20f, 0.10f);
             return leg.transform;
@@ -118,6 +118,11 @@ namespace Roguelite.Player
 
         private void Update()
         {
+            if (UI.MasteryScreenUI.IsAnyMenuOpen)
+            {
+                return;
+            }
+
             if (!IsMounted)
             {
                 if (characterController.isGrounded && verticalVelocity.y < 0)
