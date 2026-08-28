@@ -76,26 +76,27 @@ namespace Roguelite.Wave
             switch (difficulty)
             {
                 case EncounterDifficulty.Easy:
-                    SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, false);
-                    SpawnEnemy<PumpkinEnemyAI>(spawnPoints[1 % spawnPoints.Count].position, false);
+                    // Forest Zone: Gnomes
+                    SpawnEnemy<SlimeAI>(spawnPoints[0 % spawnPoints.Count].position, false);
+                    SpawnEnemy<SlimeAI>(spawnPoints[1 % spawnPoints.Count].position, false);
                     SpawnEnemy<SlimeAI>(spawnPoints[2 % spawnPoints.Count].position, false);
-                    break;
-
-                case EncounterDifficulty.Medium:
-                    SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, false);
-                    SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     SpawnEnemy<SlimeAI>(spawnPoints[3 % spawnPoints.Count].position, false);
                     break;
 
-                case EncounterDifficulty.Hard:
-                    var elitePumpkin = SpawnEnemy<PumpkinEnemyAI>(spawnPoints[0].position, true);
-                    if (elitePumpkin != null) elitePumpkin.SetEliteStatus(true);
-
-                    SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
-                    SpawnEnemy<WolfAI>(spawnPoints[2 % spawnPoints.Count].position, false);
+                case EncounterDifficulty.Medium:
+                    // Forest Depths Zone: Gnomes + Mini Trees
+                    SpawnEnemy<SlimeAI>(spawnPoints[0 % spawnPoints.Count].position, false);
+                    SpawnEnemy<SlimeAI>(spawnPoints[1 % spawnPoints.Count].position, false);
+                    SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     SpawnEnemy<GoblinAI>(spawnPoints[3 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[0 % spawnPoints.Count].position + Vector3.right * 3f, false);
+                    break;
+
+                case EncounterDifficulty.Hard:
+                    // Dark Woods Zone: Creatures + Mini Trees
+                    SpawnEnemy<WolfAI>(spawnPoints[0 % spawnPoints.Count].position, false);
+                    SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
+                    SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
+                    SpawnEnemy<GoblinAI>(spawnPoints[3 % spawnPoints.Count].position, false);
                     break;
             }
         }

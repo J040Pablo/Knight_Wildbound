@@ -84,8 +84,6 @@ namespace Roguelite.UI
             if (runManager != null && runManager.State != RunState.InRun) return;
 
             DrawHUD();
-            DrawDialogueBox();
-            DrawInteractionPrompt();
             DrawCenterReticle();
         }
 
@@ -110,160 +108,104 @@ namespace Roguelite.UI
 
         private void DrawHUD()
         {
-            GUI.skin.box.fontSize = 14;
-            GUI.skin.label.fontSize = 14;
-            GUI.skin.label.fontStyle = FontStyle.Bold;
+            // ==========================================
+            // BOTTOM-LEFT: Minimal Action-RPG HUD
+            // ==========================================
+            float hudWidth = 230f;
+            float hudHeight = 72f;
+            float posX = 20f;
+            float posY = Screen.height - hudHeight - 20f;
 
-            // Top-Left: Player Stats Box
-            GUI.Box(new Rect(15, 15, 270, 130), "");
+            Rect bgRect = new Rect(posX, posY, hudWidth, hudHeight);
+
+            // Semi-transparent dark sleek background container
+            GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.78f);
+            GUI.DrawTexture(bgRect, Texture2D.whiteTexture);
+
+            // Thin accent border
+            GUI.color = new Color(0.2f, 0.25f, 0.35f, 0.5f);
+            GUI.Box(bgRect, "");
 
             if (playerStats != null)
             {
-                // HP Bar
-                float hpRatio = playerStats.MaxHP > 0 ? playerStats.CurrentHP / playerStats.MaxHP : 0;
-                DrawBar(new Rect(25, 25, 250, 22), hpRatio, new Color(0.85f, 0.2f, 0.2f), $"HP: {Mathf.CeilToInt(playerStats.CurrentHP)} / {Mathf.CeilToInt(playerStats.MaxHP)}");
-
-                // Stamina Bar
-                float stamRatio = playerStats.MaxStamina > 0 ? playerStats.CurrentStamina / playerStats.MaxStamina : 0;
-                DrawBar(new Rect(25, 52, 250, 18), stamRatio, new Color(0.2f, 0.7f, 0.9f), $"Stamina: {Mathf.CeilToInt(playerStats.CurrentStamina)} / {Mathf.CeilToInt(playerStats.MaxStamina)}");
-
-                // XP Bar & Level
-                float xpRatio = playerStats.XPToNextLevel > 0 ? (float)playerStats.CurrentXP / playerStats.XPToNextLevel : 0;
-                DrawBar(new Rect(25, 75, 250, 18), xpRatio, new Color(0.9f, 0.75f, 0.1f), $"Level {playerStats.Level} (XP: {playerStats.CurrentXP}/{playerStats.XPToNextLevel})");
-
-                // Attacks Indicator
-                GUI.color = Color.white;
+                // Level & Class Title Header
+                GUI.skin.label.fontSize = 12;
+                GUI.skin.label.fontStyle = FontStyle.Bold;
+                GUI.color = new Color(0.95f, 0.82f, 0.35f);
                 CharacterType cType = GameSessionManager.Instance != null ? GameSessionManager.Instance.SelectedCharacter : CharacterType.Knight;
-                string lightName = cType == CharacterType.Mage ? "Magic Bolt" : (cType == CharacterType.Druid ? "Nature Bolt" : "Slash");
-                string heavyName = cType == CharacterType.Mage ? "Fireball" : (cType == CharacterType.Druid ? "Nature Burst" : "Heavy Sweep");
-                string chargeStatus = playerCombat != null && playerCombat.IsCharging ? $" ({Mathf.RoundToInt(playerCombat.ChargeRatio * 100)}%)" : "";
-                GUI.Label(new Rect(25, 98, 260, 24), $"L-Click: {lightName} | Hold: {heavyName}{chargeStatus}");
+                GUI.Label(new Rect(posX + 10, posY + 6, hudWidth - 20, 18), $"LEVEL {playerStats.Level}  •  {cType.ToString().ToUpper()}");
+
+                // 1. Thin HP Bar (Height: 10px)
+                float hpRatio = playerStats.MaxHP > 0 ? playerStats.CurrentHP / playerStats.MaxHP : 0;
+                DrawThinBar(new Rect(posX + 10, posY + 26, hudWidth - 20, 10), hpRatio, new Color(0.85f, 0.22f, 0.22f), $"{Mathf.CeilToInt(playerStats.CurrentHP)} / {Mathf.CeilToInt(playerStats.MaxHP)}");
+
+                // 2. Thin Stamina Bar (Height: 8px)
+                float stamRatio = playerStats.MaxStamina > 0 ? playerStats.CurrentStamina / playerStats.MaxStamina : 0;
+                DrawThinBar(new Rect(posX + 10, posY + 40, hudWidth - 20, 8), stamRatio, new Color(0.18f, 0.72f, 0.9f), "");
+
+                // 3. Thin XP Bar (Height: 4px)
+                float xpRatio = playerStats.XPToNextLevel > 0 ? (float)playerStats.CurrentXP / playerStats.XPToNextLevel : 0;
+                DrawThinBar(new Rect(posX + 10, posY + 53, hudWidth - 20, 4), xpRatio, new Color(0.92f, 0.75f, 0.15f), "");
             }
 
-            // Top-Right: Run Time & Encounter Info Box
-            GUI.Box(new Rect(Screen.width - 230, 15, 215, 104), "");
-            if (runManager != null)
-            {
-                int mins = (int)(runManager.RunTimeSeconds / 60);
-                int secs = (int)(runManager.RunTimeSeconds % 60);
-                GUI.Label(new Rect(Screen.width - 220, 22, 205, 24), $"⏱️ Time: {mins:D2}:{secs:D2}");
-            }
+            // ==========================================
+            // TOP-RIGHT: Minimal Timer & Location Box
+            // ==========================================
+            float trWidth = 140f;
+            float trHeight = 40f;
+            Rect trRect = new Rect(Screen.width - trWidth - 20f, 15f, trWidth, trHeight);
 
-            // Active Encounter Status or Region Name
-            if (EncounterManager.Instance != null && EncounterManager.Instance.ActiveZone != null)
-            {
-                var zone = EncounterManager.Instance.ActiveZone;
-                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"⚔️ Enemies Remaining: {zone.EnemiesRemaining}");
-            }
-            else
-            {
-                string regionName = Environment.BiomeRegionTrigger.CurrentRegionName;
-                GUI.Label(new Rect(Screen.width - 220, 48, 205, 24), $"📍 Area: {regionName}");
-            }
+            GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.65f);
+            GUI.DrawTexture(trRect, Texture2D.whiteTexture);
 
-            // Mounted Status Indicator
-            if (activeMount != null && activeMount.IsPlayerMounted)
-            {
-                GUI.color = new Color(0.85f, 0.65f, 0.2f);
-                GUI.Label(new Rect(Screen.width - 220, 74, 205, 24), "🐴 Mounted");
-                GUI.color = Color.white;
-            }
+            GUI.skin.label.fontSize = 11;
+            GUI.skin.label.fontStyle = FontStyle.Normal;
+            GUI.color = Color.white;
 
-            // Top-Center: Hollow Tree Boss Health Bar
+            int mins = runManager != null ? (int)(runManager.RunTimeSeconds / 60) : 0;
+            int secs = runManager != null ? (int)(runManager.RunTimeSeconds % 60) : 0;
+            string regionName = Environment.BiomeRegionTrigger.CurrentRegionName;
+            if (string.IsNullOrEmpty(regionName)) regionName = "Forest Route";
+
+            GUI.Label(new Rect(trRect.x + 8, trRect.y + 4, trWidth - 16, 16), $"⏱️ {mins:D2}:{secs:D2}");
+            GUI.Label(new Rect(trRect.x + 8, trRect.y + 20, trWidth - 16, 16), $"📍 {regionName}");
+
+            // ==========================================
+            // TOP-CENTER: Boss Health Bar (Only when active)
+            // ==========================================
             if (activeBoss != null && !activeBoss.IsDead && Environment.BossActivationTrigger.IsBossActivated)
             {
                 float bossHpRatio = activeBoss.MaxHP > 0 ? activeBoss.CurrentHP / activeBoss.MaxHP : 0;
-                float barWidth = Mathf.Min(550, Screen.width - 100);
-                Rect bossRect = new Rect((Screen.width - barWidth) / 2, 20, barWidth, 34);
+                float barWidth = Mathf.Min(500, Screen.width - 100);
+                Rect bossRect = new Rect((Screen.width - barWidth) / 2, 20, barWidth, 24);
 
                 Color bossColor = activeBoss.IsPhase2 ? new Color(0.95f, 0.15f, 0.25f) : new Color(0.85f, 0.45f, 0.1f);
-                string phaseText = activeBoss.IsPhase2 ? "PHASE 2 (ENRAGED)" : "PHASE 1";
-                DrawBar(bossRect, bossHpRatio, bossColor, $"👑 THE HOLLOW TREE [{phaseText}] — HP: {Mathf.CeilToInt(activeBoss.CurrentHP)} / {Mathf.CeilToInt(activeBoss.MaxHP)}");
-            }
-
-            // Center Banner Notification
-            if (EncounterManager.Instance != null && EncounterManager.Instance.StatusBannerTimer > 0)
-            {
-                GUI.color = Color.yellow;
-                GUI.skin.label.fontSize = 22;
-                GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-                GUI.Label(new Rect(0, Screen.height * 0.26f, Screen.width, 45), EncounterManager.Instance.StatusBannerText);
-                GUI.skin.label.alignment = TextAnchor.UpperLeft;
-                GUI.skin.label.fontSize = 14;
-                GUI.color = Color.white;
+                string phaseText = activeBoss.IsPhase2 ? "PHASE 2" : "PHASE 1";
+                DrawThinBar(bossRect, bossHpRatio, bossColor, $"👑 THE HOLLOW TREE [{phaseText}] — {Mathf.CeilToInt(activeBoss.CurrentHP)} / {Mathf.CeilToInt(activeBoss.MaxHP)}");
             }
         }
 
-        private void DrawInteractionPrompt()
+        private void DrawThinBar(Rect rect, float fillRatio, Color fillColor, string labelText)
         {
-            if (interactionSystem == null) interactionSystem = FindFirstObjectByType<InteractionSystem>();
-            if (interactionSystem == null || string.IsNullOrEmpty(interactionSystem.CurrentPrompt)) return;
-
-            float w = 320f;
-            float h = 42f;
-            Rect rect = new Rect((Screen.width - w) / 2f, Screen.height * 0.76f, w, h);
-
-            GUI.color = new Color(0.1f, 0.2f, 0.35f, 0.9f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = Color.cyan;
-            GUI.Box(rect, "");
-
-            GUI.skin.label.fontSize = 16;
-            GUI.skin.label.fontStyle = FontStyle.Bold;
-            GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-            GUI.color = Color.white;
-            GUI.Label(rect, interactionSystem.CurrentPrompt);
-            GUI.skin.label.alignment = TextAnchor.UpperLeft;
-            GUI.skin.label.fontSize = 14;
-        }
-
-        private void DrawDialogueBox()
-        {
-            if (DialogueSystem.Instance == null || !DialogueSystem.Instance.IsDialogueActive) return;
-
-            float w = Mathf.Min(650f, Screen.width - 60);
-            float h = 130f;
-            Rect rect = new Rect((Screen.width - w) / 2f, Screen.height - h - 30f, w, h);
-
-            GUI.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = new Color(0.9f, 0.75f, 0.1f);
-            GUI.Box(rect, "");
-
-            // Speaker Name
-            GUI.skin.label.fontSize = 18;
-            GUI.skin.label.fontStyle = FontStyle.Bold;
-            GUI.color = new Color(1.0f, 0.85f, 0.2f);
-            GUI.Label(new Rect(rect.x + 20, rect.y + 15, w - 40, 28), DialogueSystem.Instance.CurrentSpeaker);
-
-            // Dialogue Line Text
-            GUI.skin.label.fontSize = 15;
-            GUI.skin.label.fontStyle = FontStyle.Normal;
-            GUI.color = Color.white;
-            GUI.Label(new Rect(rect.x + 20, rect.y + 45, w - 40, 50), DialogueSystem.Instance.CurrentText);
-
-            // Continue Hint
-            GUI.skin.label.fontSize = 12;
-            GUI.skin.label.fontStyle = FontStyle.Italic;
-            GUI.skin.label.alignment = TextAnchor.LowerRight;
-            GUI.color = Color.gray;
-            GUI.Label(new Rect(rect.x + 20, rect.y + h - 25, w - 40, 20), "Press [E / Space / Left Click] to continue...");
-            GUI.skin.label.alignment = TextAnchor.UpperLeft;
-        }
-
-        private void DrawBar(Rect rect, float fillRatio, Color fillColor, string labelText)
-        {
-            GUI.color = new Color(0.15f, 0.15f, 0.15f, 0.85f);
+            // Dark track background
+            GUI.color = new Color(0.1f, 0.12f, 0.15f, 0.85f);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
 
+            // Fill bar
             GUI.color = fillColor;
             Rect fillRect = new Rect(rect.x, rect.y, rect.width * Mathf.Clamp01(fillRatio), rect.height);
             GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
 
-            GUI.color = Color.white;
-            GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-            GUI.Label(rect, labelText);
-            GUI.skin.label.alignment = TextAnchor.UpperLeft;
+            // Label (if provided)
+            if (!string.IsNullOrEmpty(labelText))
+            {
+                GUI.color = Color.white;
+                GUI.skin.label.fontSize = 9;
+                GUI.skin.label.fontStyle = FontStyle.Bold;
+                GUI.skin.label.alignment = TextAnchor.MiddleCenter;
+                GUI.Label(rect, labelText);
+                GUI.skin.label.alignment = TextAnchor.UpperLeft;
+            }
         }
     }
 }

@@ -19,8 +19,8 @@ namespace Roguelite.Player
 
         [Header("Sensitivity & Limits")]
         public float mouseSensitivity = 2.5f;
-        public float minPitch = -20.0f;
-        public float maxPitch = 70.0f;
+        public float minPitch = -75.0f;
+        public float maxPitch = 85.0f;
 
         [Header("Smoothing & Collision")]
         public float smoothSpeed = 14f;

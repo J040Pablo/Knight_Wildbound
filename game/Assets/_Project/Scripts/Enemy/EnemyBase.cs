@@ -23,6 +23,8 @@ namespace Roguelite.Enemy
         protected PlayerStats playerStats;
         protected Renderer meshRenderer;
         protected Color originalColor;
+        protected bool isAttacking = false;
+        protected float attackTimer = 0f;
 
         private Vector3 knockbackVelocity;
 
@@ -51,7 +53,15 @@ namespace Roguelite.Enemy
             }
             else
             {
-                MaxHP = 50f;
+                enemyData = ScriptableObject.CreateInstance<EnemyData>();
+                enemyData.maxHealth = 50f;
+                enemyData.moveSpeed = 4.5f;
+                enemyData.attackDamage = 10f;
+                enemyData.attackRange = 2.0f;
+                enemyData.attackCooldown = 1.8f;
+                enemyData.xpReward = 10;
+
+                MaxHP = enemyData.maxHealth;
                 CurrentHP = MaxHP;
             }
         }
@@ -75,7 +85,7 @@ namespace Roguelite.Enemy
         {
             if (IsDead) return;
 
-            if (playerTransform == null)
+            if (playerTransform == null || playerStats == null)
             {
                 FindPlayerTarget();
             }
@@ -129,9 +139,11 @@ namespace Roguelite.Enemy
             IsDead = true;
 
             // Give XP to player
-            if (playerStats != null && enemyData != null)
+            int xp = (enemyData != null) ? enemyData.xpReward : 10;
+            if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+            if (playerStats != null)
             {
-                playerStats.AddXP(enemyData.xpReward);
+                playerStats.AddXP(xp);
             }
 
             OnEnemyDied?.Invoke(this);

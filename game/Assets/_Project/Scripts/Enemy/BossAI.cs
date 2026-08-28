@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using Roguelite.Combat;
+using Roguelite.Data;
 
 namespace Roguelite.Enemy
 {
@@ -23,6 +24,9 @@ namespace Roguelite.Enemy
         protected override void Awake()
         {
             base.Awake();
+            if (enemyData == null) enemyData = ScriptableObject.CreateInstance<EnemyData>();
+            enemyData.xpReward = 250;
+
             if (MaxHP < 200f)
             {
                 MaxHP = 500f;

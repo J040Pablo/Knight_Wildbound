@@ -4,6 +4,8 @@ using System.Collections;
 using UnityEngine;
 using Roguelite.Combat;
 using Roguelite.Core;
+using Roguelite.Data;
+using Roguelite.Player;
 
 namespace Roguelite.Enemy
 {
@@ -27,7 +29,14 @@ namespace Roguelite.Enemy
         protected override void Awake()
         {
             base.Awake();
-            MaxHP = 750f;
+            if (enemyData == null) enemyData = ScriptableObject.CreateInstance<EnemyData>();
+            enemyData.enemyName = "Hollow Tree Boss";
+            enemyData.enemyType = EnemyType.Boss;
+            enemyData.maxHealth = 750f;
+            enemyData.moveSpeed = 0f;
+            enemyData.xpReward = 250;
+
+            MaxHP = enemyData.maxHealth;
             CurrentHP = MaxHP;
         }
 
@@ -326,7 +335,8 @@ namespace Roguelite.Enemy
             activeSummonedMinions.Clear();
 
             // Give XP
-            if (playerStats != null) playerStats.AddXP(500);
+            if (playerStats == null) playerStats = FindFirstObjectByType<PlayerStats>();
+            if (playerStats != null) playerStats.AddXP(250);
 
             // Trigger Victory state in RunManager
             RunManager runManager = FindFirstObjectByType<RunManager>();

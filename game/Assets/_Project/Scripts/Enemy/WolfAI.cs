@@ -1,13 +1,105 @@
 using System.Collections;
 using UnityEngine;
 using Roguelite.Combat;
+using Roguelite.Data;
 
 namespace Roguelite.Enemy
 {
     public class WolfAI : EnemyBase
     {
-        private float attackTimer = 0f;
         private bool isCharging = false;
+        protected override void Awake()
+        {
+            base.Awake();
+            if (enemyData == null || enemyData.xpReward == 0)
+            {
+                if (enemyData == null) enemyData = ScriptableObject.CreateInstance<EnemyData>();
+                enemyData.enemyName = "Creature";
+                enemyData.enemyType = EnemyType.Creature;
+                enemyData.maxHealth = 50f;
+                enemyData.moveSpeed = 6.5f;
+                enemyData.attackDamage = 12f;
+                enemyData.attackRange = 2.2f;
+                enemyData.attackCooldown = 2.2f;
+                enemyData.xpReward = 20;
+
+                MaxHP = enemyData.maxHealth;
+                CurrentHP = MaxHP;
+            }
+        }
+
+        protected override void Start()
+        {
+            base.Start();
+            BuildCreatureVisuals();
+        }
+
+        private void BuildCreatureVisuals()
+        {
+            if (transform.Find("CreatureBody_Visual") != null) return;
+
+            // 1. Corrupted Quadruped Body
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            body.name = "CreatureBody_Visual";
+            body.transform.parent = transform;
+            body.transform.localPosition = new Vector3(0, 0.5f, 0);
+            body.transform.localScale = new Vector3(0.7f, 0.5f, 1.4f);
+            Collider bCol = body.GetComponent<Collider>();
+            if (bCol != null) DestroyImmediate(bCol);
+            Renderer bR = body.GetComponent<Renderer>();
+            if (bR != null) bR.material.color = new Color(0.18f, 0.12f, 0.22f); // Corrupted dark violet
+
+            // 2. 4 Legs
+            CreateCreatureLeg("Leg_FL", new Vector3(-0.35f, 0.25f, 0.5f));
+            CreateCreatureLeg("Leg_FR", new Vector3(0.35f, 0.25f, 0.5f));
+            CreateCreatureLeg("Leg_BL", new Vector3(-0.35f, 0.25f, -0.5f));
+            CreateCreatureLeg("Leg_BR", new Vector3(0.35f, 0.25f, -0.5f));
+
+            // 3. Head with Glowing Eyes
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            head.name = "CreatureHead_Visual";
+            head.transform.parent = transform;
+            head.transform.localPosition = new Vector3(0, 0.65f, 0.8f);
+            head.transform.localScale = new Vector3(0.48f, 0.45f, 0.55f);
+            Collider hCol = head.GetComponent<Collider>();
+            if (hCol != null) DestroyImmediate(hCol);
+            Renderer hR = head.GetComponent<Renderer>();
+            if (hR != null) hR.material.color = new Color(0.12f, 0.08f, 0.16f);
+
+            // Glowing Eyes
+            GameObject eyeL = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            eyeL.name = "GlowingEyeL";
+            eyeL.transform.parent = head.transform;
+            eyeL.transform.localPosition = new Vector3(-0.18f, 0.1f, 0.22f);
+            eyeL.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
+            Collider eLCol = eyeL.GetComponent<Collider>();
+            if (eLCol != null) DestroyImmediate(eLCol);
+            Renderer elR = eyeL.GetComponent<Renderer>();
+            if (elR != null) elR.material.color = new Color(1.0f, 0.9f, 0.1f); // Bright yellow glow
+
+            GameObject eyeR = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            eyeR.name = "GlowingEyeR";
+            eyeR.transform.parent = head.transform;
+            eyeR.transform.localPosition = new Vector3(0.18f, 0.1f, 0.22f);
+            eyeR.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
+            Collider eRCol = eyeR.GetComponent<Collider>();
+            if (eRCol != null) DestroyImmediate(eRCol);
+            Renderer erR = eyeR.GetComponent<Renderer>();
+            if (erR != null) erR.material.color = new Color(1.0f, 0.9f, 0.1f);
+        }
+
+        private void CreateCreatureLeg(string legName, Vector3 localPos)
+        {
+            GameObject leg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            leg.name = legName;
+            leg.transform.parent = transform;
+            leg.transform.localPosition = localPos;
+            leg.transform.localScale = new Vector3(0.16f, 0.25f, 0.16f);
+            Collider col = leg.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = leg.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.15f, 0.10f, 0.18f);
+        }
 
         private float GetFlatDistanceToPlayer()
         {

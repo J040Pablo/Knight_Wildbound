@@ -116,6 +116,23 @@ namespace Roguelite.Player
             IsMounted = mounted;
         }
 
+        private void Update()
+        {
+            if (!IsMounted)
+            {
+                if (characterController.isGrounded && verticalVelocity.y < 0)
+                {
+                    verticalVelocity.y = -2f;
+                }
+                verticalVelocity.y += GRAVITY * Time.deltaTime;
+
+                characterController.Move(verticalVelocity * Time.deltaTime);
+
+                CurrentState = HorseState.Idle;
+                ResetLegs();
+            }
+        }
+
         public void TryJump()
         {
             if (characterController.isGrounded)

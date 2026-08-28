@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using Roguelite.Combat;
+using Roguelite.Data;
 
 namespace Roguelite.Enemy
 {
@@ -18,10 +19,16 @@ namespace Roguelite.Enemy
         public void SetEliteStatus(bool elite)
         {
             isElite = elite;
+            if (enemyData == null) enemyData = ScriptableObject.CreateInstance<EnemyData>();
+            enemyData.enemyName = isElite ? "Elite Pumpkin Lord" : "Pumpkin";
+            enemyData.xpReward = isElite ? 40 : 10;
+            enemyData.moveSpeed = isElite ? 4.5f : 5.5f;
+
             if (isElite)
             {
                 MaxHP = 160f;
                 CurrentHP = MaxHP;
+                enemyData.maxHealth = 160f;
                 transform.localScale = new Vector3(1.8f, 1.8f, 1.8f);
                 if (meshRenderer != null)
                 {
@@ -34,9 +41,19 @@ namespace Roguelite.Enemy
         protected override void Awake()
         {
             base.Awake();
-            if (enemyData == null)
+            if (enemyData == null || enemyData.xpReward == 0)
             {
-                MaxHP = isElite ? 160f : 45f;
+                if (enemyData == null) enemyData = ScriptableObject.CreateInstance<EnemyData>();
+                enemyData.enemyName = isElite ? "Elite Pumpkin Lord" : "Pumpkin";
+                enemyData.enemyType = EnemyType.Gnome;
+                enemyData.maxHealth = isElite ? 160f : 45f;
+                enemyData.moveSpeed = isElite ? 4.5f : 5.5f;
+                enemyData.attackDamage = isElite ? 25f : 12f;
+                enemyData.attackRange = 2.2f;
+                enemyData.attackCooldown = jumpAttackCooldown;
+                enemyData.xpReward = isElite ? 40 : 10;
+
+                MaxHP = enemyData.maxHealth;
                 CurrentHP = MaxHP;
             }
         }

@@ -311,22 +311,27 @@ namespace Roguelite.Environment
             CreateFriendlyHorse(new Vector3(GetForestPathXOffset(165f) - 8f, 0, 165f));
             CreateFriendlyHorse(new Vector3(GetForestPathXOffset(240f) + 8f, 0, 240f));
 
-            // DIRECT ROUTE COMBAT ENCOUNTERS (ON THE MAIN PATH, ZERO GATES, ZERO DETOURS)
-            // 1. Easy Section (Z = 120)
+            // Direct Route Encounters:
+            // 1. Forest (Z = 120): Gnomes
             CreateDirectRouteEncounter(120f, EncounterDifficulty.Easy);
 
-            // 2. Medium Section (Z = 200)
+            // 2. Forest Depths (Z = 200): Gnomes + Mini Trees
             CreateDirectRouteEncounter(200f, EncounterDifficulty.Medium);
 
-            // 3. Hard Section (Z = 280)
+            // 3. Dark Woods (Z = 280): Creatures + Mini Trees
             CreateDirectRouteEncounter(280f, EncounterDifficulty.Hard);
 
-            // Stage 2 Biome Region Trigger: Autumn Forest (Z: 80 to 240)
-            CreateRegionTrigger("RegionTrigger_AutumnForest", "Autumn Forest", new Vector3(0, 5f, 160f), new Vector3(120f, 25f, 160f),
-                new Color(1.0f, 0.85f, 0.65f), 1.15f, new Color(0.45f, 0.35f, 0.3f), 0.018f, new Color(0.45f, 0.35f, 0.3f));
+            // Progression Region Triggers
+            // Forest Region (Z: 80 to 160)
+            CreateRegionTrigger("RegionTrigger_Forest", "Forest", new Vector3(0, 5f, 120f), new Vector3(120f, 25f, 80f),
+                new Color(1.0f, 0.85f, 0.65f), 1.15f, new Color(0.45f, 0.35f, 0.3f), 0.015f, new Color(0.45f, 0.35f, 0.3f));
 
-            // Stage 3 Biome Region Trigger: Dark Corrupted Forest (Z: 240 to 330)
-            CreateRegionTrigger("RegionTrigger_DarkCorruptedForest", "Dark Corrupted Forest", new Vector3(0, 5f, 285f), new Vector3(120f, 25f, 90f),
+            // Forest Depths Region (Z: 160 to 240)
+            CreateRegionTrigger("RegionTrigger_ForestDepths", "Forest Depths", new Vector3(0, 5f, 200f), new Vector3(120f, 25f, 80f),
+                new Color(0.85f, 0.65f, 0.45f), 1.0f, new Color(0.35f, 0.25f, 0.25f), 0.022f, new Color(0.35f, 0.25f, 0.25f));
+
+            // Dark Woods Region (Z: 240 to 330)
+            CreateRegionTrigger("RegionTrigger_DarkWoods", "Dark Woods", new Vector3(0, 5f, 285f), new Vector3(120f, 25f, 90f),
                 new Color(0.65f, 0.35f, 0.45f), 0.8f, new Color(0.25f, 0.12f, 0.20f), 0.032f, new Color(0.30f, 0.12f, 0.22f));
         }
 
@@ -346,12 +351,10 @@ namespace Roguelite.Environment
 
             var diffField = typeof(EncounterZone).GetField("difficulty", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (diffField != null) diffField.SetValue(encZone, diff);
-
-            // NO forwardGate passed -> main path remains 100% open and unblocked!
         }
 
         // ==========================================
-        // 4. THEMATIC DARK TRANSITION CORRIDOR (Z: 330 to 353)
+        // 4. CORRUPTED ROOTS TRANSITION (Z: 330 to 353)
         // ==========================================
         private void BuildDarkTransitionCorridor()
         {
@@ -376,7 +379,7 @@ namespace Roguelite.Environment
             CreateDeadCorruptedTree(new Vector3(startX - 14f, 0, startZ + 6f));
             CreateDeadCorruptedTree(new Vector3(startX + 14f, 0, startZ + 14f));
 
-            CreateRegionTrigger("RegionTrigger_DarkCorridor", "Sombreness Pass", new Vector3(0, 5f, startZ + length / 2f), new Vector3(60f, 20f, length),
+            CreateRegionTrigger("RegionTrigger_CorruptedRoots", "Corrupted Roots", new Vector3(0, 5f, startZ + length / 2f), new Vector3(60f, 20f, length),
                 new Color(0.6f, 0.3f, 0.3f), 0.75f, new Color(0.2f, 0.1f, 0.15f), 0.038f, new Color(0.25f, 0.1f, 0.15f));
         }
 
@@ -604,7 +607,7 @@ namespace Roguelite.Environment
             bossTriggerObj.AddComponent<BossActivationTrigger>();
 
             // Boss Arena Region Trigger
-            CreateRegionTrigger("RegionTrigger_HollowGlade", "The Hollow Glade", arenaCenter + new Vector3(0, 5f, 0), new Vector3(55f, 20f, 65f),
+            CreateRegionTrigger("RegionTrigger_HollowGlade", "Hollow Tree Boss Arena", arenaCenter + new Vector3(0, 5f, 0), new Vector3(55f, 20f, 65f),
                 new Color(0.85f, 0.35f, 0.35f), 0.9f, new Color(0.35f, 0.15f, 0.25f), 0.035f, new Color(0.35f, 0.15f, 0.25f));
         }
 

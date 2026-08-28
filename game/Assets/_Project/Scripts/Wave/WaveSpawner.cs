@@ -52,15 +52,15 @@ namespace Roguelite.Wave
             switch (currentWaveIndex)
             {
                 case 1:
-                    SpawnEnemyGroup(EnemyType.Slime, 5);
+                    SpawnEnemyGroup(EnemyType.Gnome, 5);
                     break;
                 case 2:
-                    SpawnEnemyGroup(EnemyType.Slime, 3);
-                    SpawnEnemyGroup(EnemyType.Goblin, 3);
+                    SpawnEnemyGroup(EnemyType.Gnome, 3);
+                    SpawnEnemyGroup(EnemyType.MiniTree, 3);
                     break;
                 case 3:
-                    SpawnEnemyGroup(EnemyType.Goblin, 3);
-                    SpawnEnemyGroup(EnemyType.Wolf, 4);
+                    SpawnEnemyGroup(EnemyType.MiniTree, 3);
+                    SpawnEnemyGroup(EnemyType.Creature, 4);
                     break;
                 default:
                     if (!bossSpawned)
@@ -213,61 +213,61 @@ namespace Roguelite.Wave
 
             switch (type)
             {
-                case EnemyType.Slime:
-                    obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    obj.name = "Slime_Enemy";
-                    data.enemyName = "Slime";
-                    data.enemyType = EnemyType.Slime;
-                    data.maxHealth = 40f;
-                    data.moveSpeed = 3.2f;
+                case EnemyType.Gnome:
+                    obj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    obj.name = "Gnome_Enemy";
+                    data.enemyName = "Gnome";
+                    data.enemyType = EnemyType.Gnome;
+                    data.maxHealth = 35f;
+                    data.moveSpeed = 4.2f;
                     data.attackDamage = 8f;
-                    data.attackRange = 1.6f;
-                    data.attackCooldown = 1.5f;
-                    data.xpReward = 25;
-                    data.enemyColor = new Color(0.2f, 0.85f, 0.3f);
-                    data.modelScale = new Vector3(1.2f, 1.0f, 1.2f);
+                    data.attackRange = 1.8f;
+                    data.attackCooldown = 1.8f;
+                    data.xpReward = 10;
+                    data.enemyColor = new Color(0.25f, 0.45f, 0.18f);
+                    data.modelScale = new Vector3(0.8f, 0.8f, 0.8f);
                     
                     obj.AddComponent<CharacterController>();
-                    var slimeAI = obj.AddComponent<SlimeAI>();
-                    SetEnemyDataField(slimeAI, data);
+                    var gnomeAI = obj.AddComponent<SlimeAI>();
+                    SetEnemyDataField(gnomeAI, data);
                     break;
 
-                case EnemyType.Goblin:
-                    obj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                    obj.name = "Goblin_Enemy";
-                    data.enemyName = "Goblin";
-                    data.enemyType = EnemyType.Goblin;
-                    data.maxHealth = 80f;
-                    data.moveSpeed = 4.5f;
+                case EnemyType.MiniTree:
+                    obj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                    obj.name = "MiniTree_Enemy";
+                    data.enemyName = "Mini Tree";
+                    data.enemyType = EnemyType.MiniTree;
+                    data.maxHealth = 60f;
+                    data.moveSpeed = 4.8f;
                     data.attackDamage = 14f;
                     data.attackRange = 2.0f;
-                    data.attackCooldown = 1.2f;
-                    data.xpReward = 45;
-                    data.enemyColor = new Color(0.85f, 0.55f, 0.15f);
-                    data.modelScale = new Vector3(1.0f, 1.5f, 1.0f);
+                    data.attackCooldown = 1.6f;
+                    data.xpReward = 20;
+                    data.enemyColor = new Color(0.32f, 0.20f, 0.12f);
+                    data.modelScale = new Vector3(1.0f, 1.2f, 1.0f);
 
                     obj.AddComponent<CharacterController>();
-                    var goblinAI = obj.AddComponent<GoblinAI>();
-                    SetEnemyDataField(goblinAI, data);
+                    var miniTreeAI = obj.AddComponent<GoblinAI>();
+                    SetEnemyDataField(miniTreeAI, data);
                     break;
 
-                case EnemyType.Wolf:
+                case EnemyType.Creature:
                     obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    obj.name = "Wolf_Enemy";
-                    data.enemyName = "Wolf";
-                    data.enemyType = EnemyType.Wolf;
+                    obj.name = "Creature_Enemy";
+                    data.enemyName = "Creature";
+                    data.enemyType = EnemyType.Creature;
                     data.maxHealth = 50f;
-                    data.moveSpeed = 7.0f;
-                    data.attackDamage = 22f;
+                    data.moveSpeed = 6.5f;
+                    data.attackDamage = 12f;
                     data.attackRange = 2.2f;
-                    data.attackCooldown = 2.0f;
-                    data.xpReward = 50;
-                    data.enemyColor = new Color(0.5f, 0.5f, 0.6f);
-                    data.modelScale = new Vector3(1.1f, 0.9f, 2.0f);
+                    data.attackCooldown = 2.2f;
+                    data.xpReward = 20;
+                    data.enemyColor = new Color(0.18f, 0.12f, 0.22f);
+                    data.modelScale = new Vector3(1.1f, 0.9f, 1.8f);
 
                     obj.AddComponent<CharacterController>();
-                    var wolfAI = obj.AddComponent<WolfAI>();
-                    SetEnemyDataField(wolfAI, data);
+                    var creatureAI = obj.AddComponent<WolfAI>();
+                    SetEnemyDataField(creatureAI, data);
                     break;
 
                 case EnemyType.Boss:
