@@ -685,7 +685,7 @@ namespace Roguelite.Environment
             return root;
         }
 
-        // ── Robust URP-Compatible Material Applicator ────────────────────
+        // ── Robust Built-In Compatible Material Applicator ────────────────────
         private static void Apply(GameObject g, Color color)
         {
             if (!g.TryGetComponent<Renderer>(out var r)) return;
@@ -703,11 +703,9 @@ namespace Roguelite.Environment
             int key = color.GetHashCode();
             if (!_matCache.TryGetValue(key, out Material mat) || mat == null)
             {
-                Shader s = Shader.Find("Roguelite/URPOpaqueEnvironmentProp")
-                        ?? Shader.Find("Roguelite/OpaqueEnvironmentProp")
-                        ?? Shader.Find("Universal Render Pipeline/Lit")
-                        ?? Shader.Find("Universal Render Pipeline/Simple Lit")
-                        ?? Shader.Find("Universal Render Pipeline/Unlit")
+                Shader s = Shader.Find("Standard")
+                        ?? Shader.Find("Mobile/Diffuse")
+                        ?? Shader.Find("Legacy Shaders/Diffuse")
                         ?? Shader.Find("Unlit/Color");
 
                 if (s == null)
@@ -726,9 +724,13 @@ namespace Roguelite.Environment
                 if (mat.HasProperty("_ZWrite")) mat.SetInt("_ZWrite", 1);
                 if (mat.HasProperty("_ZTest")) mat.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
 
-                mat.color = color;
-                if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-                if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
+                Color opaqueColor = new Color(color.r, color.g, color.b, 1.0f);
+                mat.color = opaqueColor;
+                if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", opaqueColor);
+                if (mat.HasProperty("_Color")) mat.SetColor("_Color", opaqueColor);
+                if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
+                if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", 0f);
+                if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0f);
 
                 _matCache[key] = mat;
             }

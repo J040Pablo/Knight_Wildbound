@@ -40,8 +40,6 @@ Shader "Roguelite/URPOpaqueVertexColorTerrain"
             };
 
             fixed4 _Color;
-            fixed4 _WorldSpaceLightPos0;
-            fixed4 _LightColor0;
 
             v2f vert(appdata v)
             {

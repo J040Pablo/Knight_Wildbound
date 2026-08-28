@@ -64,7 +64,7 @@ namespace Roguelite.Environment
             Color startFogColor = RenderSettings.fogColor;
             float startFogDensity = RenderSettings.fogDensity;
 
-            RenderSettings.fog = true;
+            RenderSettings.fog = false;
             RenderSettings.fogMode = FogMode.Exponential;
 
             float elapsed = 0f;
@@ -104,7 +104,7 @@ namespace Roguelite.Environment
             }
 
             RenderSettings.ambientLight = ambientColor;
-            RenderSettings.fog = true;
+            RenderSettings.fog = false;
             RenderSettings.fogColor = fogColor;
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogDensity = fogDensity;

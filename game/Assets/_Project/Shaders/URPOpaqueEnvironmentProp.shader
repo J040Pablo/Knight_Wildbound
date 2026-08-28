@@ -42,8 +42,6 @@ Shader "Roguelite/URPOpaqueEnvironmentProp"
 
             fixed4 _Color;
             fixed4 _BaseColor;
-            fixed4 _WorldSpaceLightPos0;
-            fixed4 _LightColor0;
 
             v2f vert(appdata v)
             {

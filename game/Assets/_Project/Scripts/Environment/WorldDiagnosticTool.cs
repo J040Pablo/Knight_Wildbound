@@ -12,7 +12,10 @@ namespace Roguelite.Environment
             Debug.Log("          WORLD DIAGNOSTIC TOOL START             ");
             Debug.Log("==================================================");
 
-            // 0. Lighting & Atmosphere Audit
+            // 0. Color Space & Lighting Audit
+            Camera mainCam = Camera.main;
+            Debug.Log($"[COLOR DEBUG]\nColor Space: {QualitySettings.activeColorSpace}\nHDR: {(mainCam != null ? mainCam.allowHDR.ToString() : "Disabled")}");
+
             Light[] dirLights = FindObjectsByType<Light>(FindObjectsSortMode.None);
             int dirCount = 0;
             float totalDirIntensity = 0f;
@@ -76,7 +79,7 @@ namespace Roguelite.Environment
                 }
             }
 
-            // 0c. Visual Material Audit
+            // 0c. Visual Material Audit & Final Material Color Audit
             int auditedMats = 0;
             HashSet<Material> printedMats = new HashSet<Material>();
             foreach (var mr in allMeshRenderers)
@@ -96,6 +99,16 @@ namespace Roguelite.Environment
                 }
             }
 
+            foreach (var mr in allMeshRenderers)
+            {
+                if (mr.gameObject.name.Contains("TerrainChunk"))
+                {
+                    Material mat = mr.material;
+                    Color finalCol = mat.HasProperty("_Color") ? mat.color : (mat.HasProperty("_BaseColor") ? mat.GetColor("_BaseColor") : Color.white);
+                    Debug.Log($"[FINAL MATERIAL COLOR]\nObject: {mr.gameObject.name}\nShader: {(mat.shader != null ? mat.shader.name : "null")}\nColor: {finalCol}\nEmission: {(mat.HasProperty("_EmissionColor") ? mat.GetColor("_EmissionColor") : Color.black)}\nMetallic: {(mat.HasProperty("_Metallic") ? mat.GetFloat("_Metallic") : 0f)}\nSmoothness: {(mat.HasProperty("_Smoothness") ? mat.GetFloat("_Smoothness") : 0f)}");
+                }
+            }
+
             // 0d. World Visual Audit & Prop Material Audit
             int terrainRenderers = 0;
             int terrainShaderUsers = 0;
@@ -105,14 +118,25 @@ namespace Roguelite.Environment
 
             foreach (var mr in allMeshRenderers)
             {
-                if (mr.gameObject.name.Contains("TerrainChunk")) terrainRenderers++;
+                if (mr.gameObject.name.Contains("TerrainChunk"))
+                {
+                    terrainRenderers++;
+                    if (mr.sharedMaterial != null && mr.sharedMaterial.shader != null)
+                    {
+                        terrainShaderUsers++;
+                    }
+                }
+                else
+                {
+                    if (mr.sharedMaterial != null && mr.sharedMaterial.shader != null)
+                    {
+                        envShaderUsers++;
+                    }
+                }
 
                 Material mat = mr.sharedMaterial;
                 if (mat != null && mat.shader != null)
                 {
-                    if (mat.shader.name.Contains("OpaqueVertexColorTerrain")) terrainShaderUsers++;
-                    if (mat.shader.name.Contains("OpaqueEnvironmentProp")) envShaderUsers++;
-
                     Color col = mat.HasProperty("_BaseColor") ? mat.GetColor("_BaseColor") : (mat.HasProperty("_Color") ? mat.color : Color.white);
                     if (col.r < 0.05f && col.g < 0.05f && col.b < 0.05f) darkMaterials++;
                     if (col.r > 0.98f && col.g > 0.98f && col.b > 0.98f && !mr.gameObject.name.Contains("Chunk")) overexposedMaterials++;
@@ -136,18 +160,14 @@ namespace Roguelite.Environment
                 }
             }
 
-            // 1. Detect Active Camera & Perform Visible Surface Raycast
-            Camera cam = Camera.main;
-            Vector3 camPos = cam != null ? cam.transform.position : new Vector3(0, 10f, -5f);
-            Vector3 camDir = cam != null ? cam.transform.forward : (new Vector3(0, 0f, 10f) - camPos).normalized;
-
-            Ray ray = new Ray(camPos, camDir);
-            RaycastHit[] hits = Physics.RaycastAll(ray, 500f);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            // 1. Terrain-Specific Surface Raycast (Downward from above spawn sanctuary)
+            Ray terrainRay = new Ray(new Vector3(0f, 50f, 8f), Vector3.down);
+            RaycastHit[] terrainHits = Physics.RaycastAll(terrainRay, 200f);
+            System.Array.Sort(terrainHits, (a, b) => a.distance.CompareTo(b.distance));
             bool foundTerrain = false;
             RaycastHit groundHit = default;
 
-            foreach (var hit in hits)
+            foreach (var hit in terrainHits)
             {
                 if (hit.collider.gameObject.name.Contains("TerrainChunk"))
                 {
@@ -164,15 +184,9 @@ namespace Roguelite.Environment
                 }
             }
 
-            if (!foundTerrain && hits.Length > 0)
+            if (!foundTerrain && terrainHits.Length > 0)
             {
-                groundHit = hits[0];
-                Renderer r = groundHit.collider.GetComponent<Renderer>();
-                MeshFilter mf = groundHit.collider.GetComponent<MeshFilter>();
-                Mesh m = mf != null ? mf.sharedMesh : null;
-                Material mat = r != null ? r.sharedMaterial : null;
-                Shader s = mat != null ? mat.shader : null;
-                Debug.Log($"[VISIBLE SURFACE]\nHit GameObject: {groundHit.collider.gameObject.name}\nHit Collider: {groundHit.collider.GetType().Name}\nHit Renderer: {(r != null ? r.GetType().Name : "null")}\nHit Mesh: {(m != null ? m.name : "null")}\nHit Material: {(mat != null ? mat.name : "null")}\nHit Shader: {(s != null ? s.name : "null")}\nHit Point: {groundHit.point}\nDistance: {groundHit.distance:F2}m");
+                groundHit = terrainHits[0];
             }
 
             // 2. Search for Giant Overlapping Renderers (> 100m)
@@ -189,7 +203,7 @@ namespace Roguelite.Environment
                 }
             }
 
-            // 3. Vertex Color & Geometry Inspection for ContinuousTerrainChunk objects
+            // 3. Geometry Inspection for ContinuousTerrainChunk objects
             float globalMinY = float.MaxValue;
             float globalMaxY = float.MinValue;
             float spawnMinY = float.MaxValue;
@@ -249,24 +263,7 @@ namespace Roguelite.Environment
                 }
             }
 
-            // 4. Bounds & Visibility Verification across scene renderers
-            foreach (var mr in allRenderers)
-            {
-                MeshFilter mf = mr.GetComponent<MeshFilter>();
-                Mesh m = mf != null ? mf.sharedMesh : null;
-
-                if (mr.name.Contains("TerrainChunk") || mr.name.Contains("Tree") || mr.name.Contains("PH_"))
-                {
-                    Debug.Log($"[BOUNDS DEBUG]\nObject: {mr.gameObject.name}\nMesh Bounds: {(m != null ? m.bounds.ToString() : "null")}\nRenderer Bounds: {mr.bounds}\nActual Position: {mr.transform.position}");
-
-                    float distToCam = cam != null ? Vector3.Distance(cam.transform.position, mr.transform.position) : 0f;
-                    int lodLevel = mr.TryGetComponent<LODGroup>(out var lod) ? lod.lodCount : 0;
-
-                    Debug.Log($"[VISIBILITY DEBUG]\nGameObject: {mr.gameObject.name}\nRenderer: {mr.GetType().Name}\nActive: {mr.gameObject.activeInHierarchy}\nEnabled: {mr.enabled}\nIsVisible: {mr.isVisible}\nBounds: {mr.bounds}\nWorld Position: {mr.transform.position}\nDistance From Camera: {distToCam:F2}m\nCamera Forward: {(cam != null ? cam.transform.forward.ToString() : "null")}\nLOD Level: {lodLevel}\nOcclusion: False\nLayer: {LayerMask.LayerToName(mr.gameObject.layer)}");
-                }
-            }
-
-            // 5. Consolidated World Validation Report (Section 16)
+            // 4. Consolidated World Validation Report
             bool visiblePass = (groundHit.collider != null && groundHit.collider.gameObject.name.Contains("ContinuousTerrainChunk"));
             bool topologyPass = (chunkCount == 4 && meshTopologyValid);
             bool spawnPass = (spawnMaxY <= 2.0f && spawnMaxSlope <= 15.0f);

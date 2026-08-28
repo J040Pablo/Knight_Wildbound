@@ -288,45 +288,41 @@ namespace Roguelite.Environment
             string pipelineName = pipelineAsset != null ? pipelineAsset.GetType().Name : "Built-in Render Pipeline";
             Debug.Log($"[RENDER PIPELINE] Current active pipeline: {pipelineName}");
 
-            // 2. Load custom shader & log diagnostic state
-            Shader shader = Shader.Find("Roguelite/URPOpaqueVertexColorTerrain")
-                         ?? Shader.Find("Roguelite/OpaqueVertexColorTerrain");
+            // 2. Load standard Built-in 3D shader baseline (NO custom HLSL / URP shaders!)
+            Shader shader = Shader.Find("Standard")
+                         ?? Shader.Find("Mobile/Diffuse")
+                         ?? Shader.Find("Legacy Shaders/Diffuse")
+                         ?? Shader.Find("Unlit/Color");
+
             bool found = shader != null;
-            bool supported = found && shader.isSupported;
+            Debug.Log($"[SHADER DEBUG]\nRequested: Built-in Standard\nFound: {found}\nShader name actually loaded: {(found ? shader.name : "null")}");
 
-            Debug.Log($"[SHADER DEBUG]\nRequested: Roguelite/URPOpaqueVertexColorTerrain\nFound: {found}\nSupported: {supported}\nShader name actually loaded: {(found ? shader.name : "null")}");
-
-            // 3. Fallback to proper 3D opaque shaders only (NO 2D / Sprites / UI shaders!)
-            if (!found || !supported)
-            {
-                Debug.LogWarning("[SHADER WARNING] Custom URP terrain shader not ready/supported. Searching 3D fallbacks...");
-                shader = Shader.Find("Universal Render Pipeline/Lit")
-                      ?? Shader.Find("Universal Render Pipeline/Simple Lit")
-                      ?? Shader.Find("Universal Render Pipeline/Unlit")
-                      ?? Shader.Find("Mobile/Unlit (Supports Lightmap)")
-                      ?? Shader.Find("Unlit/Color");
-            }
-
-            // 4. Safety Guard: Never instantiate Material with a null Shader!
             if (shader == null)
             {
-                Debug.LogError("[SHADER ERROR] No compatible 3D opaque terrain shader could be loaded! Aborting terrain material creation.");
+                Debug.LogError("[SHADER ERROR] No standard Built-in 3D terrain shader could be loaded!");
                 return null;
             }
 
+            Color richGreen = new Color(0.25f, 0.50f, 0.22f, 1.0f);
             Material mat = new Material(shader);
             mat.name = "ContinuousTerrainMaterial";
-            mat.color = Color.white;
+            mat.color = richGreen;
 
-            // Enforce OPAQUE Geometry Queue (2000) & Enable ZWrite to prevent depth-buffer transparency
+            // Enforce OPAQUE Geometry Queue (2000) & Enable ZWrite
             mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry; // 2000
             mat.SetOverrideTag("RenderType", "Opaque");
 
             if (mat.HasProperty("_ZWrite")) mat.SetInt("_ZWrite", 1);
             if (mat.HasProperty("_ZTest")) mat.SetInt("_ZTest", (int)UnityEngine.Rendering.CompareFunction.LessEqual);
 
-            if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
-            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
+            if (mat.HasProperty("_Color")) mat.SetColor("_Color", richGreen);
+            if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", richGreen);
+            if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", 0f);
+            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", 0f);
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0f);
+            if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", Color.black);
+
+            Debug.Log($"[MATERIAL TRACE]\nTime: {Time.time:F2}s\nGameObject: Chunk Generation Template\nShader: {shader.name}\nColor: {richGreen}\nSource Script: ContinuousTerrainGenerator.GetDefaultTerrainMaterial");
 
             return mat;
         }

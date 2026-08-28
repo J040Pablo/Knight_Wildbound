@@ -256,7 +256,7 @@ namespace Roguelite.Environment
             for (int i = 0; i < chunkMin.Length; i++)
             {
                 string chunkName = $"ContinuousTerrainChunk_{i}";
-                ContinuousTerrainGenerator.CreateContinuousTerrainChunk(
+                GameObject chunkObj = ContinuousTerrainGenerator.CreateContinuousTerrainChunk(
                     chunkName,
                     worldParent,
                     chunkMin[i],
@@ -265,7 +265,69 @@ namespace Roguelite.Environment
                     GetTerrainHeightY,
                     GetForestPathXOffset
                 );
+
+                // Section 4: Force Material Color at runtime using renderer.material (instance)
+                if (chunkObj != null && chunkObj.TryGetComponent<Renderer>(out var r))
+                {
+                    r.material.shader = Shader.Find("Standard");
+                    Color richGreen = new Color(0.25f, 0.50f, 0.22f, 1.0f);
+                    r.material.color = richGreen;
+                    if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", richGreen);
+                    if (r.material.HasProperty("_Metallic")) r.material.SetFloat("_Metallic", 0f);
+                    if (r.material.HasProperty("_Glossiness")) r.material.SetFloat("_Glossiness", 0f);
+                    if (r.material.HasProperty("_Smoothness")) r.material.SetFloat("_Smoothness", 0f);
+                    if (r.material.HasProperty("_EmissionColor")) r.material.SetColor("_EmissionColor", Color.black);
+
+                    Color emi = r.material.HasProperty("_EmissionColor") ? r.material.GetColor("_EmissionColor") : Color.black;
+                    float metallic = r.material.HasProperty("_Metallic") ? r.material.GetFloat("_Metallic") : 0f;
+                    float smoothness = r.material.HasProperty("_Smoothness") ? r.material.GetFloat("_Smoothness") : 0f;
+
+                    Debug.Log($"[BASELINE TERRAIN]\nObject: {chunkName}\nShader: {r.material.shader.name}\nColor: {r.material.color}\nEmission: {emi}\nMetallic: {metallic}\nSmoothness: {smoothness}");
+                }
             }
+
+            CreateColorTestObjects();
+        }
+
+        private void CreateColorTestObjects()
+        {
+            // Section 5: Temporary Red Test Object beside player spawn (0, 0.5, 8.0)
+            GameObject redTest = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            redTest.name = "TerrainColorTest";
+            redTest.transform.position = new Vector3(3f, 1f, 8f);
+            redTest.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+            Renderer rRed = redTest.GetComponent<Renderer>();
+            rRed.material.shader = Shader.Find("Standard");
+            rRed.material.color = Color.red;
+            if (rRed.material.HasProperty("_BaseColor")) rRed.material.SetColor("_BaseColor", Color.red);
+            if (rRed.material.HasProperty("_Metallic")) rRed.material.SetFloat("_Metallic", 0f);
+            if (rRed.material.HasProperty("_Smoothness")) rRed.material.SetFloat("_Smoothness", 0f);
+
+            // Section 16: Control Tree Test (Trunk: Brown, Leaves: Green) beside player
+            GameObject testTree = new GameObject("TreeColorTest");
+            testTree.transform.position = new Vector3(-3f, 0f, 8f);
+
+            GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            trunk.name = "TestTrunk";
+            trunk.transform.SetParent(testTree.transform, false);
+            trunk.transform.localPosition = new Vector3(0, 1.5f, 0);
+            trunk.transform.localScale = new Vector3(0.5f, 1.5f, 0.5f);
+            Renderer rTrunk = trunk.GetComponent<Renderer>();
+            rTrunk.material.shader = Shader.Find("Standard");
+            Color woodBrown = new Color(0.463f, 0.318f, 0.227f, 1.0f);
+            rTrunk.material.color = woodBrown;
+
+            GameObject leaves = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            leaves.name = "TestLeaves";
+            leaves.transform.SetParent(testTree.transform, false);
+            leaves.transform.localPosition = new Vector3(0, 3.5f, 0);
+            leaves.transform.localScale = new Vector3(2.5f, 2.0f, 2.5f);
+            Renderer rLeaves = leaves.GetComponent<Renderer>();
+            rLeaves.material.shader = Shader.Find("Standard");
+            Color leafGreen = new Color(0.306f, 0.580f, 0.275f, 1.0f);
+            rLeaves.material.color = leafGreen;
+
+            Debug.Log($"[COLOR TEST] Spawned TerrainColorTest (RED) and TreeColorTest (BROWN/GREEN) at spawn.");
         }
 
         private void SetupGlobalSunLight()
@@ -281,18 +343,17 @@ namespace Roguelite.Environment
             Light lightComp = sun.GetComponent<Light>();
             if (lightComp != null)
             {
-                lightComp.color = new Color(1.0f, 0.95f, 0.86f);
-                lightComp.intensity = 0.80f; // Controlled sun intensity (0.7-0.9 spec)
+                lightComp.color = Color.white;
+                lightComp.intensity = 0.80f; // Controlled sun intensity
                 lightComp.shadows = LightShadows.Soft;
             }
             sun.transform.rotation = Quaternion.Euler(52f, -35f, 0f);
 
-            // Configure soft stylized ambient light & sky environment (0.45-0.65 spec)
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.38f, 0.49f, 0.61f);
-            RenderSettings.ambientEquatorColor = new Color(0.27f, 0.32f, 0.27f);
-            RenderSettings.ambientGroundColor = new Color(0.17f, 0.15f, 0.13f);
-            RenderSettings.ambientIntensity = 0.55f;
+            // Configure flat neutral ambient lighting & disable fog for clear baseline
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.45f, 0.45f, 0.45f);
+            RenderSettings.ambientIntensity = 0.50f;
+            RenderSettings.fog = false;
         }
 
         private GameObject SpawnProp(PlaceholderAssetKey key, Vector3 worldPos, Quaternion rot, float scale = 1f, Color? color = null)
@@ -769,14 +830,37 @@ namespace Roguelite.Environment
 
             for (int i = 0; i < checkZs.Length; i++)
             {
-                float z = checkZs[i];
+                float zBoundary = checkZs[i];
                 float maxChunkDiff = 0f;
-                for (float x = -100f; x <= 100f; x += 10f)
+
+                Transform chunkA = worldParent != null ? worldParent.Find($"ContinuousTerrainChunk_{i}") : null;
+                Transform chunkB = worldParent != null ? worldParent.Find($"ContinuousTerrainChunk_{i + 1}") : null;
+
+                if (chunkA != null && chunkB != null &&
+                    chunkA.TryGetComponent<MeshFilter>(out var mfA) && mfA.sharedMesh != null &&
+                    chunkB.TryGetComponent<MeshFilter>(out var mfB) && mfB.sharedMesh != null)
                 {
-                    float hBefore = GetTerrainHeightY(x, z - 0.01f);
-                    float hAfter = GetTerrainHeightY(x, z + 0.01f);
-                    float diff = Mathf.Abs(hBefore - hAfter);
-                    if (diff > maxChunkDiff) maxChunkDiff = diff;
+                    Vector3[] vertsA = mfA.sharedMesh.vertices;
+                    Vector3[] vertsB = mfB.sharedMesh.vertices;
+
+                    // Match vertices at exact boundary Z
+                    for (int a = 0; a < vertsA.Length; a++)
+                    {
+                        Vector3 wA = chunkA.TransformPoint(vertsA[a]);
+                        if (Mathf.Abs(wA.z - zBoundary) < 0.001f && wA.y > -45f) // Exclude bedrock skirt cap
+                        {
+                            for (int b = 0; b < vertsB.Length; b++)
+                            {
+                                Vector3 wB = chunkB.TransformPoint(vertsB[b]);
+                                if (Mathf.Abs(wB.z - zBoundary) < 0.001f && Mathf.Abs(wA.x - wB.x) < 0.001f && wB.y > -45f)
+                                {
+                                    float diff = Mathf.Abs(wA.y - wB.y);
+                                    if (diff > maxChunkDiff) maxChunkDiff = diff;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Debug.Log($"[CHUNK CONNECTIVITY] Chunk {i} -> Chunk {i + 1} Max edge difference: {maxChunkDiff:F4}m");
