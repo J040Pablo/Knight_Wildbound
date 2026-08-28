@@ -45,8 +45,8 @@ namespace Roguelite.Environment
             // 5. HOLLOW TREE BOSS ARENA REGION (Z: 353 to 430)
             BuildBossArenaRegion();
 
-            // 6. CONTINUOUS WORLD BOUNDARY (Expanded X size 160m to prevent mini-arena collisions)
-            CreateWorldBoundary(new Vector3(0, 5f, 200f), new Vector3(160f, 30f, 480f));
+            // 6. CONTINUOUS WORLD BOUNDARY (Expanded X size 180m for wide open 80m forest clearings)
+            CreateWorldBoundary(new Vector3(0, 5f, 200f), new Vector3(180f, 30f, 500f));
 
             // Apply starting region settings (Ruins)
             var startingRegion = GameObject.Find("RegionTrigger_Ruins")?.GetComponent<BiomeRegionTrigger>();
@@ -232,114 +232,122 @@ namespace Roguelite.Environment
             float forestEnd = 330f;
             float stepZ = 10f;
 
-            // Generate Organic Winding Path Slabs
             for (float z = forestStart; z <= forestEnd; z += stepZ)
             {
                 float xOffset = GetForestPathXOffset(z);
                 float xNext = GetForestPathXOffset(z + stepZ);
                 float xMid = (xOffset + xNext) / 2f;
+                float yElev = Mathf.Sin(z * 0.04f) * 0.35f;
 
+                // 1. Central Warm Dirt Trail Slab (18-25m Wide Main Road)
                 GameObject pathSlab = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 pathSlab.name = $"ForestPathSlab_{z}";
                 pathSlab.tag = "Ground";
-                pathSlab.transform.position = new Vector3(xMid, -0.5f, z + stepZ / 2f);
+                pathSlab.transform.position = new Vector3(xMid, yElev - 0.5f, z + stepZ / 2f);
                 pathSlab.transform.localScale = new Vector3(22f, 0.5f, stepZ + 0.2f);
-                Renderer gR = pathSlab.GetComponent<Renderer>();
-                if (gR != null) gR.material.color = new Color(0.38f, 0.28f, 0.18f); // Warm autumn dirt
+                Renderer pR = pathSlab.GetComponent<Renderer>();
 
-                // Slanted Autumn Trees & Organic Props along road margins (leaving right-side mini-arena entrances clear)
-                CreateAutumnTree(new Vector3(xMid - 9.5f, 0, z), Random.Range(-10f, 10f));
+                bool isDarkStage = z >= 240f;
+                if (pR != null) pR.material.color = isDarkStage ? new Color(0.22f, 0.16f, 0.16f) : new Color(0.38f, 0.28f, 0.18f);
 
-                if (Mathf.Abs(z - 130f) > 8f && Mathf.Abs(z - 200f) > 8f && Mathf.Abs(z - 275f) > 8f)
+                // 2. Wide Left Ground Clearing Slab (30m wide)
+                GameObject clearingLeft = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                clearingLeft.name = $"ForestClearingLeft_{z}";
+                clearingLeft.tag = "Ground";
+                clearingLeft.transform.position = new Vector3(xMid - 26f, yElev - 0.5f, z + stepZ / 2f);
+                clearingLeft.transform.localScale = new Vector3(30f, 0.5f, stepZ + 0.2f);
+                Renderer cLR = clearingLeft.GetComponent<Renderer>();
+                if (cLR != null) cLR.material.color = isDarkStage ? new Color(0.18f, 0.12f, 0.15f) : new Color(0.32f, 0.25f, 0.15f);
+
+                // 3. Wide Right Ground Clearing Slab (30m wide)
+                GameObject clearingRight = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                clearingRight.name = $"ForestClearingRight_{z}";
+                clearingRight.tag = "Ground";
+                clearingRight.transform.position = new Vector3(xMid + 26f, yElev - 0.5f, z + stepZ / 2f);
+                clearingRight.transform.localScale = new Vector3(30f, 0.5f, stepZ + 0.2f);
+                Renderer cRR = clearingRight.GetComponent<Renderer>();
+                if (cRR != null) cRR.material.color = isDarkStage ? new Color(0.18f, 0.12f, 0.15f) : new Color(0.32f, 0.25f, 0.15f);
+
+                // 4. Organic Props & Foliage across 80m Clearing (leaving main 20m trail open)
+                if (!isDarkStage)
                 {
-                    CreateAutumnTree(new Vector3(xMid + 9.5f, 0, z + 5f), Random.Range(-10f, 10f));
+                    // Autumn Trees along outer margins
+                    CreateAutumnTree(new Vector3(xMid - 16f, yElev, z), Random.Range(-12f, 12f));
+                    CreateAutumnTree(new Vector3(xMid + 16f, yElev, z + 4f), Random.Range(-12f, 12f));
+                    CreateAutumnTree(new Vector3(xMid - 28f, yElev, z + 6f), Random.Range(-15f, 15f));
+                    CreateAutumnTree(new Vector3(xMid + 28f, yElev, z + 2f), Random.Range(-15f, 15f));
+
+                    // Decorative props
+                    if ((int)z % 20 == 0)
+                    {
+                        CreatePumpkinProp(new Vector3(xMid - 11f, yElev + 0.4f, z + 3f));
+                        CreateLanternProp(new Vector3(xMid + 11f, yElev, z + 8f));
+                        CreateFallenLogProp(new Vector3(xMid - 14f, yElev + 0.2f, z + 5f), Random.Range(30f, 70f));
+                    }
+                    if ((int)z % 30 == 0)
+                    {
+                        CreateMushroomsProp(new Vector3(xMid + 12f, yElev + 0.1f, z + 4f));
+                        CreateBrokenFenceProp(new Vector3(xMid - 12f, yElev, z + 6f));
+                        CreateMossyBoulderProp(new Vector3(xMid + 15f, yElev + 0.4f, z + 2f), Random.Range(1.2f, 2.2f));
+                        CreateBushProp(new Vector3(xMid - 13f, yElev + 0.3f, z + 8f), 1.5f);
+                    }
                 }
+                else
+                {
+                    // Corrupted Dead Trees & Gnarled Roots
+                    CreateDeadCorruptedTree(new Vector3(xMid - 16f, yElev, z));
+                    CreateDeadCorruptedTree(new Vector3(xMid + 16f, yElev, z + 5f));
+                    CreateDeadCorruptedTree(new Vector3(xMid - 30f, yElev, z + 3f));
+                    CreateDeadCorruptedTree(new Vector3(xMid + 30f, yElev, z + 7f));
 
-                if ((int)z % 20 == 0)
-                {
-                    CreatePumpkinProp(new Vector3(xMid - 7.5f, 0.4f, z + 3f));
-                    CreateLanternProp(new Vector3(xMid + 7.5f, 0f, z + 8f));
-                }
-                if ((int)z % 30 == 0)
-                {
-                    CreateMushroomsProp(new Vector3(xMid + 6.5f, 0.1f, z + 4f));
-                    CreateBrokenFenceProp(new Vector3(xMid - 8.0f, 0f, z + 6f));
+                    if ((int)z % 15 == 0)
+                    {
+                        CreateCrossingRootProp(new Vector3(xMid, yElev + 0.2f, z + 4f), Random.Range(70f, 110f));
+                    }
                 }
             }
 
-            // Side Mini-Arenas (Main road is NEVER blocked)
-            // 1. Easy Mini-Arena (Z = 130)
-            CreateSideMiniArena(130f, EncounterDifficulty.Easy);
+            // Safe Stop Horses along path
+            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(165f) - 8f, 0, 165f));
+            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(240f) + 8f, 0, 240f));
 
-            // Safe Stop Horse (Z = 165)
-            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(165f) - 5f, 0, 165f));
+            // DIRECT ROUTE COMBAT ENCOUNTERS (ON THE MAIN PATH, ZERO GATES, ZERO DETOURS)
+            // 1. Easy Section (Z = 120)
+            CreateDirectRouteEncounter(120f, EncounterDifficulty.Easy);
 
-            // 2. Medium Mini-Arena (Z = 200)
-            CreateSideMiniArena(200f, EncounterDifficulty.Medium);
+            // 2. Medium Section (Z = 200)
+            CreateDirectRouteEncounter(200f, EncounterDifficulty.Medium);
 
-            // Safe Stop Horse (Z = 240)
-            CreateFriendlyHorse(new Vector3(GetForestPathXOffset(240f) + 5f, 0, 240f));
+            // 3. Hard Section (Z = 280)
+            CreateDirectRouteEncounter(280f, EncounterDifficulty.Hard);
 
-            // 3. Hard Mini-Arena (Z = 275)
-            CreateSideMiniArena(275f, EncounterDifficulty.Hard);
+            // Stage 2 Biome Region Trigger: Autumn Forest (Z: 80 to 240)
+            CreateRegionTrigger("RegionTrigger_AutumnForest", "Autumn Forest", new Vector3(0, 5f, 160f), new Vector3(120f, 25f, 160f),
+                new Color(1.0f, 0.85f, 0.65f), 1.15f, new Color(0.45f, 0.35f, 0.3f), 0.018f, new Color(0.45f, 0.35f, 0.3f));
 
-            // Forest Region Trigger
-            CreateRegionTrigger("RegionTrigger_AutumnForest", "Autumn Forest", new Vector3(0, 5f, 205f), new Vector3(60f, 20f, 250f),
-                new Color(1.0f, 0.85f, 0.65f), 1.15f, new Color(0.45f, 0.35f, 0.3f), 0.020f, new Color(0.45f, 0.35f, 0.3f));
+            // Stage 3 Biome Region Trigger: Dark Corrupted Forest (Z: 240 to 330)
+            CreateRegionTrigger("RegionTrigger_DarkCorruptedForest", "Dark Corrupted Forest", new Vector3(0, 5f, 285f), new Vector3(120f, 25f, 90f),
+                new Color(0.65f, 0.35f, 0.45f), 0.8f, new Color(0.25f, 0.12f, 0.20f), 0.032f, new Color(0.30f, 0.12f, 0.22f));
         }
 
-        private void CreateSideMiniArena(float mainZ, EncounterDifficulty diff)
+        private void CreateDirectRouteEncounter(float centerZ, EncounterDifficulty diff)
         {
-            float mainX = GetForestPathXOffset(mainZ);
+            float centerX = GetForestPathXOffset(centerZ);
+            Vector3 centerPos = new Vector3(centerX, 0, centerZ);
 
-            // Arena clearing offset 25m off to the right of main road
-            Vector3 arenaCenter = new Vector3(mainX + 25f, 0, mainZ);
-
-            // Connector path slab from main road to side arena
-            GameObject connectorGround = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            connectorGround.name = $"MiniArenaConnectorGround_{diff}";
-            connectorGround.tag = "Ground";
-            connectorGround.transform.position = new Vector3(mainX + 12.5f, -0.5f, mainZ);
-            connectorGround.transform.localScale = new Vector3(20f, 0.5f, 10f);
-            Renderer cR = connectorGround.GetComponent<Renderer>();
-            if (cR != null) cR.material.color = new Color(0.35f, 0.25f, 0.16f);
-
-            // Mini-Arena circular ground clearing
-            GameObject arenaGround = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            arenaGround.name = $"MiniArenaGround_{diff}";
-            arenaGround.tag = "Ground";
-            arenaGround.transform.position = arenaCenter + new Vector3(0, -0.5f, 0);
-            arenaGround.transform.localScale = new Vector3(24f, 0.5f, 24f);
-            Collider aCol = arenaGround.GetComponent<Collider>();
-            if (aCol != null) DestroyImmediate(aCol);
-            arenaGround.AddComponent<BoxCollider>();
-            Renderer aR = arenaGround.GetComponent<Renderer>();
-            if (aR != null) aR.material.color = new Color(0.32f, 0.22f, 0.14f);
-
-            // Entrance gate positioned on the side connector path ONLY (main road stays unblocked!)
-            GameObject gate = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            gate.name = $"SideGate_{diff}";
-            gate.transform.position = new Vector3(mainX + 12f, 2.0f, mainZ);
-            gate.transform.localScale = new Vector3(1.0f, 4.0f, 10f);
-            Renderer gR = gate.GetComponent<Renderer>();
-            if (gR != null) gR.material.color = new Color(0.45f, 0.25f, 0.12f);
-            gate.SetActive(false); // Initially open
-
-            // Encounter Zone Volume inside the side arena clearing
-            GameObject zoneObj = new GameObject($"EncounterZone_{diff}");
-            zoneObj.transform.position = arenaCenter;
+            GameObject zoneObj = new GameObject($"DirectEncounterZone_{diff}");
+            zoneObj.transform.position = centerPos;
 
             BoxCollider box = zoneObj.AddComponent<BoxCollider>();
             box.isTrigger = true;
-            box.size = new Vector3(22f, 6f, 22f);
+            box.size = new Vector3(55f, 8f, 35f); // Spans open wide 80m route
 
             var encZone = zoneObj.AddComponent<EncounterZone>();
 
             var diffField = typeof(EncounterZone).GetField("difficulty", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (diffField != null) diffField.SetValue(encZone, diff);
 
-            var gateField = typeof(EncounterZone).GetField("forwardGate", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (gateField != null) gateField.SetValue(encZone, gate);
+            // NO forwardGate passed -> main path remains 100% open and unblocked!
         }
 
         // ==========================================
@@ -352,36 +360,24 @@ namespace Roguelite.Environment
             float length = endZ - startZ;
             float startX = GetForestPathXOffset(startZ);
 
-            // Transition Ground
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "DarkTransitionGround";
             ground.tag = "Ground";
             ground.transform.position = new Vector3(startX / 2f, -0.5f, startZ + length / 2f);
-            ground.transform.localScale = new Vector3(22f, 0.5f, length + 2f);
+            ground.transform.localScale = new Vector3(45f, 0.5f, length + 2f);
             Renderer gR = ground.GetComponent<Renderer>();
-            if (gR != null) gR.material.color = new Color(0.2f, 0.15f, 0.15f); // Dark scorched earth
+            if (gR != null) gR.material.color = new Color(0.18f, 0.12f, 0.14f);
 
-            // Giant Corrupted Roots crossing the path horizontally
-            for (float z = startZ + 5f; z < endZ; z += 8f)
+            for (float z = startZ + 4f; z < endZ; z += 6f)
             {
-                GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                root.name = "CorruptedCrossingRoot";
-                root.transform.position = new Vector3(Random.Range(-2f, 2f), 0.2f, z);
-                root.transform.localScale = new Vector3(0.5f, 8f, 0.5f);
-                root.transform.rotation = Quaternion.Euler(0, Random.Range(70f, 110f), 85f);
-                Collider rCol = root.GetComponent<Collider>();
-                if (rCol != null) DestroyImmediate(rCol);
-                Renderer rR = root.GetComponent<Renderer>();
-                if (rR != null) rR.material.color = new Color(0.18f, 0.10f, 0.08f);
+                CreateCrossingRootProp(new Vector3(Random.Range(-3f, 3f), 0.2f, z), Random.Range(70f, 110f));
             }
 
-            // Dead Leafless Trees along corridor
-            CreateDeadCorruptedTree(new Vector3(startX - 9f, 0, startZ + 6f));
-            CreateDeadCorruptedTree(new Vector3(startX + 9f, 0, startZ + 14f));
+            CreateDeadCorruptedTree(new Vector3(startX - 14f, 0, startZ + 6f));
+            CreateDeadCorruptedTree(new Vector3(startX + 14f, 0, startZ + 14f));
 
-            // Dark Corridor Region Trigger
-            CreateRegionTrigger("RegionTrigger_DarkCorridor", "Sombreness Pass", new Vector3(0, 5f, startZ + length / 2f), new Vector3(30f, 20f, length),
-                new Color(0.6f, 0.3f, 0.3f), 0.8f, new Color(0.2f, 0.1f, 0.15f), 0.035f, new Color(0.25f, 0.1f, 0.15f));
+            CreateRegionTrigger("RegionTrigger_DarkCorridor", "Sombreness Pass", new Vector3(0, 5f, startZ + length / 2f), new Vector3(60f, 20f, length),
+                new Color(0.6f, 0.3f, 0.3f), 0.75f, new Color(0.2f, 0.1f, 0.15f), 0.038f, new Color(0.25f, 0.1f, 0.15f));
         }
 
         private void CreateDeadCorruptedTree(Vector3 pos)
@@ -494,8 +490,58 @@ namespace Roguelite.Environment
                 Collider pCol = plank.GetComponent<Collider>();
                 if (pCol != null) DestroyImmediate(pCol);
                 Renderer pR = plank.GetComponent<Renderer>();
-                if (pR != null) pR.material.color = new Color(0.35f, 0.22f, 0.12f);
             }
+        }
+
+        private void CreateFallenLogProp(Vector3 pos, float rotationY)
+        {
+            GameObject log = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            log.name = "FallenLogProp";
+            log.transform.position = pos;
+            log.transform.localScale = new Vector3(0.7f, 3.5f, 0.7f);
+            log.transform.rotation = Quaternion.Euler(0, rotationY, 90f);
+            Collider col = log.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = log.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.28f, 0.18f, 0.10f);
+        }
+
+        private void CreateMossyBoulderProp(Vector3 pos, float scale)
+        {
+            GameObject boulder = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            boulder.name = "MossyBoulderProp";
+            boulder.transform.position = pos;
+            boulder.transform.localScale = new Vector3(scale * 1.2f, scale * 0.8f, scale);
+            boulder.transform.rotation = Quaternion.Euler(Random.Range(0, 360), Random.Range(0, 360), 0);
+            Collider col = boulder.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = boulder.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.38f, 0.42f, 0.35f); // Mossy stone gray
+        }
+
+        private void CreateBushProp(Vector3 pos, float scale)
+        {
+            GameObject bush = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            bush.name = "ForestBushProp";
+            bush.transform.position = pos;
+            bush.transform.localScale = new Vector3(scale * 1.3f, scale * 0.7f, scale * 1.3f);
+            Collider col = bush.GetComponent<Collider>();
+            if (col != null) DestroyImmediate(col);
+            Renderer r = bush.GetComponent<Renderer>();
+            if (r != null) r.material.color = new Color(0.18f, 0.35f, 0.15f); // Deep forest green
+        }
+
+        private void CreateCrossingRootProp(Vector3 pos, float angleY)
+        {
+            GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            root.name = "CorruptedCrossingRoot";
+            root.transform.position = pos;
+            root.transform.localScale = new Vector3(0.6f, 10f, 0.6f);
+            root.transform.rotation = Quaternion.Euler(0, angleY, 86f);
+            Collider rCol = root.GetComponent<Collider>();
+            if (rCol != null) DestroyImmediate(rCol);
+            Renderer rR = root.GetComponent<Renderer>();
+            if (rR != null) rR.material.color = new Color(0.22f, 0.12f, 0.14f);
         }
 
         // ==========================================
