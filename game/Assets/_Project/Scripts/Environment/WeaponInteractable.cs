@@ -1,6 +1,7 @@
 using UnityEngine;
 using Roguelite.Core;
 using Roguelite.Player;
+using Roguelite.Progression;
 
 namespace Roguelite.Environment
 {
@@ -18,7 +19,7 @@ namespace Roguelite.Environment
                 switch (targetClass)
                 {
                     case CharacterType.Mage: return "E — Pick up Staff (Mage)";
-                    case CharacterType.Druid: return "E — Pick up Wooden Branch (Druid)";
+                    case CharacterType.Druid: return "E — Pick up Nature Staff (Druid)";
                     case CharacterType.Knight:
                     default: return "E — Pick up Sword (Knight)";
                 }
@@ -27,14 +28,12 @@ namespace Roguelite.Environment
 
         public bool CanInteract(GameObject player)
         {
-            // Must have King dialogue completed & no class selected yet
-            KingNPC king = FindFirstObjectByType<KingNPC>();
-            if (king != null && !king.HasFinishedDialogue)
+            if (GameSessionManager.Instance != null && GameSessionManager.Instance.HasSelectedCharacter)
             {
                 return false;
             }
 
-            if (GameSessionManager.Instance != null && GameSessionManager.Instance.HasSelectedCharacter)
+            if (ProgressionManager.Instance != null && ProgressionManager.Instance.CurrentClass != ClassType.None)
             {
                 return false;
             }
@@ -44,17 +43,18 @@ namespace Roguelite.Environment
 
         public void Interact(GameObject player)
         {
-            if (player == null) return;
+            Debug.Log("[Weapon] Interact called");
+            Debug.Log($"[Weapon] Selected class: {targetClass}");
 
             // Map CharacterType to ClassType
-            Progression.ClassType pClass = Progression.ClassType.Knight;
-            if (targetClass == CharacterType.Mage) pClass = Progression.ClassType.Mage;
-            else if (targetClass == CharacterType.Druid) pClass = Progression.ClassType.Druid;
+            ClassType pClass = ClassType.Knight;
+            if (targetClass == CharacterType.Mage) pClass = ClassType.Mage;
+            else if (targetClass == CharacterType.Druid) pClass = ClassType.Druid;
 
             // 1. Update ProgressionManager state (Permanent class selection)
-            if (Progression.ProgressionManager.Instance != null)
+            if (ProgressionManager.Instance != null)
             {
-                Progression.ProgressionManager.Instance.SetClass(pClass);
+                ProgressionManager.Instance.SetClass(pClass);
             }
 
             if (GameSessionManager.Instance != null)
@@ -67,13 +67,18 @@ namespace Roguelite.Environment
                 GameSettings.Instance.SelectedCharacter = targetClass;
             }
 
-            // 2. Apply weapon visual & combat behavior to player
-            PlayerCombat combat = player.GetComponent<PlayerCombat>();
-            PlayerStats stats = player.GetComponent<PlayerStats>();
-
-            if (combat != null)
+            // Find player if null
+            if (player == null)
             {
-                // Re-setup visuals and combat behavior for selected class
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null) player = playerObj;
+            }
+
+            // 2. Apply weapon visual & combat behavior to player
+            if (player != null)
+            {
+                PlayerCombat combat = player.GetComponent<PlayerCombat>();
+                PlayerStats stats = player.GetComponent<PlayerStats>();
                 SetupPlayerClassVisualsAndBehavior(player, targetClass, combat, stats);
             }
 
@@ -90,17 +95,25 @@ namespace Roguelite.Environment
             {
                 gate.UnlockGate();
             }
+
+            // 5. Trigger notification banner
+            if (Wave.EncounterManager.Instance != null)
+            {
+                Wave.EncounterManager.Instance.TriggerBanner($"⚔️ {targetClass.ToString().ToUpper()} CLASS UNLOCKED! Press [Q] for Masteries!");
+            }
         }
 
         public static void SetupPlayerClassVisualsAndBehavior(GameObject playerObj, CharacterType selectedChar, PlayerCombat combat, PlayerStats stats)
         {
-            Progression.ClassType pClass = Progression.ClassType.Knight;
-            if (selectedChar == CharacterType.Mage) pClass = Progression.ClassType.Mage;
-            else if (selectedChar == CharacterType.Druid) pClass = Progression.ClassType.Druid;
+            if (playerObj == null) return;
 
-            if (Progression.ProgressionManager.Instance != null)
+            ClassType pClass = ClassType.Knight;
+            if (selectedChar == CharacterType.Mage) pClass = ClassType.Mage;
+            else if (selectedChar == CharacterType.Druid) pClass = ClassType.Druid;
+
+            if (ProgressionManager.Instance != null)
             {
-                Progression.ProgressionManager.Instance.SetClass(pClass);
+                ProgressionManager.Instance.SetClass(pClass);
             }
 
             // Remove previous visual weapons/hats

@@ -60,8 +60,8 @@ namespace Roguelite.UI
             reticleTexture.wrapMode = TextureWrapMode.Clamp;
 
             float center = size / 2f;
-            float outerRadius = 4f;   // Outer edge of black outline ring
-            float innerRadius = 2.2f; // Outer edge of white circle center
+            float outerRadius = 4f;
+            float innerRadius = 2.2f;
 
             for (int y = 0; y < size; y++)
             {
@@ -71,19 +71,16 @@ namespace Roguelite.UI
 
                     if (dist <= innerRadius)
                     {
-                        // Solid white center dot with soft anti-aliased edge
                         float alpha = Mathf.Clamp01((innerRadius - dist) + 0.5f);
                         reticleTexture.SetPixel(x, y, new Color(1.0f, 1.0f, 1.0f, alpha));
                     }
                     else if (dist <= outerRadius)
                     {
-                        // Thin black outline ring with anti-aliasing
                         float alpha = Mathf.Clamp01((outerRadius - dist) + 0.5f);
                         reticleTexture.SetPixel(x, y, new Color(0.0f, 0.0f, 0.0f, alpha));
                     }
                     else
                     {
-                        // Fully transparent background
                         reticleTexture.SetPixel(x, y, Color.clear);
                     }
                 }
@@ -102,6 +99,11 @@ namespace Roguelite.UI
             {
                 activeMount = FindFirstObjectByType<MountSystem>();
             }
+
+            if (interactionSystem == null)
+            {
+                interactionSystem = FindFirstObjectByType<InteractionSystem>();
+            }
         }
 
         private void OnGUI()
@@ -109,7 +111,34 @@ namespace Roguelite.UI
             if (runManager != null && runManager.State != RunState.InRun) return;
 
             DrawHUD();
+            DrawInteractionPrompt();
             DrawCenterReticle();
+        }
+
+        private void DrawInteractionPrompt()
+        {
+            if (DialogueSystem.Instance != null && DialogueSystem.Instance.IsDialogueActive) return;
+            if (interactionSystem == null || string.IsNullOrEmpty(interactionSystem.CurrentPrompt)) return;
+
+            float pWidth = 340f;
+            float pHeight = 36f;
+            float posX = (Screen.width - pWidth) * 0.5f;
+            float posY = Screen.height - 180f;
+
+            Rect pRect = new Rect(posX, posY, pWidth, pHeight);
+
+            GUI.color = new Color(0.05f, 0.08f, 0.12f, 0.88f);
+            GUI.DrawTexture(pRect, Texture2D.whiteTexture);
+
+            GUI.color = new Color(0.95f, 0.75f, 0.25f, 0.9f);
+            GUI.Box(pRect, "");
+
+            GUI.skin.label.fontSize = 12;
+            GUI.skin.label.fontStyle = FontStyle.Bold;
+            GUI.skin.label.alignment = TextAnchor.MiddleCenter;
+            GUI.color = Color.white;
+            GUI.Label(pRect, interactionSystem.CurrentPrompt);
+            GUI.skin.label.alignment = TextAnchor.UpperLeft;
         }
 
         private void DrawCenterReticle()
@@ -121,7 +150,7 @@ namespace Roguelite.UI
                 CreateReticleTexture();
             }
 
-            float drawSize = 10f; // Minimal, crisp 10px reticle diameter on screen
+            float drawSize = 10f;
             float centerX = Screen.width / 2f;
             float centerY = Screen.height / 2f;
 
@@ -194,7 +223,7 @@ namespace Roguelite.UI
                 float xpRatio = reqXP > 0 ? (float)curXP / reqXP : 0;
                 DrawThinBar(new Rect(posX + 10, posY + 54, hudWidth - 20, 5), xpRatio, new Color(0.92f, 0.75f, 0.15f), "");
 
-                // 4. Bloons TD 6 Style Notification Banner when Level Up / Mastery Points are available
+                // 4. Notification Banner when Level Up / Mastery Points are available
                 int pendingPoints = ProgressionManager.Instance != null ? ProgressionManager.Instance.PendingLevelUpCount : 0;
                 if (pendingPoints > 0)
                 {

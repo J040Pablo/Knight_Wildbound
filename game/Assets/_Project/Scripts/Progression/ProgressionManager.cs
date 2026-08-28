@@ -284,9 +284,10 @@ namespace Roguelite.Progression
                 default: activeClassDefinition = knightClassDefinition; break;
             }
 
-            Debug.Log($"[ProgressionManager] Class Selected -> {CurrentClass}");
+            Debug.Log($"Class selected: {classType}");
 
             OnClassSelected?.Invoke(CurrentClass);
+            Debug.Log("[Progression] OnClassSelected fired");
 
             if (PendingLevelUpCount > 0)
             {

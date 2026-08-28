@@ -69,10 +69,67 @@ namespace Roguelite.Player
 
             ApplyKnockbackDecay();
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            HandleDebugClassSelectShortcuts();
             if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] END pos: {transform.position}");
 #endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void HandleDebugClassSelectShortcuts()
+        {
+            if (Roguelite.Progression.ProgressionManager.Instance == null) return;
+            if (Roguelite.Progression.ProgressionManager.Instance.CurrentClass != Roguelite.Progression.ClassType.None) return;
+
+            Roguelite.Core.CharacterType selectedType = Roguelite.Core.CharacterType.Knight;
+            bool trigger = false;
+
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                selectedType = Roguelite.Core.CharacterType.Knight;
+                trigger = true;
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                selectedType = Roguelite.Core.CharacterType.Mage;
+                trigger = true;
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                selectedType = Roguelite.Core.CharacterType.Druid;
+                trigger = true;
+            }
+
+            if (trigger)
+            {
+                Debug.Log($"[DEBUG_FALLBACK] Class selected via key shortcut: {selectedType}");
+                Roguelite.Progression.ClassType pClass = selectedType switch
+                {
+                    Roguelite.Core.CharacterType.Mage => Roguelite.Progression.ClassType.Mage,
+                    Roguelite.Core.CharacterType.Druid => Roguelite.Progression.ClassType.Druid,
+                    _ => Roguelite.Progression.ClassType.Knight
+                };
+
+                Roguelite.Progression.ProgressionManager.Instance.SetClass(pClass);
+                if (Roguelite.Core.GameSessionManager.Instance != null)
+                {
+                    Roguelite.Core.GameSessionManager.Instance.SelectedCharacter = selectedType;
+                    Roguelite.Core.GameSessionManager.Instance.HasSelectedCharacter = true;
+                }
+
+                Roguelite.Environment.WeaponInteractable.SetupPlayerClassVisualsAndBehavior(gameObject, selectedType, GetComponent<PlayerCombat>(), GetComponent<PlayerStats>());
+
+                var allWeapons = FindObjectsByType<Roguelite.Environment.WeaponInteractable>(FindObjectsSortMode.None);
+                foreach (var weapon in allWeapons)
+                {
+                    weapon.gameObject.SetActive(false);
+                }
+
+                var gate = FindFirstObjectByType<Roguelite.Environment.RuinsExitGate>();
+                if (gate != null) gate.UnlockGate();
+            }
+        }
+#endif
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {

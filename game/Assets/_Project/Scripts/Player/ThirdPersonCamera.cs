@@ -36,6 +36,14 @@ namespace Roguelite.Player
             {
                 collisionLayers = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
             }
+
+            Camera cam = GetComponent<Camera>();
+            if (cam != null)
+            {
+                cam.nearClipPlane = 0.05f; // Prevent near-plane slicing into 3D terrain surface
+                cam.farClipPlane = 1000f;   // Generous far clip plane for continuous open world
+                cam.useOcclusionCulling = false; // Disable unbaked occlusion culling for procedural objects
+            }
         }
 
         private void LateUpdate()
@@ -91,6 +99,13 @@ namespace Roguelite.Player
             }
 
             Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentDistance);
+
+            // Ground Collision Clamp: Camera MUST NEVER clip below terrain surface!
+            float groundH = Roguelite.Environment.SceneEnvironmentBuilder.GetTerrainHeightY(finalCamPos.x, finalCamPos.z);
+            if (finalCamPos.y < groundH + 0.8f)
+            {
+                finalCamPos.y = groundH + 0.8f;
+            }
 
             // Smooth Damping follow
             transform.position = Vector3.SmoothDamp(transform.position, finalCamPos, ref currentVelocity, 1.0f / smoothSpeed);

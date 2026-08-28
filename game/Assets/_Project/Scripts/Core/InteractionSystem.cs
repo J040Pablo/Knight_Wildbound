@@ -5,7 +5,7 @@ namespace Roguelite.Core
     public class InteractionSystem : MonoBehaviour
     {
         [Header("Interaction Config")]
-        [SerializeField] private float interactRange = 3.0f;
+        [SerializeField] private float interactRange = 3.5f;
         [SerializeField] private KeyCode interactKey = KeyCode.E;
 
         public IInteractable CurrentInteractable { get; private set; }
@@ -19,6 +19,7 @@ namespace Roguelite.Core
             {
                 if (CurrentInteractable.CanInteract(gameObject))
                 {
+                    Debug.Log("[Interaction] Hit interactable");
                     CurrentInteractable.Interact(gameObject);
                 }
             }
@@ -36,6 +37,10 @@ namespace Roguelite.Core
                 if (interactable == null)
                 {
                     interactable = hit.GetComponentInParent<IInteractable>();
+                }
+                if (interactable == null)
+                {
+                    interactable = hit.GetComponentInChildren<IInteractable>();
                 }
 
                 if (interactable != null && interactable.CanInteract(gameObject))
