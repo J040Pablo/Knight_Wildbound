@@ -129,6 +129,14 @@ namespace Roguelite.Environment
 
                 PlaceholderAssetKey.ExitGate => MakeExitGate("PH_ExitGate", parent, scale),
 
+                // Forest Density & Biome Exit
+                PlaceholderAssetKey.TreeStump            => MakeStump("PH_Stump", parent, scale),
+                PlaceholderAssetKey.Fern                 => MakeFern("PH_Fern", parent, scale),
+                PlaceholderAssetKey.RootEmerging         => MakeEmergingRoot("PH_RootEmerging", parent, scale),
+                PlaceholderAssetKey.MossStone            => MakeMossStone("PH_MossStone", parent, scale),
+                PlaceholderAssetKey.CorruptedRootBarrier => MakeCorruptedRootBarrier("PH_CorruptedBarrier", parent, scale),
+                PlaceholderAssetKey.TransitionGateSign   => MakeTransitionSign("PH_TransitionSign", parent, scale),
+
                 _ => new GameObject($"PH_Unhandled_{key}")
             };
         }
@@ -682,6 +690,97 @@ namespace Roguelite.Environment
             shaft.transform.localPosition = new Vector3(0, 6.8f * scale, 0);
             var runeCap = MakeSphere("RuneOrb", root.transform, new Vector3(0.8f, 0.8f, 0.8f), new Color(0.3f, 0.7f, 1.0f), scale);
             runeCap.transform.localPosition = new Vector3(0, 13.2f * scale, 0);
+            return root;
+        }
+
+        private static GameObject MakeStump(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            var trunk = MakeCylinder("StumpBody", root.transform, new Vector3(0.7f, 0.4f, 0.7f), new Color(0.34f, 0.22f, 0.14f), scale);
+            trunk.transform.localPosition = new Vector3(0, 0.4f * scale, 0);
+            var topRings = MakeCylinder("StumpTop", root.transform, new Vector3(0.64f, 0.02f, 0.64f), new Color(0.55f, 0.42f, 0.28f), scale);
+            topRings.transform.localPosition = new Vector3(0, 0.81f * scale, 0);
+            return root;
+        }
+
+        private static GameObject MakeFern(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            for (int i = 0; i < 5; i++)
+            {
+                float rotY = i * 72f;
+                var frond = MakeSphere($"FernFrond_{i}", root.transform, new Vector3(0.8f, 0.1f, 0.35f), new Color(0.18f, 0.52f, 0.22f), scale);
+                frond.transform.localPosition = Quaternion.Euler(0, rotY, 0) * new Vector3(0.35f * scale, 0.12f * scale, 0);
+                frond.transform.localRotation = Quaternion.Euler(-15f, rotY, 20f);
+            }
+            return root;
+        }
+
+        private static GameObject MakeEmergingRoot(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            var rootArch = MakeCylinder("RootArch", root.transform, new Vector3(0.3f, 1.2f, 0.3f), new Color(0.28f, 0.17f, 0.10f), scale);
+            rootArch.transform.localPosition = new Vector3(0, 0.4f * scale, 0);
+            rootArch.transform.localRotation = Quaternion.Euler(65f, Random.Range(0f, 360f), 0);
+            return root;
+        }
+
+        private static GameObject MakeMossStone(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            var stone = MakeSphere("BaseStone", root.transform, new Vector3(1.1f, 0.7f, 1.0f), new Color(0.38f, 0.41f, 0.42f), scale);
+            stone.transform.localPosition = new Vector3(0, 0.35f * scale, 0);
+            stone.AddComponent<BoxCollider>();
+            var moss = MakeSphere("MossCover", root.transform, new Vector3(0.95f, 0.35f, 0.85f), new Color(0.28f, 0.54f, 0.22f), scale);
+            moss.transform.localPosition = new Vector3(0, 0.55f * scale, 0);
+            return root;
+        }
+
+        private static GameObject MakeCorruptedRootBarrier(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+
+            Color corruptedWood = new Color(0.22f, 0.10f, 0.14f);
+            Color corruptedGlow = new Color(0.75f, 0.15f, 0.25f);
+
+            // Wall of interwoven roots and wood slabs (35m wide x 12m high)
+            var mainWall = MakeSlab("RootWall_Main", root.transform, new Vector3(36f, 12f, 2.5f), corruptedWood, scale);
+            mainWall.transform.localPosition = new Vector3(0, 6f * scale, 0);
+            var col = mainWall.AddComponent<BoxCollider>();
+
+            // Interwoven curved diagonal root tendrils
+            for (int i = -3; i <= 3; i++)
+            {
+                var tendril = MakeCylinder($"RootTendril_{i}", root.transform, new Vector3(1.2f, 8.0f, 1.2f), corruptedWood, scale);
+                tendril.transform.localPosition = new Vector3(i * 5.0f * scale, 6.0f * scale, (i % 2 == 0 ? -0.8f : 0.8f) * scale);
+                tendril.transform.localRotation = Quaternion.Euler(0, 0, (i % 2 == 0 ? 35f : -35f));
+
+                var glowVein = MakeSphere($"GlowVein_{i}", root.transform, new Vector3(1.4f, 1.4f, 1.4f), corruptedGlow, scale);
+                glowVein.transform.localPosition = new Vector3(i * 5.0f * scale, (3.0f + Mathf.Abs(i) * 1.2f) * scale, -1.2f * scale);
+            }
+
+            return root;
+        }
+
+        private static GameObject MakeTransitionSign(string name, Transform parent, float scale)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+
+            var pillar = MakeSlab("SignPillar", root.transform, new Vector3(1.2f, 3.5f, 0.6f), new Color(0.35f, 0.35f, 0.38f), scale);
+            pillar.transform.localPosition = new Vector3(0, 1.75f * scale, 0);
+
+            var runePlate = MakeSlab("RunePlate", root.transform, new Vector3(2.2f, 1.4f, 0.2f), new Color(0.18f, 0.22f, 0.30f), scale);
+            runePlate.transform.localPosition = new Vector3(0, 2.5f * scale, -0.25f * scale);
+
+            var glowingRune = MakeSphere("GlowingRune", root.transform, new Vector3(0.5f, 0.5f, 0.1f), new Color(0.3f, 0.8f, 1.0f), scale);
+            glowingRune.transform.localPosition = new Vector3(0, 2.5f * scale, -0.36f * scale);
+
             return root;
         }
 

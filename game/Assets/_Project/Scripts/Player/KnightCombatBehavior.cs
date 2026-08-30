@@ -57,13 +57,13 @@ namespace Roguelite.Player
             Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position + aimDirection * 1.2f, attackRange);
             for (int i = 0; i < hits.Length; i++)
             {
-                EnemyBase enemy = hits[i].GetComponent<EnemyBase>();
-                if (enemy == null) enemy = hits[i].GetComponentInParent<EnemyBase>();
+                IDamageable damageable = hits[i].GetComponent<IDamageable>();
+                if (damageable == null) damageable = hits[i].GetComponentInParent<IDamageable>();
 
-                if (enemy != null && !enemy.IsDead)
+                if (damageable != null && !damageable.IsDead)
                 {
                     DamageInfo info = new DamageInfo(attackDamage, aimDirection, knockback, false, playerCombat.gameObject);
-                    enemy.TakeDamage(info);
+                    damageable.TakeDamage(info);
                 }
             }
         }
@@ -91,14 +91,14 @@ namespace Roguelite.Player
             Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position, attackRange);
             for (int i = 0; i < hits.Length; i++)
             {
-                EnemyBase enemy = hits[i].GetComponent<EnemyBase>();
-                if (enemy == null) enemy = hits[i].GetComponentInParent<EnemyBase>();
+                IDamageable damageable = hits[i].GetComponent<IDamageable>();
+                if (damageable == null) damageable = hits[i].GetComponentInParent<IDamageable>();
 
-                if (enemy != null && !enemy.IsDead)
+                if (damageable != null && !damageable.IsDead)
                 {
-                    Vector3 knockDir = (enemy.transform.position - playerCombat.transform.position).normalized;
+                    Vector3 knockDir = (hits[i].transform.position - playerCombat.transform.position).normalized;
                     DamageInfo info = new DamageInfo(attackDamage, knockDir, knockback, true, playerCombat.gameObject);
-                    enemy.TakeDamage(info);
+                    damageable.TakeDamage(info);
                 }
             }
         }
@@ -153,13 +153,13 @@ namespace Roguelite.Player
 
         private void OnTriggerEnter(Collider other)
         {
-            EnemyBase enemy = other.GetComponent<EnemyBase>();
-            if (enemy == null) enemy = other.GetComponentInParent<EnemyBase>();
+            IDamageable damageable = other.GetComponent<IDamageable>();
+            if (damageable == null) damageable = other.GetComponentInParent<IDamageable>();
 
-            if (enemy != null && !enemy.IsDead)
+            if (damageable != null && !damageable.IsDead)
             {
                 DamageInfo info = new DamageInfo(damage, moveDir, 6.0f, false, attacker);
-                enemy.TakeDamage(info);
+                damageable.TakeDamage(info);
             }
         }
     }

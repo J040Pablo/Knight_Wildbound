@@ -29,6 +29,14 @@ namespace Roguelite.Player
         public bool IsMounted { get; set; } = false;
 
         private Vector3 currentVelocity;
+        private float shakeTimer = 0f;
+        private float shakeIntensity = 0f;
+
+        public void TriggerShake(float intensity, float duration)
+        {
+            shakeIntensity = intensity;
+            shakeTimer = duration;
+        }
 
         private void Start()
         {
@@ -99,6 +107,14 @@ namespace Roguelite.Player
             }
 
             Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentDistance);
+
+            // Camera Screen Shake Offset
+            if (shakeTimer > 0)
+            {
+                shakeTimer -= Time.deltaTime;
+                Vector3 shakeOffset = Random.insideUnitSphere * shakeIntensity * Mathf.Clamp01(shakeTimer);
+                finalCamPos += shakeOffset;
+            }
 
             // Ground Collision Clamp: Camera MUST NEVER clip below terrain surface!
             float groundH = Roguelite.Environment.SceneEnvironmentBuilder.GetTerrainHeightY(finalCamPos.x, finalCamPos.z);

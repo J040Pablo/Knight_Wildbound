@@ -95,5 +95,13 @@ namespace Roguelite.Environment
 
         // ── River ─────────────────────────────────
         RiverSegment,
+
+        // ── Forest Density & Biome Exit ───────────
+        TreeStump,
+        Fern,
+        RootEmerging,
+        MossStone,
+        CorruptedRootBarrier,
+        TransitionGateSign,
     }
 }
