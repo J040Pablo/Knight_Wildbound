@@ -2,6 +2,8 @@ using System.Collections;
 using UnityEngine;
 using Roguelite.Data;
 using Roguelite.Combat;
+using Roguelite.Enemy;
+using Roguelite.Player.Mage;
 
 namespace Roguelite.Player
 {
@@ -18,9 +20,9 @@ namespace Roguelite.Player
         private PlayerController playerController;
         private ICombatBehavior activeBehavior;
 
-        private float lightAttackTimer = 0f;
-        private float currentChargeTime = 0f;
+        // Charge State
         private bool isCharging = false;
+        private float currentChargeTime = 0f;
 
         // Class Stat Multipliers (from Upgrades)
         public float MagicDamageMultiplier { get; set; } = 1.0f;
@@ -32,20 +34,24 @@ namespace Roguelite.Player
         public float ChargeRatio => weaponData != null ? Mathf.Clamp01(currentChargeTime / weaponData.chargeTimeRequired) : 0f;
         public float BaseDamage => playerStats != null ? (weaponData.lightDamage + playerStats.CharacterData.baseAttackDamage) * playerStats.DamageMultiplier : 15.0f;
 
+        private MageAimController aimController;
+
         private void Awake()
         {
             playerStats = GetComponent<PlayerStats>();
             playerController = GetComponent<PlayerController>();
+            aimController = GetComponent<MageAimController>();
+            if (aimController == null)
+            {
+                aimController = gameObject.AddComponent<MageAimController>();
+            }
 
             if (weaponData == null)
             {
                 weaponData = ScriptableObject.CreateInstance<WeaponData>();
             }
 
-            if (enemyLayerMask == 0)
-            {
-                enemyLayerMask = ~0; // Default to everything if unassigned
-            }
+            InitializeEnemyLayerMask();
 
             if (GetComponent<SpecialAbilitySystem>() == null)
             {
@@ -56,9 +62,29 @@ namespace Roguelite.Player
             {
                 gameObject.AddComponent<ClassVisuals>();
             }
+
+            // Default to Knight behavior if none active
+            if (activeBehavior == null)
+            {
+                SetBehavior(new KnightCombatBehavior());
+            }
         }
 
-        public void SetCombatBehavior(ICombatBehavior behavior)
+        private void InitializeEnemyLayerMask()
+        {
+            if (enemyLayerMask == 0 || enemyLayerMask == ~0)
+            {
+                int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+                if (mask == 0)
+                {
+                    Debug.LogWarning("[PlayerCombat] Default enemy layers (Enemy, Boss, Destructible) are not assigned in Layer Manager! Falling back to Non-Player layers.");
+                    mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+                }
+                enemyLayerMask = mask;
+            }
+        }
+
+        public void SetBehavior(ICombatBehavior behavior)
         {
             activeBehavior = behavior;
             if (activeBehavior != null)
@@ -67,226 +93,213 @@ namespace Roguelite.Player
             }
         }
 
-        private void Update()
+        public void SetCombatBehavior(ICombatBehavior behavior)
         {
-            if (playerStats.IsDead || (playerController != null && playerController.IsDodging)) return;
-            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Roguelite.Core.InputStateManager.Instance != null && Roguelite.Core.InputStateManager.Instance.CurrentMode == Roguelite.Core.InputMode.UI)) return;
-
-            if (activeBehavior == null)
-            {
-                // Fallback to Knight if unassigned
-                SetCombatBehavior(new KnightCombatBehavior());
-            }
-
-            activeBehavior?.UpdateBehavior();
-
-            lightAttackTimer -= Time.deltaTime;
-
-            HandleCombatInputs();
+            SetBehavior(behavior);
         }
 
         public Vector3 GetReticleTargetWorldPosition()
         {
-            Camera mainCam = Camera.main;
-            if (mainCam == null) return transform.position + transform.forward * 10f;
-
-            Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
-            LayerMask mask = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
-
-            RaycastHit[] hits = Physics.RaycastAll(ray, 100f, mask);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            Vector3 playerPos = transform.position;
-            Vector3 camToPlayer = playerPos - mainCam.transform.position;
-            float playerDistAlongRay = Vector3.Dot(camToPlayer, mainCam.transform.forward);
-
-            foreach (var hit in hits)
+            if (aimController != null)
             {
-                if (hit.collider == null || hit.collider.isTrigger) continue;
-                if (IsIgnoredAimCollider(hit.collider)) continue;
-
-                // Ignore hits behind or too close to the player along the camera ray
-                if (hit.distance < playerDistAlongRay - 0.2f) continue;
-
-                // Filter out non-enemy close hits (<3m) so nearby props/ground don't skew reticle angle
-                float distToPlayer = Vector3.Distance(hit.point, playerPos);
-                if (distToPlayer < 3.0f)
-                {
-                    bool isEnemy = hit.collider.GetComponent<Roguelite.Combat.IDamageable>() != null || hit.collider.GetComponentInParent<Roguelite.Combat.IDamageable>() != null;
-                    if (!isEnemy) continue;
-                }
-
-                return hit.point;
+                return aimController.GetAimPoint();
             }
 
-            return ray.origin + ray.direction * 60f;
+            Vector3 originPos = transform.position + Vector3.up * 1.5f;
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                Ray ray = new Ray(originPos, mainCam.transform.forward);
+                if (Physics.Raycast(ray, out RaycastHit hit, 25.0f, enemyLayerMask))
+                {
+                    if (hit.collider != null && hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform) && !hit.collider.CompareTag("Player") && hit.collider.gameObject.layer != LayerMask.NameToLayer("Player"))
+                    {
+                        return hit.point;
+                    }
+                }
+                Vector3 fallbackTarget = originPos + mainCam.transform.forward * 25.0f;
+                return fallbackTarget;
+            }
+            return originPos + transform.forward * 25.0f;
+        }
+
+        public Vector3 GetGroundReticleTargetWorldPosition()
+        {
+            if (aimController != null)
+            {
+                return aimController.GetGroundAimPoint();
+            }
+
+            Vector3 target = GetReticleTargetWorldPosition();
+            if (Physics.Raycast(target + Vector3.up * 10.0f, Vector3.down, out RaycastHit hit, 25.0f, enemyLayerMask))
+            {
+                return hit.point;
+            }
+            return target;
         }
 
         public Vector3 GetReticleAimDirection()
         {
-            Camera mainCam = Camera.main;
-            Vector3 camForward = mainCam != null ? mainCam.transform.forward : transform.forward;
-            if (camForward.sqrMagnitude < 0.0001f) camForward = transform.forward;
-            camForward.Normalize();
-
-            Vector3 targetPos = GetReticleTargetWorldPosition();
-            MountSystem mount = GetComponent<MountSystem>();
-            if (mount == null) mount = GetComponentInParent<MountSystem>();
-
-            Vector3 origin = (mount != null && mount.IsPlayerMounted) ? transform.position + Vector3.up * 2.2f : transform.position + Vector3.up * 1.2f;
-            Vector3 dir = (targetPos - origin);
-
-            // Absolute safety check: If direction points backwards relative to camera view (dot < 0), fallback to camera forward
-            if (dir.sqrMagnitude < 0.0001f || Vector3.Dot(dir.normalized, camForward) < 0.0f)
+            if (aimController != null)
             {
-                return camForward;
+                return aimController.GetAimDirection();
             }
 
+            Vector3 targetPt = GetReticleTargetWorldPosition();
+            Vector3 originPos = transform.position + Vector3.up * 1.5f;
+            Vector3 dir = (targetPt - originPos);
+            if (dir.sqrMagnitude < 0.0001f)
+            {
+                return transform.forward;
+            }
             return dir.normalized;
         }
 
-        private bool IsIgnoredAimCollider(Collider col)
+        private void Update()
         {
-            if (col == null) return true;
-            if (col.CompareTag("Player")) return true;
-            string n = col.gameObject.name.ToLower();
-            if (n.Contains("player") || n.Contains("horse") || n.Contains("saddle")) return true;
-            if (col.transform == transform || col.transform.IsChildOf(transform) || transform.IsChildOf(col.transform)) return true;
-            return false;
+            if (playerStats == null || playerStats.IsDead)
+            {
+                CancelCharge();
+                return;
+            }
+
+            // Ignore input while UI is active
+            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Core.InputStateManager.Instance != null && Core.InputStateManager.Instance.CurrentMode == Core.InputMode.UI))
+            {
+                CancelCharge();
+                return;
+            }
+
+            // Update Class Behavior
+            activeBehavior?.UpdateBehavior();
+
+            // LMB = Basic Attack, RMB = Charged Attack
+            if (Input.GetMouseButtonDown(0))
+            {
+                ExecuteBasicAttack();
+            }
+
+            if (Input.GetMouseButtonDown(1))
+            {
+                StartCharge();
+            }
+
+            if (isCharging)
+            {
+                UpdateCharge();
+
+                if (Input.GetMouseButtonUp(1))
+                {
+                    ExecuteChargedAttack();
+                }
+            }
         }
 
-        private void HandleCombatInputs()
+        private void ExecuteBasicAttack()
         {
-            // Attack Button (Mouse0 or Keycode J or K)
-            bool attackPressed = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.J);
-            bool attackHeld = Input.GetMouseButton(0) || Input.GetKey(KeyCode.J);
-            bool attackReleased = Input.GetMouseButtonUp(0) || Input.GetKeyUp(KeyCode.J);
+            if (playerStats.CurrentStamina < weaponData.lightStaminaCost) return;
+            playerStats.ConsumeStamina(weaponData.lightStaminaCost);
 
-            if (attackPressed && lightAttackTimer <= 0 && !isCharging)
+            Vector3 aimDir = GetReticleAimDirection();
+            AlignPlayerWithAim(aimDir);
+
+            activeBehavior?.ExecuteBasicAttack(aimDir);
+        }
+
+        private void StartCharge()
+        {
+            if (playerStats.CurrentStamina < weaponData.chargedStaminaCost) return;
+            isCharging = true;
+            currentChargeTime = 0f;
+        }
+
+        private void UpdateCharge()
+        {
+            currentChargeTime += Time.deltaTime;
+            float ratio = ChargeRatio;
+
+            if (activeBehavior is MageCombatBehavior mageBehavior)
             {
-                isCharging = true;
-                currentChargeTime = 0f;
+                mageBehavior.UpdateChargeFeedback(ratio);
+            }
+        }
+
+        private void ExecuteChargedAttack()
+        {
+            if (!isCharging) return;
+
+            float ratio = ChargeRatio;
+            playerStats.ConsumeStamina(weaponData.chargedStaminaCost);
+
+            Vector3 aimDir = GetReticleAimDirection();
+            AlignPlayerWithAim(aimDir);
+
+            if (activeBehavior is MageCombatBehavior mageBehavior)
+            {
+                mageBehavior.StopChargeFeedback();
             }
 
-            if (isCharging && attackHeld)
+            activeBehavior?.ExecuteChargedAttack(aimDir, ratio);
+            isCharging = false;
+            currentChargeTime = 0f;
+        }
+
+        public void CancelCharge()
+        {
+            if (isCharging)
             {
-                currentChargeTime += Time.deltaTime;
-            }
-
-            if (isCharging && attackReleased)
-            {
-                Vector3 aimDir = GetReticleAimDirection();
-
-                // Rotate player character horizontally toward reticle aim direction
-                Vector3 horizontalAimDir = new Vector3(aimDir.x, 0, aimDir.z);
-                if (horizontalAimDir.sqrMagnitude > 0.0001f)
+                if (activeBehavior is MageCombatBehavior mageBehavior)
                 {
-                    horizontalAimDir.Normalize();
-                    Quaternion rot = Quaternion.LookRotation(horizontalAimDir, Vector3.up);
-                    rot.Normalize();
-                    transform.rotation = rot;
+                    mageBehavior.StopChargeFeedback();
                 }
-
-                if (currentChargeTime >= weaponData.chargeTimeRequired)
-                {
-                    ExecuteChargedAttack(aimDir);
-                }
-                else
-                {
-                    ExecuteLightAttack(aimDir);
-                }
-
                 isCharging = false;
                 currentChargeTime = 0f;
             }
         }
 
-        private void ExecuteLightAttack(Vector3 aimDir)
+        private void AlignPlayerWithAim(Vector3 aimDir)
         {
-            if (!playerStats.ConsumeStamina(weaponData.lightStaminaCost)) return;
-
-            float cooldown = weaponData.lightAttackCooldown / playerStats.AttackSpeedMultiplier;
-            lightAttackTimer = cooldown;
-
-            if (activeBehavior != null)
+            aimDir.y = 0;
+            if (aimDir.sqrMagnitude > 0.001f)
             {
-                activeBehavior.ExecuteBasicAttack(aimDir);
-            }
-            else
-            {
-                PerformSweepAttack(weaponData.lightAttackRange, weaponData.lightAttackAngle, weaponData.lightDamage, weaponData.lightKnockbackForce, false);
+                Vector3 normDir = aimDir.normalized;
+                Vector3 safeUp = Mathf.Abs(Vector3.Dot(normDir, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
+                Quaternion rot = Quaternion.LookRotation(normDir, safeUp);
+                rot.Normalize();
+                transform.rotation = rot;
             }
         }
 
-        private void ExecuteChargedAttack(Vector3 aimDir)
+        public void PerformSweepAttack(float range, float arcAngle, float damage, float knockbackForce)
         {
-            if (!playerStats.ConsumeStamina(weaponData.chargedStaminaCost)) return;
+            InitializeEnemyLayerMask();
 
-            float cooldown = weaponData.lightAttackCooldown * 1.5f / playerStats.AttackSpeedMultiplier;
-            lightAttackTimer = cooldown;
-
-            if (activeBehavior != null)
-            {
-                activeBehavior.ExecuteChargedAttack(aimDir, ChargeRatio);
-            }
-            else
-            {
-                PerformSweepAttack(weaponData.chargedAttackRange, weaponData.chargedAttackAngle, weaponData.chargedDamage, weaponData.chargedKnockbackForce, true);
-            }
-        }
-
-        private void PerformSweepAttack(float range, float angle, float baseDamage, float knockbackForce, bool isCharged)
-        {
-            // Find all potential targets in radius
-            Collider[] hits = Physics.OverlapSphere(transform.position, range, enemyLayerMask);
-
-            float totalDamage = (baseDamage + playerStats.CharacterData.baseAttackDamage + playerStats.FlatDamageBonus) * playerStats.DamageMultiplier;
-            bool isCrit = Random.value <= (playerStats.CharacterData.baseCritChance + playerStats.CritChanceBonus);
-
-            if (isCrit)
-            {
-                totalDamage *= playerStats.CharacterData.critDamageMultiplier;
-            }
+            Vector3 origin = transform.position + Vector3.up * 1.0f;
+            Collider[] hits = Physics.OverlapSphere(origin, range, enemyLayerMask);
 
             foreach (var col in hits)
             {
-                if (col.gameObject == gameObject) continue;
+                if (col == null || col.gameObject == gameObject || col.transform.IsChildOf(transform) || col.CompareTag("Player") || col.gameObject.layer == LayerMask.NameToLayer("Player"))
+                {
+                    continue; // Skip self/player colliders
+                }
 
                 Vector3 dirToTarget = (col.transform.position - transform.position).normalized;
                 dirToTarget.y = 0;
 
-                float angleToTarget = Vector3.Angle(transform.forward, dirToTarget);
-
-                if (angleToTarget <= angle * 0.5f)
+                float angle = Vector3.Angle(transform.forward, dirToTarget);
+                if (angle <= arcAngle * 0.5f)
                 {
-                    IDamageable damageable = col.GetComponent<IDamageable>();
-                    if (damageable == null)
-                    {
-                        damageable = col.GetComponentInParent<IDamageable>();
-                    }
+                    EnemyBase enemy = col.GetComponent<EnemyBase>();
+                    if (enemy == null) enemy = col.GetComponentInParent<EnemyBase>();
 
-                    if (damageable != null && !damageable.IsDead)
+                    if (enemy != null && !enemy.IsDead)
                     {
-                        DamageInfo info = new DamageInfo(
-                            totalDamage,
-                            dirToTarget,
-                            knockbackForce,
-                            isCrit,
-                            gameObject
-                        );
-                        damageable.TakeDamage(info);
+                        DamageInfo info = new DamageInfo(damage, dirToTarget, knockbackForce, false, gameObject);
+                        enemy.TakeDamage(info);
                     }
                 }
             }
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (weaponData == null) return;
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, weaponData.lightAttackRange);
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, weaponData.chargedAttackRange);
         }
     }
 }

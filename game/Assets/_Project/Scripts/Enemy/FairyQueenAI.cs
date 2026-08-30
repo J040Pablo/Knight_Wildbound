@@ -115,7 +115,9 @@ namespace Roguelite.Enemy
             lookDir.y = 0;
             if (lookDir.sqrMagnitude > 0.0001f)
             {
-                Quaternion rot = Quaternion.LookRotation(lookDir, Vector3.up);
+                Vector3 normLook = lookDir.normalized;
+                Vector3 safeUp = Mathf.Abs(Vector3.Dot(normLook, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
+                Quaternion rot = Quaternion.LookRotation(normLook, safeUp);
                 rot.Normalize();
                 transform.rotation = rot;
             }

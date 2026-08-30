@@ -95,9 +95,15 @@ namespace Roguelite.Player
             Renderer r = zoneObj.GetComponent<Renderer>();
             if (r != null) r.material.color = new Color(0.2f, 0.8f, 0.3f, 0.5f);
 
-            Collider[] hits = Physics.OverlapSphere(centerPos, radius);
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapSphere(centerPos, radius, mask);
             for (int i = 0; i < hits.Length; i++)
             {
+                if (hits[i] == null || hits[i].gameObject == playerCombat.gameObject || hits[i].transform.IsChildOf(playerCombat.transform)) continue;
+                if (hits[i].CompareTag("Player") || hits[i].gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                 EnemyBase enemy = hits[i].GetComponent<EnemyBase>();
                 if (enemy == null) enemy = hits[i].GetComponentInParent<EnemyBase>();
 

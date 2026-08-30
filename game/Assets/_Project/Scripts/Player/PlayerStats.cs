@@ -57,6 +57,18 @@ namespace Roguelite.Player
             CurrentStamina = MaxStamina;
         }
 
+        private void Start()
+        {
+            StartCoroutine(SpawnProtectionRoutine());
+        }
+
+        private System.Collections.IEnumerator SpawnProtectionRoutine()
+        {
+            IsInvulnerable = true;
+            yield return new WaitForSeconds(1.5f);
+            IsInvulnerable = false;
+        }
+
         private void Update()
         {
             // Auto Regenerate Stamina
@@ -146,9 +158,26 @@ namespace Roguelite.Player
         {
             if (IsDead || IsInvulnerable) return;
 
+            // Strict Self-Damage Prevention Check
+            if (damageInfo.attacker != null)
+            {
+                if (damageInfo.attacker == gameObject || damageInfo.attacker.transform.IsChildOf(transform) || transform.IsChildOf(damageInfo.attacker.transform))
+                {
+                    return;
+                }
+                if (damageInfo.attacker.CompareTag("Player") || damageInfo.attacker.layer == LayerMask.NameToLayer("Player"))
+                {
+                    return;
+                }
+            }
+
             if (damageInfo.amount > 0f)
             {
-                Debug.Log($"[DAMAGE SOURCE] Attacker: '{damageInfo.attacker?.name ?? "NULL"}', Amount: {damageInfo.amount:F1}, Knockback: {damageInfo.knockbackForce:F1}, IsCrit: {damageInfo.isCritical}");
+                string attackerName = damageInfo.attacker != null ? damageInfo.attacker.name : "UNKNOWN_SOURCE";
+                string attackerLayer = damageInfo.attacker != null ? LayerMask.LayerToName(damageInfo.attacker.layer) : "UNKNOWN";
+                string attackerTag = damageInfo.attacker != null ? damageInfo.attacker.tag : "UNKNOWN";
+
+                Debug.Log($"[UNEXPECTED PLAYER DAMAGE]\nAttacker: {attackerName}\nDamage: {damageInfo.amount:F1}\nSource Component: {damageInfo.attacker?.GetType().Name ?? "NULL"}\nCollider: N/A\nGameObject: {attackerName}\nLayer: {attackerLayer}\nTag: {attackerTag}");
             }
 
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);
@@ -160,20 +189,30 @@ namespace Roguelite.Player
             }
         }
 
+        public float XPMultiplier { get; set; } = 1.0f;
+
         public void AddXP(int amount)
         {
-            if (IsDead) return;
+            if (IsDead || amount <= 0) return;
+
+            int finalAmount = Mathf.RoundToInt(amount * Mathf.Max(0.1f, XPMultiplier));
+            int prevLevel = Level;
 
             if (Progression.ProgressionManager.Instance != null)
             {
-                Progression.ProgressionManager.Instance.AddXP(amount);
+                Progression.ProgressionManager.Instance.AddXP(finalAmount);
                 CurrentXP = Progression.ProgressionManager.Instance.CurrentLevelXP;
                 Level = Progression.ProgressionManager.Instance.CurrentLevel;
                 XPToNextLevel = Progression.ProgressionManager.Instance.GetXPRequired(Level);
+
+                if (Level > prevLevel)
+                {
+                    OnLevelUp?.Invoke();
+                }
             }
             else
             {
-                CurrentXP += amount;
+                CurrentXP += finalAmount;
                 while (CurrentXP >= XPToNextLevel)
                 {
                     CurrentXP -= XPToNextLevel;
@@ -224,6 +263,9 @@ namespace Roguelite.Player
                 case UpgradeType.NatureRecoveryPercent:
                     var pCombatN = GetComponent<PlayerCombat>();
                     if (pCombatN != null) pCombatN.HealingEfficiencyMultiplier += upgrade.statValue;
+                    break;
+                case UpgradeType.XPBoostPercent:
+                    XPMultiplier += upgrade.statValue;
                     break;
             }
 

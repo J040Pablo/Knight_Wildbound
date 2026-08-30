@@ -185,9 +185,30 @@ namespace Roguelite.Enemy
             }
         }
 
+        public float MoveSpeedMultiplier { get; set; } = 1.0f;
+        public float DamageOutputMultiplier { get; set; } = 1.0f;
+        public bool IsStunnedOrFrozen { get; set; } = false;
+
+        public void SetStatusModifiers(float speedMult, float damageMult, bool stunnedOrFrozen)
+        {
+            MoveSpeedMultiplier = speedMult;
+            DamageOutputMultiplier = damageMult;
+            IsStunnedOrFrozen = stunnedOrFrozen;
+        }
+
+        public Roguelite.Combat.StatusEffects.StatusEffectReceiver GetOrCreateStatusReceiver()
+        {
+            var receiver = GetComponent<Roguelite.Combat.StatusEffects.StatusEffectReceiver>();
+            if (receiver == null)
+            {
+                receiver = gameObject.AddComponent<Roguelite.Combat.StatusEffects.StatusEffectReceiver>();
+            }
+            return receiver;
+        }
+
         protected bool SafeCanMove()
         {
-            return characterController != null && characterController.enabled && gameObject.activeInHierarchy;
+            return characterController != null && characterController.enabled && gameObject.activeInHierarchy && !IsStunnedOrFrozen;
         }
 
         protected virtual void ApplyKnockbackDecay()

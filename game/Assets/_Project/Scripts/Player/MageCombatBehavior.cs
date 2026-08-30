@@ -1,5 +1,6 @@
 using UnityEngine;
 using Roguelite.Combat;
+using Roguelite.Player.Mage;
 
 namespace Roguelite.Player
 {
@@ -7,52 +8,62 @@ namespace Roguelite.Player
     {
         private PlayerCombat playerCombat;
         private PlayerStats playerStats;
+        private MageAbilityController abilityController;
 
         public void Initialize(PlayerCombat combat, PlayerStats stats)
         {
             playerCombat = combat;
             playerStats = stats;
+
+            if (playerCombat != null)
+            {
+                abilityController = playerCombat.GetComponent<MageAbilityController>();
+                if (abilityController == null)
+                {
+                    abilityController = playerCombat.gameObject.AddComponent<MageAbilityController>();
+                }
+                abilityController.Initialize(playerCombat, playerStats);
+            }
         }
 
-        public void UpdateBehavior() { }
+        public void UpdateBehavior()
+        {
+            if (abilityController != null)
+            {
+                abilityController.UpdateController();
+            }
+        }
+
+        public void UpdateChargeFeedback(float chargeRatio)
+        {
+            if (abilityController != null)
+            {
+                abilityController.UpdateChargeFeedback(chargeRatio);
+            }
+        }
+
+        public void StopChargeFeedback()
+        {
+            if (abilityController != null)
+            {
+                abilityController.StopChargeFeedback();
+            }
+        }
 
         public void ExecuteBasicAttack(Vector3 aimDirection)
         {
-            // Magic Bolt
-            Vector3 spawnPos = playerCombat.transform.position + aimDirection * 1.0f + Vector3.up * 1.2f;
-            GameObject boltObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            boltObj.name = "MagicBolt";
-            boltObj.transform.position = spawnPos;
-            boltObj.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
-
-            SphereCollider col = boltObj.GetComponent<SphereCollider>();
-            if (col != null) col.isTrigger = true;
-
-            MagicProjectile proj = boltObj.AddComponent<MagicProjectile>();
-            float speed = 22.0f * playerCombat.ProjectileSpeedMultiplier;
-            float damage = playerCombat.BaseDamage * playerCombat.MagicDamageMultiplier * 1.2f;
-            proj.Initialize(playerCombat.gameObject, aimDirection, damage, speed, false, 0f, 4.0f, new Color(0.6f, 0.3f, 1.0f));
+            if (abilityController != null)
+            {
+                abilityController.ExecuteBasicAttack(aimDirection);
+            }
         }
 
         public void ExecuteChargedAttack(Vector3 aimDirection, float chargeRatio)
         {
-            // Fireball AoE
-            Vector3 spawnPos = playerCombat.transform.position + aimDirection * 1.2f + Vector3.up * 1.2f;
-            GameObject fireballObj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            fireballObj.name = "Fireball_Charged";
-            fireballObj.transform.position = spawnPos;
-            float scale = 1.0f + chargeRatio * 0.6f;
-            fireballObj.transform.localScale = new Vector3(scale, scale, scale);
-
-            SphereCollider col = fireballObj.GetComponent<SphereCollider>();
-            if (col != null) col.isTrigger = true;
-
-            MagicProjectile proj = fireballObj.AddComponent<MagicProjectile>();
-            float speed = 16.0f * playerCombat.ProjectileSpeedMultiplier;
-            float damage = playerCombat.BaseDamage * playerCombat.MagicDamageMultiplier * (1.8f + chargeRatio * 1.2f);
-            float aoeRadius = 3.5f * playerCombat.SpellAreaMultiplier;
-
-            proj.Initialize(playerCombat.gameObject, aimDirection, damage, speed, true, aoeRadius, 9.0f, new Color(1.0f, 0.4f, 0.1f));
+            if (abilityController != null)
+            {
+                abilityController.ExecuteChargedAttack(aimDirection, chargeRatio);
+            }
         }
     }
 }

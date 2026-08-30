@@ -21,13 +21,21 @@ namespace Roguelite.Combat
         public void Initialize(GameObject casterOwner, Vector3 direction, float projDamage, float projSpeed = 18.0f, bool explosive = false, float radius = 3.5f, float knockback = 6.0f, Color? color = null)
         {
             owner = casterOwner;
-            moveDirection = direction.normalized;
+            moveDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
             damage = projDamage;
             speed = projSpeed;
             isExplosive = explosive;
             explosionRadius = radius;
             knockbackForce = knockback;
             if (color.HasValue) projectileColor = color.Value;
+
+            if (moveDirection.sqrMagnitude > 0.0001f)
+            {
+                Vector3 safeUp = Mathf.Abs(Vector3.Dot(moveDirection, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
+                Quaternion rot = Quaternion.LookRotation(moveDirection, safeUp);
+                rot.Normalize();
+                transform.rotation = rot;
+            }
 
             Renderer r = GetComponent<Renderer>();
             if (r != null)
@@ -45,11 +53,24 @@ namespace Roguelite.Combat
 
         private void OnTriggerEnter(Collider other)
         {
-            // Ignore owner, self, and trigger zones
-            if (other.gameObject == owner || other.isTrigger) return;
+            if (other == null) return;
 
-            // Ignore Player collision
+            // Strict Self-Damage & Caster Prevention
+            if (owner != null && (other.gameObject == owner || other.transform.IsChildOf(owner.transform) || owner.transform.IsChildOf(other.transform) || other.CompareTag("Player") || other.gameObject.layer == LayerMask.NameToLayer("Player")))
+            {
+                return;
+            }
             if (other.GetComponent<Roguelite.Player.PlayerStats>() != null) return;
+
+            // Check if target is an enemy
+            EnemyBase enemy = other.GetComponent<EnemyBase>();
+            if (enemy == null) enemy = other.GetComponentInParent<EnemyBase>();
+
+            bool isEnemy = enemy != null && !enemy.IsDead;
+            bool isEnemyLayer = other.gameObject.layer == LayerMask.NameToLayer("Enemy") || other.gameObject.layer == LayerMask.NameToLayer("Boss") || other.gameObject.layer == LayerMask.NameToLayer("Destructible");
+
+            // Ignore non-enemy triggers (like interaction triggers, camera bounds)
+            if (other.isTrigger && !isEnemy && !isEnemyLayer) return;
 
             if (isExplosive)
             {
@@ -57,27 +78,30 @@ namespace Roguelite.Combat
             }
             else
             {
-                // Single target hit
-                EnemyBase enemy = other.GetComponent<EnemyBase>();
-                if (enemy == null) enemy = other.GetComponentInParent<EnemyBase>();
-
-                if (enemy != null && !enemy.IsDead)
+                if (isEnemy)
                 {
                     DamageInfo info = new DamageInfo(damage, moveDirection, knockbackForce, false, owner);
                     enemy.TakeDamage(info);
                 }
             }
 
-            // Spawn simple impact visual
+            // Spawn impact visual
             CreateImpactVisual();
             Destroy(gameObject);
         }
 
         private void ExplodeAoE()
         {
-            Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius);
+            int enemyMask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (enemyMask == 0) enemyMask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, enemyMask);
+
             for (int i = 0; i < hits.Length; i++)
             {
+                if (hits[i] == null) continue;
+                if (owner != null && (hits[i].gameObject == owner || hits[i].transform.IsChildOf(owner.transform) || owner.transform.IsChildOf(hits[i].transform) || hits[i].CompareTag("Player") || hits[i].gameObject.layer == LayerMask.NameToLayer("Player"))) continue;
+
                 EnemyBase enemy = hits[i].GetComponent<EnemyBase>();
                 if (enemy == null) enemy = hits[i].GetComponentInParent<EnemyBase>();
 

@@ -163,9 +163,9 @@ namespace Roguelite.Progression
         private void PopulateDefaultMageUpgrades(ClassDefinition def)
         {
             // ELEMENTAL PATH
-            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N1, "Elemental N1 — Fire", "+15% Magic Damage\nBasic: Fire Bolt\nCharged: Fireball", "Visual: Red Robe & Fire Staff Crystal", 0.05f, 0.15f, 0f, "Fire Bolt", "Fireball", "", null);
-            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N2, "Elemental N2 — Lightning", "+30% Magic Damage\nBasic: Lightning Bolt\nCharged: Chain Lightning", "Visual: Electric Aura & Blue Crystal", 0.10f, 0.30f, 0f, "Lightning Bolt", "Chain Lightning", "", null);
-            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N3, "Elemental N3 — Ice", "+50% Magic Damage\nBasic: Ice Shard\nCharged: Frozen Storm\nPassive: Slow & Freeze Effects", "Visual: Ice Crown & Frozen Staff", 0.15f, 0.50f, 0f, "Ice Shard", "Frozen Storm", "Slow & Freeze Effects", CreateAbility(AbilityId.MageMeteor, "Frozen Storm", 16f, 90f, 7.0f));
+            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N1, "Elemental N1 — Ice", "+15% Magic Damage\nBasic: Ice Shards\nCharged: Frost Wave", "Visual: Cyan Robe & Ice Crystal", 0.05f, 0.15f, 0f, "Ice Shards", "Frost Wave", "Slow Effect", null);
+            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N2, "Elemental N2 — Fire", "+30% Magic Damage\nBasic: Fire Spark\nCharged: Fireball", "Visual: Fiery Robe & Fire Crystal", 0.10f, 0.30f, 0f, "Fire Spark", "Fireball", "Explosive Damage", null);
+            CreateUpgrade(def, MasteryPath.Path1, MasteryTier.N3, "Elemental N3 — Electricity", "+50% Magic Damage\nBasic: Lightning Bolt\nCharged: Lightning Strike", "Visual: Lightning Aura & Electric Crystal", 0.15f, 0.50f, 0f, "Lightning Bolt", "Lightning Strike", "Chain & Stun Effects", CreateAbility(AbilityId.MageMeteor, "Lightning Strike", 16f, 90f, 7.0f));
 
             // WARLOCK PATH
             CreateUpgrade(def, MasteryPath.Path2, MasteryTier.N1, "Warlock N1 — Dark Magic", "+10% Damage & Cooldown Reduction\nBasic: Dark Orb\nCharged: Shadow Chain", "Visual: Dark Hood", 0.10f, 0.10f, 10f, "Dark Orb", "Shadow Chain", "", null);

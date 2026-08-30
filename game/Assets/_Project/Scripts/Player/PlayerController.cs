@@ -21,7 +21,7 @@ namespace Roguelite.Player
         // State Flags
         public bool IsSprinting { get; private set; }
         public bool IsDodging { get; private set; }
-        public bool IsGrounded => characterController.isGrounded;
+        public bool IsGrounded => characterController != null && characterController.isGrounded;
 
         private float dodgeTimer = 0f;
 
@@ -50,7 +50,7 @@ namespace Roguelite.Player
 
         private void Update()
         {
-            if (playerStats.IsDead) return;
+            if (playerStats == null || playerStats.IsDead) return;
 
 #if UNITY_EDITOR
             if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] START pos: {transform.position}");
@@ -156,7 +156,7 @@ namespace Roguelite.Player
 
         private void HandleGroundedState()
         {
-            if (characterController.isGrounded && verticalVelocity.y < 0)
+            if (characterController != null && characterController.isGrounded && verticalVelocity.y < 0)
             {
                 verticalVelocity.y = -2f; // Snap to ground
             }
@@ -189,7 +189,9 @@ namespace Roguelite.Player
 
                 if (moveDirection.sqrMagnitude > 0.001f)
                 {
-                    Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized, Vector3.up);
+                    Vector3 normMove = moveDirection.normalized;
+                    Vector3 safeUp = Mathf.Abs(Vector3.Dot(normMove, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
+                    Quaternion targetRotation = Quaternion.LookRotation(normMove, safeUp);
                     targetRotation.Normalize();
                     Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
                     slerped.Normalize();
@@ -247,7 +249,9 @@ namespace Roguelite.Player
                 dodgeDir = (forward * moveZ + right * moveX).normalized;
                 if (dodgeDir.sqrMagnitude > 0.001f)
                 {
-                    Quaternion rot = Quaternion.LookRotation(dodgeDir.normalized, Vector3.up);
+                    Vector3 normDodge = dodgeDir.normalized;
+                    Vector3 safeUp = Mathf.Abs(Vector3.Dot(normDodge, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
+                    Quaternion rot = Quaternion.LookRotation(normDodge, safeUp);
                     rot.Normalize();
                     transform.rotation = rot;
                 }

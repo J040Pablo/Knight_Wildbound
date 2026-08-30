@@ -21,7 +21,8 @@ namespace Roguelite.Data
         MagicDamagePercent,
         ProjectileSpeedPercent,
         SpellAreaPercent,
-        NatureRecoveryPercent
+        NatureRecoveryPercent,
+        XPBoostPercent
     }
 
     [CreateAssetMenu(fileName = "NewUpgradeData", menuName = "Roguelite/Data/Upgrade Data")]

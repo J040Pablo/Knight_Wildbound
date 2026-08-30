@@ -107,17 +107,13 @@ namespace Roguelite.Player
             // 1. Unparent player
             player.transform.SetParent(null);
 
-            // 2. Validate dismount position safely next to horse
-            Vector3 candidatePos = transform.position + transform.right * 1.5f + Vector3.up * 0.2f;
+            // 2. Validate dismount position safely clear of horse body (2.2m right offset)
+            Vector3 candidatePos = transform.position + transform.right * 2.2f + Vector3.up * 0.4f;
             Vector3 safeDismountPos = candidatePos;
 
-            if (PlayerSpawnManager.Instance != null && PlayerSpawnManager.Instance.ValidatePlayerPosition(candidatePos, 0.5f, out Vector3 validGroundPos))
+            if (Physics.Raycast(candidatePos + Vector3.up * 3.0f, Vector3.down, out RaycastHit hit, 10.0f))
             {
-                safeDismountPos = validGroundPos;
-            }
-            else if (Physics.Raycast(candidatePos + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 10f))
-            {
-                safeDismountPos = hit.point + Vector3.up * 0.1f;
+                safeDismountPos = hit.point + Vector3.up * 0.05f;
             }
 
             player.transform.position = safeDismountPos;
@@ -126,12 +122,19 @@ namespace Roguelite.Player
             // Force PhysX transform sync before re-enabling CharacterController
             Physics.SyncTransforms();
 
-            // 3. Re-enable player controllers
-            CharacterController pCC = player.GetComponent<CharacterController>();
-            if (pCC != null) pCC.enabled = true;
-
+            // 3. Re-enable player controllers & reset velocity state
             PlayerController pCtrl = player.GetComponent<PlayerController>();
-            if (pCtrl != null) pCtrl.enabled = true;
+            if (pCtrl != null)
+            {
+                pCtrl.ResetVelocity();
+                pCtrl.enabled = true;
+            }
+
+            CharacterController pCC = player.GetComponent<CharacterController>();
+            if (pCC != null)
+            {
+                pCC.enabled = true;
+            }
 
             // 4. Restore camera target to player and reset aim height
             if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();

@@ -97,6 +97,9 @@ namespace Roguelite.Player
             Collider c = vfx.GetComponent<Collider>();
             if (c != null) Destroy(c);
 
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
             while (elapsed < duration)
             {
                 transform.Rotate(Vector3.up, 720f * Time.deltaTime);
@@ -108,9 +111,11 @@ namespace Roguelite.Player
                 if (tickTimer >= tickInterval)
                 {
                     tickTimer = 0f;
-                    Collider[] hits = Physics.OverlapSphere(transform.position, 5.0f);
+                    Collider[] hits = Physics.OverlapSphere(transform.position, 5.0f, mask);
                     foreach (var hit in hits)
                     {
+                        if (hit == null || hit.gameObject == gameObject || hit.transform.IsChildOf(transform) || hit.CompareTag("Player") || hit.gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                         EnemyBase enemy = hit.GetComponent<EnemyBase>();
                         if (enemy == null) enemy = hit.GetComponentInParent<EnemyBase>();
 
@@ -155,9 +160,14 @@ namespace Roguelite.Player
             Collider col = beam.GetComponent<Collider>();
             if (col != null) col.isTrigger = true;
 
-            Collider[] hits = Physics.OverlapBox(launchPos + safeDir * 8.0f, new Vector3(1.75f, 2.5f, 8.0f), beamRot);
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapBox(launchPos + safeDir * 8.0f, new Vector3(1.75f, 2.5f, 8.0f), beamRot, mask);
             foreach (var hit in hits)
             {
+                if (hit == null || hit.gameObject == gameObject || hit.transform.IsChildOf(transform) || hit.CompareTag("Player") || hit.gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                 EnemyBase enemy = hit.GetComponent<EnemyBase>();
                 if (enemy == null) enemy = hit.GetComponentInParent<EnemyBase>();
 
@@ -196,9 +206,14 @@ namespace Roguelite.Player
             float elapsed = 0f;
             float maxRadius = 10f;
 
-            Collider[] hits = Physics.OverlapSphere(transform.position, maxRadius);
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapSphere(transform.position, maxRadius, mask);
             foreach (var hit in hits)
             {
+                if (hit == null || hit.gameObject == gameObject || hit.transform.IsChildOf(transform) || hit.CompareTag("Player") || hit.gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                 EnemyBase enemy = hit.GetComponent<EnemyBase>();
                 if (enemy == null) enemy = hit.GetComponentInParent<EnemyBase>();
 

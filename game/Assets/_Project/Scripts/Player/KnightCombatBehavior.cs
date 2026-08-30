@@ -54,13 +54,19 @@ namespace Roguelite.Player
             float attackRange = profile != null ? profile.attackRange : 2.4f;
             float knockback = profile != null ? profile.knockbackForce : 4.0f;
 
-            Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position + aimDirection * 1.2f, attackRange);
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position + aimDirection * 1.2f, attackRange, mask);
             for (int i = 0; i < hits.Length; i++)
             {
+                if (hits[i] == null || hits[i].gameObject == playerCombat.gameObject || hits[i].transform.IsChildOf(playerCombat.transform)) continue;
+                if (hits[i].CompareTag("Player") || hits[i].gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                 IDamageable damageable = hits[i].GetComponent<IDamageable>();
                 if (damageable == null) damageable = hits[i].GetComponentInParent<IDamageable>();
 
-                if (damageable != null && !damageable.IsDead)
+                if (damageable != null && !damageable.IsDead && damageable != (IDamageable)playerStats)
                 {
                     DamageInfo info = new DamageInfo(attackDamage, aimDirection, knockback, false, playerCombat.gameObject);
                     damageable.TakeDamage(info);
@@ -88,13 +94,19 @@ namespace Roguelite.Player
                 LaunchEnergyWave(aimDirection, attackDamage * 0.8f);
             }
 
-            Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position, attackRange);
+            int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
+            if (mask == 0) mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+
+            Collider[] hits = Physics.OverlapSphere(playerCombat.transform.position, attackRange, mask);
             for (int i = 0; i < hits.Length; i++)
             {
+                if (hits[i] == null || hits[i].gameObject == playerCombat.gameObject || hits[i].transform.IsChildOf(playerCombat.transform)) continue;
+                if (hits[i].CompareTag("Player") || hits[i].gameObject.layer == LayerMask.NameToLayer("Player")) continue;
+
                 IDamageable damageable = hits[i].GetComponent<IDamageable>();
                 if (damageable == null) damageable = hits[i].GetComponentInParent<IDamageable>();
 
-                if (damageable != null && !damageable.IsDead)
+                if (damageable != null && !damageable.IsDead && damageable != (IDamageable)playerStats)
                 {
                     Vector3 knockDir = (hits[i].transform.position - playerCombat.transform.position).normalized;
                     DamageInfo info = new DamageInfo(attackDamage, knockDir, knockback, true, playerCombat.gameObject);
@@ -153,6 +165,10 @@ namespace Roguelite.Player
 
         private void OnTriggerEnter(Collider other)
         {
+            if (other == null) return;
+            if (attacker != null && (other.gameObject == attacker || other.transform.IsChildOf(attacker.transform))) return;
+            if (other.CompareTag("Player") || other.gameObject.layer == LayerMask.NameToLayer("Player")) return;
+
             IDamageable damageable = other.GetComponent<IDamageable>();
             if (damageable == null) damageable = other.GetComponentInParent<IDamageable>();
 

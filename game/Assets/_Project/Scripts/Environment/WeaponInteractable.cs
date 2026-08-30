@@ -150,6 +150,16 @@ namespace Roguelite.Environment
                     Renderer mR = mageStaff.GetComponent<Renderer>();
                     if (mR != null) mR.material.color = new Color(0.8f, 0.7f, 0.2f);
 
+                    // Glowing Staff Tip Crystal
+                    GameObject crystal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    crystal.name = "StaffCrystal_Visual";
+                    crystal.transform.parent = mageStaff.transform;
+                    crystal.transform.localPosition = new Vector3(0, 1.1f, 0);
+                    crystal.transform.localScale = new Vector3(3.5f, 0.25f, 3.5f);
+                    Destroy(crystal.GetComponent<Collider>());
+                    Renderer cR = crystal.GetComponent<Renderer>();
+                    if (cR != null) cR.material.color = new Color(0.3f, 0.85f, 1.0f);
+
                     if (combat != null) combat.SetCombatBehavior(new MageCombatBehavior());
                     break;
 
