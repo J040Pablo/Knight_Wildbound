@@ -1,4 +1,5 @@
 using UnityEngine;
+using Roguelite.Core.StateMachine;
 
 namespace Roguelite.Core
 {
@@ -28,7 +29,7 @@ namespace Roguelite.Core
             }
         }
 
-        public InputMode CurrentMode { get; private set; } = InputMode.Gameplay;
+        public InputMode CurrentMode => GameStateManager.Instance != null && GameStateManager.Instance.IsGameplayActive() ? InputMode.Gameplay : InputMode.UI;
 
         private void Awake()
         {
@@ -43,23 +44,40 @@ namespace Roguelite.Core
 
         private void Start()
         {
-            SetGameplayMode();
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+            }
+        }
+
+        private void HandleGameStateChanged(GameState oldState, GameState newState)
+        {
+            Debug.Log($"[InputStateManager] Synced with GameState: {newState}");
         }
 
         public void SetGameplayMode()
         {
-            CurrentMode = InputMode.Gameplay;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-            Debug.Log("[InputState] Gameplay Mode");
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.SetState(GameState.Gameplay);
+            }
         }
 
         public void SetUIMode()
         {
-            CurrentMode = InputMode.UI;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            Debug.Log("[InputState] UI Mode");
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.SetState(GameState.Inventory);
+            }
         }
     }
 }
+

@@ -43,6 +43,12 @@ namespace Roguelite.Player
 
         private void Awake()
         {
+            Quaternion rot = transform.rotation;
+            float sqrMag = rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w;
+            if (sqrMag < 0.001f)
+            {
+                transform.rotation = Quaternion.identity;
+            }
             characterController = GetComponent<CharacterController>();
             BuildPlaceholderHorseVisuals();
         }

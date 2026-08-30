@@ -9,6 +9,18 @@ namespace Roguelite.Progression
         [Header("Class Type")]
         public ClassType classType = ClassType.Knight;
         public string className = "Knight";
+        [TextArea(2, 4)]
+        public string description = "A resilient warrior specializing in melee combat and heavy armor.";
+        public Sprite classIcon;
+
+        [Header("Base Stats")]
+        public float baseHealth = 100f;
+        public float baseStamina = 100f;
+        public float moveSpeed = 6.0f;
+
+        [Header("Prefabs & Weapon")]
+        public GameObject characterPrefab;
+        public Roguelite.Items.ItemData startingWeapon;
 
         [Header("Path Names")]
         public string path1Name = "Helmet";

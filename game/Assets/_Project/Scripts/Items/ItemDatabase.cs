@@ -41,6 +41,21 @@ namespace Roguelite.Items
                         i.flatHpBonus = 25f;
                     });
 
+                case "relic_fae_heart":
+                    return With(ItemData.Create(id, "Heart of the Fae King", "Permanent campaign relic (+30 Max HP). A fragment of the ancient forest's lifeforce.", ItemCategory.Relic, ItemRarity.Relic, "💚", 0, false, 1), i =>
+                    {
+                        i.isRelic = true;
+                        i.flatHpBonus = 30f;
+                    });
+
+                case "accessory_fairy_queen_crown":
+                    return With(ItemData.Create(id, "Fairy Queen Crown", "A crown blessed by the Queen of the Fairies (+20 HP, +15 Stamina, +5% Speed).", ItemCategory.Ring, ItemRarity.Legendary, "👑", 220, false, 1), i =>
+                    {
+                        i.flatHpBonus = 20f;
+                        i.flatStaminaBonus = 15f;
+                        i.moveSpeedBonusPercent = 0.05f;
+                    });
+
                 // ── Tree Boss Unique Equipment ───────────────────────
                 case "weapon_rootbreaker_axe":
                     return With(ItemData.Create(id, "Rootbreaker Axe", "Heavy greataxe carved from corrupted elder wood (+30 Damage).", ItemCategory.Weapon, ItemRarity.Epic, "🪓", 120, false, 1), i =>

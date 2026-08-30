@@ -30,6 +30,10 @@ namespace Roguelite.Core
                 string currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 if (currentScene.StartsWith("0") || currentScene == "GameArena")
                 {
+                    if (GameSessionManager.Instance != null && !GameSessionManager.Instance.HasSelectedCharacter)
+                    {
+                        GameSessionManager.Instance.ResetSession();
+                    }
                     SetupGameRunHierarchy();
                 }
                 else

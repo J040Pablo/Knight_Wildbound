@@ -4,6 +4,7 @@ using Roguelite.Enemy;
 using Roguelite.Wave;
 using Roguelite.Core;
 using Roguelite.Progression;
+using Roguelite.Core.StateMachine;
 
 namespace Roguelite.UI
 {
@@ -117,6 +118,7 @@ namespace Roguelite.UI
 
         private void DrawInteractionPrompt()
         {
+            if (GameStateManager.Instance != null && !GameStateManager.Instance.IsGameplayActive()) return;
             if (DialogueSystem.Instance != null && DialogueSystem.Instance.IsDialogueActive) return;
             if (interactionSystem == null || string.IsNullOrEmpty(interactionSystem.CurrentPrompt)) return;
 
@@ -143,6 +145,7 @@ namespace Roguelite.UI
 
         private void DrawCenterReticle()
         {
+            if (GameStateManager.Instance != null && !GameStateManager.Instance.IsGameplayActive()) return;
             if (DialogueSystem.Instance != null && DialogueSystem.Instance.IsDialogueActive) return;
 
             if (reticleTexture == null)

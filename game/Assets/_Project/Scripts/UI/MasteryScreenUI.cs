@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Roguelite.Progression;
 using Roguelite.Core;
+using Roguelite.Core.StateMachine;
 
 namespace Roguelite.UI
 {
@@ -15,48 +16,68 @@ namespace Roguelite.UI
 
         public bool IsOpen => isOpen;
 
+        private void Start()
+        {
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+            }
+        }
+
+        private void HandleGameStateChanged(GameState oldState, GameState newState)
+        {
+            isOpen = (newState == GameState.Mastery);
+            IsAnyMenuOpen = isOpen;
+            if (isOpen)
+            {
+                Refresh();
+            }
+        }
+
         public void Open()
         {
-            isOpen = true;
-            IsAnyMenuOpen = true;
-            Time.timeScale = 0f;
-
-            if (InputStateManager.Instance != null)
+            if (GameStateManager.Instance != null)
             {
-                InputStateManager.Instance.SetUIMode();
+                GameStateManager.Instance.SetState(GameState.Mastery);
             }
-            Refresh();
-            Debug.Log("[Mastery] Opened");
-            Debug.Log("[Mastery] Cursor Unlocked");
+            else
+            {
+                isOpen = true;
+                IsAnyMenuOpen = true;
+            }
         }
 
         public void Close()
         {
-            isOpen = false;
-            IsAnyMenuOpen = false;
-            Time.timeScale = 1f;
-
-            if (InputStateManager.Instance != null)
+            if (GameStateManager.Instance != null)
             {
-                InputStateManager.Instance.SetGameplayMode();
+                GameStateManager.Instance.SetState(GameState.Gameplay);
             }
-            Debug.Log("[Mastery] Closed");
-            Debug.Log("[Mastery] Cursor Restored");
+            else
+            {
+                isOpen = false;
+                IsAnyMenuOpen = false;
+            }
         }
 
         public void Toggle()
         {
-            if (isOpen) Close();
-            else Open();
-        }
-
-        private void OnDisable()
-        {
-            if (isOpen)
+            if (GameStateManager.Instance != null)
             {
-                isOpen = false;
-                IsAnyMenuOpen = false;
-                Time.timeScale = 1f;
+                GameStateManager.Instance.ToggleState(GameState.Mastery);
+            }
+            else
+            {
+                if (isOpen) Close();
+                else Open();
             }
         }
 

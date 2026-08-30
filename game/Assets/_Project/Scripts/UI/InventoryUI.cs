@@ -5,6 +5,7 @@ using Roguelite.Inventory;
 using Roguelite.Player;
 using Roguelite.Progression;
 using Roguelite.Core;
+using Roguelite.Core.StateMachine;
 
 namespace Roguelite.UI
 {
@@ -57,11 +58,32 @@ namespace Roguelite.UI
             applicationIsQuitting = true;
         }
 
+        private void Start()
+        {
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged += HandleGameStateChanged;
+            }
+        }
+
         private void OnDestroy()
         {
             if (instance == this)
             {
                 applicationIsQuitting = true;
+            }
+            if (GameStateManager.Instance != null)
+            {
+                GameStateManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+            }
+        }
+
+        private void HandleGameStateChanged(GameState oldState, GameState newState)
+        {
+            isOpen = (newState == GameState.Inventory);
+            if (!isOpen)
+            {
+                selectedSlot = null;
             }
         }
 
@@ -75,27 +97,14 @@ namespace Roguelite.UI
 
         public void ToggleInventory()
         {
-            isOpen = !isOpen;
-
-            if (isOpen)
+            if (GameStateManager.Instance != null)
             {
-                Debug.Log("[Inventory] Toggle Open");
-                if (InputStateManager.Instance != null)
-                {
-                    InputStateManager.Instance.SetUIMode();
-                }
+                GameStateManager.Instance.ToggleState(GameState.Inventory);
             }
             else
             {
-                Debug.Log("[Inventory] Toggle Close");
-                if (InputStateManager.Instance != null)
-                {
-                    InputStateManager.Instance.SetGameplayMode();
-                }
-                selectedSlot = null;
+                isOpen = !isOpen;
             }
-
-            Time.timeScale = isOpen ? 0f : 1f;
         }
 
         private void OnGUI()

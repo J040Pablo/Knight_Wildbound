@@ -10,12 +10,37 @@ namespace Roguelite.Enemy
     [RequireComponent(typeof(CharacterController))]
     public class EnemyBase : MonoBehaviour, IDamageable
     {
-        [Header("Enemy Configuration")]
+        [Header("Enemy Data-Driven Configuration")]
         [SerializeField] protected EnemyData enemyData;
+        [SerializeField] protected EnemyDefinition enemyDefinition;
 
         public EnemyData EnemyData => enemyData;
-        public float CurrentHP { get; protected set; }
-        public float MaxHP { get; protected set; }
+        public EnemyDefinition EnemyDefinition => enemyDefinition;
+        public EnemyRuntimeData RuntimeData { get; protected set; }
+
+        public float CurrentHP
+        {
+            get => RuntimeData != null ? RuntimeData.CurrentHealth : currentHPInternal;
+            protected set
+            {
+                if (RuntimeData != null) RuntimeData.CurrentHealth = value;
+                currentHPInternal = value;
+            }
+        }
+
+        public float MaxHP
+        {
+            get => RuntimeData != null ? RuntimeData.MaxHealth : maxHPInternal;
+            protected set
+            {
+                if (RuntimeData != null) RuntimeData.MaxHealth = value;
+                maxHPInternal = value;
+            }
+        }
+
+        private float currentHPInternal = 50f;
+        private float maxHPInternal = 50f;
+
         public bool IsDead { get; protected set; } = false;
 
         protected CharacterController characterController;
@@ -30,8 +55,33 @@ namespace Roguelite.Enemy
 
         public event Action<EnemyBase> OnEnemyDied;
 
+        public virtual void InitializeWithDefinition(EnemyDefinition def)
+        {
+            enemyDefinition = def;
+            if (def != null)
+            {
+                RuntimeData = new EnemyRuntimeData(def);
+                maxHPInternal = def.maxHealth;
+                currentHPInternal = maxHPInternal;
+                transform.localScale = def.modelScale;
+
+                if (meshRenderer != null && def.enemyColor != Color.clear)
+                {
+                    meshRenderer.material.color = def.enemyColor;
+                    originalColor = def.enemyColor;
+                }
+            }
+        }
+
         protected virtual void Awake()
         {
+            Quaternion rot = transform.rotation;
+            float sqrMag = rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w;
+            if (sqrMag < 0.001f)
+            {
+                transform.rotation = Quaternion.identity;
+            }
+
             characterController = GetComponent<CharacterController>();
             meshRenderer = GetComponentInChildren<Renderer>();
 
@@ -40,7 +90,11 @@ namespace Roguelite.Enemy
                 originalColor = meshRenderer.material.color;
             }
 
-            if (enemyData != null)
+            if (enemyDefinition != null && RuntimeData == null)
+            {
+                InitializeWithDefinition(enemyDefinition);
+            }
+            else if (enemyData != null && RuntimeData == null)
             {
                 MaxHP = enemyData.maxHealth;
                 CurrentHP = MaxHP;
@@ -51,18 +105,10 @@ namespace Roguelite.Enemy
                     originalColor = enemyData.enemyColor;
                 }
             }
-            else
+            else if (RuntimeData == null)
             {
-                enemyData = ScriptableObject.CreateInstance<EnemyData>();
-                enemyData.maxHealth = 50f;
-                enemyData.moveSpeed = 4.5f;
-                enemyData.attackDamage = 10f;
-                enemyData.attackRange = 2.0f;
-                enemyData.attackCooldown = 1.8f;
-                enemyData.xpReward = 10;
-
-                MaxHP = enemyData.maxHealth;
-                CurrentHP = MaxHP;
+                MaxHP = 50f;
+                CurrentHP = 50f;
             }
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Roguelite.Items;
 using Roguelite.Progression;
+using Roguelite.Core.Save;
 
 namespace Roguelite.Inventory
 {
@@ -56,12 +57,16 @@ namespace Roguelite.Inventory
             }
             instance = this;
             DontDestroyOnLoad(gameObject);
-
-            LoadAll();
         }
 
         public void SaveAll()
         {
+            if (SaveManager.Instance != null && SaveManager.Instance.UseNewSaveSystem)
+            {
+                SaveManager.Instance.RequestSave();
+                return;
+            }
+
             PlayerSavePacket packet = new PlayerSavePacket();
 
             // Save Gold & Inventory
@@ -95,7 +100,7 @@ namespace Roguelite.Inventory
             string json = JsonUtility.ToJson(packet);
             PlayerPrefs.SetString(SAVE_KEY, json);
             PlayerPrefs.Save();
-            Debug.Log("[PlayerInventorySave] Inventory, Equipment, and Relics saved.");
+            Debug.Log("[PlayerInventorySave (Legacy)] Inventory, Equipment, and Relics saved.");
         }
 
         public void SaveInventory(InventoryManager manager)

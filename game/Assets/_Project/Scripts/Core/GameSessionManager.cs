@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Roguelite.Player;
 using Roguelite.Progression;
+using Roguelite.Inventory;
+using Roguelite.Core.Save;
 
 namespace Roguelite.Core
 {
@@ -58,10 +60,12 @@ namespace Roguelite.Core
 
             UnlockedUpgradeIDs.Clear();
 
-            // Clear saved inventory & equipment state for a clean run reset
-            if (Inventory.PlayerInventorySave.Instance != null) Inventory.PlayerInventorySave.Instance.ClearSaveData();
-            if (Inventory.InventoryManager.Instance != null) Inventory.InventoryManager.Instance.ResetInventory();
-            if (Inventory.EquipmentManager.Instance != null) Inventory.EquipmentManager.Instance.ResetEquipment();
+            // Clear saved inventory, equipment & progression state for a clean run reset
+            if (SaveManager.Instance != null) SaveManager.Instance.ClearSaveData();
+            if (PlayerInventorySave.Instance != null) PlayerInventorySave.Instance.ClearSaveData();
+            if (InventoryManager.Instance != null) InventoryManager.Instance.ResetInventory();
+            if (EquipmentManager.Instance != null) EquipmentManager.Instance.ResetEquipment();
+            if (ProgressionManager.Instance != null) ProgressionManager.Instance.ResetRun();
         }
 
         public void SavePlayerState(PlayerStats stats)

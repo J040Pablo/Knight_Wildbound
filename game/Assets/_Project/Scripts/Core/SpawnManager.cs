@@ -15,6 +15,32 @@ namespace Roguelite.Core
         private List<Vector3> debugInvalidTestPoints = new List<Vector3>();
         private Vector3 debugLastValidPlayerSpawn = Vector3.zero;
 
+        [Header("Sub Spawners")]
+        [SerializeField] private Roguelite.Core.Managers.EnemySpawner enemySpawner;
+        [SerializeField] private Roguelite.Core.Managers.EventSpawner eventSpawner;
+        [SerializeField] private Roguelite.Core.Managers.ChestSpawner chestSpawner;
+        [SerializeField] private Roguelite.Core.Managers.BossSpawner bossSpawner;
+
+        public Roguelite.Core.Managers.EnemySpawner EnemySpawner => GetSubSpawner(ref enemySpawner);
+        public Roguelite.Core.Managers.EventSpawner EventSpawner => GetSubSpawner(ref eventSpawner);
+        public Roguelite.Core.Managers.ChestSpawner ChestSpawner => GetSubSpawner(ref chestSpawner);
+        public Roguelite.Core.Managers.BossSpawner BossSpawner => GetSubSpawner(ref bossSpawner);
+
+        private T GetSubSpawner<T>(ref T field) where T : Component
+        {
+            if (field == null)
+            {
+                field = GetComponentInChildren<T>();
+                if (field == null)
+                {
+                    GameObject child = new GameObject(typeof(T).Name);
+                    child.transform.SetParent(transform);
+                    field = child.AddComponent<T>();
+                }
+            }
+            return field;
+        }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)

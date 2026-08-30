@@ -17,6 +17,10 @@ namespace Roguelite.Environment
     /// </summary>
     public class SceneEnvironmentBuilder : MonoBehaviour
     {
+        [Header("Data-Driven Biome Configuration")]
+        [SerializeField] private Roguelite.Data.BiomeDefinition activeBiome;
+        public Roguelite.Data.BiomeDefinition ActiveBiome { get => activeBiome; set => activeBiome = value; }
+
         private Transform worldParent;
 
         // Foundation flattening zones for structures (Ruins, Pedestals, Camps, Gates, Arenas)
@@ -337,7 +341,9 @@ namespace Roguelite.Environment
 
             GameObject obj = WorldPlaceholderFactory.Build(key, worldParent, color, scale);
             obj.transform.position = finalPos;
-            obj.transform.rotation = (rot.w == 0f && rot.x == 0f && rot.y == 0f && rot.z == 0f) ? Quaternion.identity : rot.normalized;
+
+            float sqrMag = rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w;
+            obj.transform.rotation = (sqrMag < 0.001f) ? Quaternion.identity : Quaternion.Normalize(rot);
             return obj;
         }
 
@@ -726,11 +732,28 @@ namespace Roguelite.Environment
             }
 
             float shrineX = GetForestPathXOffset(515f) - 25f;
-            SpawnProp(PlaceholderAssetKey.ForgottenShrine, new Vector3(shrineX, 0, 515f), Quaternion.identity, 1.6f);
+            float shrineY = GetTerrainHeightY(shrineX, 515f);
+            SpawnProp(PlaceholderAssetKey.ForgottenShrine, new Vector3(shrineX, shrineY, 515f), Quaternion.identity, 1.6f);
+            SpawnProp(PlaceholderAssetKey.LoreSignPost, new Vector3(shrineX + 4f, shrineY, 513f), Quaternion.identity, 1.2f);
+
+            // ── FAIRY QUEEN MINI-BOSS ARENA (Ancient Grove Sacred Clearing) ──
+            Vector3 queenPos = new Vector3(shrineX - 20f, GetTerrainHeightY(shrineX - 20f, 525f) + 1.0f, 525f);
+            SpawnProp(PlaceholderAssetKey.LandmarkGiantAncestralTree, queenPos, Quaternion.identity, 2.4f);
+
+            GameObject queenObj = new GameObject("FairyQueen_MiniBoss");
+            queenObj.transform.position = queenPos + new Vector3(0, 0.5f, 0);
+
+            CharacterController qCC = queenObj.AddComponent<CharacterController>();
+            qCC.height = 2.2f;
+            qCC.radius = 0.7f;
+            qCC.center = new Vector3(0, 1.1f, 0);
+
+            queenObj.AddComponent<Enemy.FairyQueenAI>();
 
             if (ForestLandmarkManager.Instance != null)
             {
                 ForestLandmarkManager.Instance.RegisterLandmark("Forgotten Shrine", LandmarkType.AncientAltar, new Vector3(shrineX, 0, 515f), null, 18f);
+                ForestLandmarkManager.Instance.RegisterLandmark("Sacred Fairy Tree", LandmarkType.AncestralTree, queenPos, null, 25f);
             }
 
             CreateEncounterZone("AncientGroveCombatZone", GetForestPathXOffset(520f), 520f, EncounterDifficulty.Hard);
