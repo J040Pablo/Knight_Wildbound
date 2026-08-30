@@ -70,6 +70,30 @@ namespace Roguelite.Core
                 GameObject inputObj = new GameObject("InputStateManager");
                 inputObj.AddComponent<InputStateManager>();
             }
+
+            if (InventoryUI.Instance == null)
+            {
+                GameObject invUiObj = new GameObject("InventoryUI");
+                invUiObj.AddComponent<InventoryUI>();
+            }
+
+            if (LootNotificationUI.Instance == null)
+            {
+                GameObject lootNotifObj = new GameObject("LootNotificationUI");
+                lootNotifObj.AddComponent<LootNotificationUI>();
+            }
+
+            if (CampaignBookUI.Instance == null)
+            {
+                GameObject bookObj = new GameObject("CampaignBookUI");
+                bookObj.AddComponent<CampaignBookUI>();
+            }
+
+            if (RelicDiscoveryUI.Instance == null)
+            {
+                GameObject relicDiscObj = new GameObject("RelicDiscoveryUI");
+                relicDiscObj.AddComponent<RelicDiscoveryUI>();
+            }
         }
 
         public void ShowMainMenu()
@@ -108,31 +132,57 @@ namespace Roguelite.Core
             // 2. Setup Player Character GameObject
             CharacterType selectedChar = GameSessionManager.Instance != null ? GameSessionManager.Instance.SelectedCharacter : CharacterType.Knight;
 
-            GameObject playerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            playerObj.name = $"Player_{selectedChar}";
-            playerObj.tag = "Player";
-
-            // CRITICAL FIX: Immediately destroy primitive CapsuleCollider so CharacterController is the ONLY collider on playerObj!
-            Collider primitiveCollider = playerObj.GetComponent<Collider>();
-            if (primitiveCollider != null)
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj == null)
             {
-                DestroyImmediate(primitiveCollider);
+                playerObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                playerObj.name = $"Player_{selectedChar}";
+                playerObj.tag = "Player";
+
+                // CRITICAL FIX: Immediately destroy primitive CapsuleCollider so CharacterController is the ONLY collider on playerObj!
+                Collider primitiveCollider = playerObj.GetComponent<Collider>();
+                if (primitiveCollider != null)
+                {
+                    DestroyImmediate(primitiveCollider);
+                }
+            }
+            else
+            {
+                // Ensure no duplicate players exist in the scene
+                GameObject[] allPlayers = GameObject.FindGameObjectsWithTag("Player");
+                for (int i = 0; i < allPlayers.Length; i++)
+                {
+                    if (allPlayers[i] != playerObj)
+                    {
+                        Destroy(allPlayers[i]);
+                    }
+                }
             }
 
             // Add Spawn Tracker for Debug Logging & Spheres
-            PlayerSpawnTracker tracker = playerObj.AddComponent<PlayerSpawnTracker>();
+            PlayerSpawnTracker tracker = playerObj.GetComponent<PlayerSpawnTracker>();
+            if (tracker == null) tracker = playerObj.AddComponent<PlayerSpawnTracker>();
 
-            // Add Player Components
-            CharacterController cc = playerObj.AddComponent<CharacterController>();
+            // Add Player Components safely
+            CharacterController cc = playerObj.GetComponent<CharacterController>();
+            if (cc == null) cc = playerObj.AddComponent<CharacterController>();
             cc.height = 1.8f;
             cc.radius = 0.4f;
             cc.center = new Vector3(0, 0.9f, 0);
 
-            PlayerStats stats = playerObj.AddComponent<PlayerStats>();
-            PlayerController controller = playerObj.AddComponent<PlayerController>();
-            PlayerCombat combat = playerObj.AddComponent<PlayerCombat>();
-            InteractionSystem interaction = playerObj.AddComponent<InteractionSystem>();
-            playerObj.AddComponent<PlayerFallRecovery>();
+            PlayerStats stats = playerObj.GetComponent<PlayerStats>();
+            if (stats == null) stats = playerObj.AddComponent<PlayerStats>();
+
+            PlayerController controller = playerObj.GetComponent<PlayerController>();
+            if (controller == null) controller = playerObj.AddComponent<PlayerController>();
+
+            PlayerCombat combat = playerObj.GetComponent<PlayerCombat>();
+            if (combat == null) combat = playerObj.AddComponent<PlayerCombat>();
+
+            InteractionSystem interaction = playerObj.GetComponent<InteractionSystem>();
+            if (interaction == null) interaction = playerObj.AddComponent<InteractionSystem>();
+
+            if (playerObj.GetComponent<PlayerFallRecovery>() == null) playerObj.AddComponent<PlayerFallRecovery>();
 
             // Delegate safe player placement to PlayerSpawnManager
             if (PlayerSpawnManager.Instance != null)

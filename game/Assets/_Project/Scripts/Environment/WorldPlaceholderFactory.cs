@@ -22,12 +22,9 @@ namespace Roguelite.Environment
         private static readonly System.Collections.Generic.Dictionary<int, Material> _matCache
             = new System.Collections.Generic.Dictionary<int, Material>();
 
-        private static Material _baseTemplateMaterial;
-
         public static void ClearCache()
         {
             _matCache.Clear();
-            _baseTemplateMaterial = null;
         }
 
         // ─────────────────────────────────────────────────────────────────

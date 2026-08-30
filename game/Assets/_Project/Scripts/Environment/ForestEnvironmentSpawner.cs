@@ -108,7 +108,9 @@ namespace Roguelite.Environment
                 if (obj != null)
                 {
                     obj.transform.position = pos;
-                    obj.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+                    Quaternion rot = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+                    rot.Normalize();
+                    obj.transform.rotation = rot;
                     RegisterProp(pos, radius);
                 }
             }

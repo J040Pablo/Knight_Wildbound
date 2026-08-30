@@ -116,12 +116,32 @@ namespace Roguelite.Enemy
 
         private IEnumerator FlashRed()
         {
+            yield return FlashColor(Color.red);
+        }
+
+        private IEnumerator FlashColor(Color color)
+        {
             if (meshRenderer != null)
             {
-                meshRenderer.material.color = Color.red;
+                meshRenderer.material.color = color;
                 yield return new WaitForSeconds(0.12f);
                 meshRenderer.material.color = originalColor;
             }
+        }
+
+        public virtual void Heal(float amount)
+        {
+            if (IsDead || amount <= 0f) return;
+            CurrentHP = Mathf.Min(MaxHP, CurrentHP + amount);
+            if (meshRenderer != null)
+            {
+                StartCoroutine(FlashColor(Color.green));
+            }
+        }
+
+        protected bool SafeCanMove()
+        {
+            return characterController != null && characterController.enabled && gameObject.activeInHierarchy;
         }
 
         protected virtual void ApplyKnockbackDecay()
@@ -129,7 +149,10 @@ namespace Roguelite.Enemy
             if (knockbackVelocity.magnitude > 0.1f)
             {
                 knockbackVelocity.y = 0f; // Force horizontal knockback only
-                characterController.Move(knockbackVelocity * Time.deltaTime);
+                if (SafeCanMove())
+                {
+                    characterController.Move(knockbackVelocity * Time.deltaTime);
+                }
                 knockbackVelocity = Vector3.Lerp(knockbackVelocity, Vector3.zero, Time.deltaTime * 8f);
             }
         }
@@ -153,8 +176,36 @@ namespace Roguelite.Enemy
 
             OnEnemyDied?.Invoke(this);
 
+            // Evaluate & Spawn Loot Drop
+            SpawnEnemyLoot();
+
             // Simple shrink death effect
             StartCoroutine(ShrinkAndDestroy());
+        }
+
+        protected virtual void SpawnEnemyLoot()
+        {
+            Roguelite.Loot.LootResult result = null;
+            string n = gameObject.name.ToLower();
+
+            if (n.Contains("fairy"))
+            {
+                result = Roguelite.Loot.LootTable.ForFairy();
+            }
+            else if (n.Contains("mushroom"))
+            {
+                result = Roguelite.Loot.LootTable.ForMushroom();
+            }
+            else if (n.Contains("stonegiant") || n.Contains("stone_giant") || n.Contains("giant"))
+            {
+                result = Roguelite.Loot.LootTable.ForStoneGiant();
+            }
+            else
+            {
+                result = Roguelite.Loot.LootTable.Default();
+            }
+
+            Roguelite.Loot.LootDrop.SpawnFromResult(result, transform.position + Vector3.up * 0.5f);
         }
 
         private IEnumerator ShrinkAndDestroy()

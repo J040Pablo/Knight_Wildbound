@@ -4,6 +4,7 @@ using Roguelite.Core;
 using Roguelite.Player;
 using Roguelite.Wave;
 using Roguelite.Enemy;
+using Roguelite.Loot;
 
 namespace Roguelite.Environment
 {
@@ -351,12 +352,19 @@ namespace Roguelite.Environment
             return true;
         }
 
+        public static Quaternion SafeEuler(float x, float y, float z)
+        {
+            Quaternion q = Quaternion.Euler(x, y, z);
+            q.Normalize();
+            return q;
+        }
+
         private GameObject SpawnPropRandomized(PlaceholderAssetKey key, Vector3 pos, float baseScale = 1f, float scaleVar = 0.25f, float radius = 1.5f, Color? color = null)
         {
             if (!CanSpawnProp(pos, radius)) return null;
 
             float finalScale = baseScale * Random.Range(1f - scaleVar, 1f + scaleVar);
-            Quaternion rot = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+            Quaternion rot = SafeEuler(0, Random.Range(0f, 360f), 0);
 
             GameObject obj = SpawnProp(key, pos, rot, finalScale, color);
             if (obj != null)
@@ -390,7 +398,8 @@ namespace Roguelite.Environment
         {
             if (!CanSpawnTree(pos, minDistance)) return null;
 
-            Quaternion finalRot = (rot == Quaternion.identity) ? Quaternion.Euler(0, Random.Range(0f, 360f), 0) : rot;
+            Quaternion finalRot = (rot == Quaternion.identity) ? SafeEuler(0, Random.Range(0f, 360f), 0) : rot;
+            finalRot.Normalize();
             float finalScale = scale * Random.Range(0.85f, 1.35f); // Random tree scale variation
 
             GameObject tree = SpawnProp(key, pos, finalRot, finalScale);
@@ -528,6 +537,22 @@ namespace Roguelite.Environment
             float obX = GetForestPathXOffset(110f) - 30f;
             SpawnProp(PlaceholderAssetKey.LandmarkGiantObelisk, new Vector3(obX, 0, 110f), Quaternion.identity, 2.0f);
 
+            // ── AMBIENT VIGNETTE 4: Fairy Ritual Glade (Z: 140, X: -42) ──
+            Vector3 ritualPos = new Vector3(GetForestPathXOffset(140f) - 42f, GetTerrainHeightY(GetForestPathXOffset(140f) - 42f, 140f), 140f);
+            SpawnProp(PlaceholderAssetKey.LandmarkGiantObelisk, ritualPos, Quaternion.identity, 1.5f);
+
+            GameObject fairy1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            fairy1.name = "Ambient_Fairy1";
+            fairy1.transform.position = ritualPos + new Vector3(-2f, 2f, 0f);
+            fairy1.transform.localScale = Vector3.one * 0.5f;
+            fairy1.AddComponent<Enemy.FairyEnemyAI>();
+
+            GameObject fairy2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            fairy2.name = "Ambient_Fairy2";
+            fairy2.transform.position = ritualPos + new Vector3(2f, 2.5f, 1f);
+            fairy2.transform.localScale = Vector3.one * 0.5f;
+            fairy2.AddComponent<Enemy.FairyEnemyAI>();
+
             float meadowX = GetForestPathXOffset(85f) - 15f;
             CreateHorseSpawnPoint("HorseMeadowSpawn", new Vector3(meadowX, 0f, 85f), Quaternion.identity);
             CreateFriendlyHorse(new Vector3(meadowX, 0f, 85f));
@@ -544,15 +569,12 @@ namespace Roguelite.Environment
         // ==========================================
         private void BuildDeepForestRegion()
         {
-            float startZ = 160f;
-            float endZ = 280f;
-
             float treeX = GetForestPathXOffset(180f) + 32f;
             SpawnTreeValidated(PlaceholderAssetKey.HeroTree, new Vector3(treeX, 0, 180f), Quaternion.identity, 2.2f, 10f);
 
             float chestX = GetForestPathXOffset(190f) + 34f;
             float chestY = GetTerrainHeightY(chestX, 190f);
-            var chest = SpawnProp(PlaceholderAssetKey.Chest, new Vector3(chestX, chestY, 190f), Quaternion.Euler(0, -60f, 0), 1.3f);
+            var chest = SpawnInteractiveTreasureChest(new Vector3(chestX, chestY, 190f), Quaternion.Euler(0, -60f, 0), ChestLootTable.RollChestRarity());
             chest.name = "DeepForestHiddenChest";
             if (ForestLandmarkManager.Instance != null)
             {
@@ -561,6 +583,23 @@ namespace Roguelite.Environment
             }
 
             SpawnProp(PlaceholderAssetKey.DestroyedWagon, new Vector3(GetForestPathXOffset(190f) + 18f, 0, 190f), Quaternion.Euler(0, 40f, 0), 1.2f);
+
+            // ── AMBIENT VIGNETTE 1: Goblin Scavenger Camp (Z: 200, X: -38) ──
+            Vector3 scavPos = new Vector3(GetForestPathXOffset(200f) - 38f, GetTerrainHeightY(GetForestPathXOffset(200f) - 38f, 200f), 200f);
+            SpawnProp(PlaceholderAssetKey.DestroyedWagon, scavPos, Quaternion.Euler(0, 110f, 0), 1.1f);
+            SpawnProp(PlaceholderAssetKey.Campfire, scavPos + new Vector3(3f, 0, -2f), Quaternion.identity, 1.0f);
+
+            // ── AMBIENT VIGNETTE 2: Mushroom Hazard Swamp (Z: 250, X: +48) ──
+            Vector3 swampPos = new Vector3(GetForestPathXOffset(250f) + 48f, GetTerrainHeightY(GetForestPathXOffset(250f) + 48f, 250f), 250f);
+            GameObject mShroom = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            mShroom.name = "Ambient_GiantMushroomCluster";
+            mShroom.transform.position = swampPos;
+            mShroom.transform.localScale = new Vector3(2.5f, 3.5f, 2.5f);
+            mShroom.AddComponent<Enemy.PoisonMushroomAI>();
+
+            // Root-Bound Hidden Chest inside Toxic Swamp
+            var rootChest = SpawnInteractiveTreasureChest(swampPos + new Vector3(3f, 0, 3f), Quaternion.Euler(0, 45f, 0), ChestRarity.Rare);
+            if (rootChest != null) rootChest.name = "RootBoundHazardChest";
 
             CreateEncounterZone("DeepForestCombatZone", GetForestPathXOffset(220f), 220f, EncounterDifficulty.Medium);
 
@@ -582,7 +621,7 @@ namespace Roguelite.Environment
             SpawnProp(PlaceholderAssetKey.LakeWater, new Vector3(lakeX, lakeTerrainY - 0.35f, 350f), Quaternion.identity, 45f);
             SpawnProp(PlaceholderAssetKey.LakeIsland, new Vector3(lakeX, lakeTerrainY, 350f), Quaternion.identity, 14f);
             SpawnTreeValidated(PlaceholderAssetKey.TreeWillow, new Vector3(lakeX, 0, 350f), Quaternion.identity, 1.3f, 6f);
-            SpawnProp(PlaceholderAssetKey.Chest, new Vector3(lakeX + 2f, 0.3f, 350f), Quaternion.identity, 1.2f);
+            SpawnInteractiveTreasureChest(new Vector3(lakeX + 2f, lakeTerrainY + 0.3f, 350f), Quaternion.identity, ChestLootTable.RollChestRarity());
 
             if (ForestLandmarkManager.Instance != null)
             {
@@ -635,6 +674,22 @@ namespace Roguelite.Environment
 
             float caveX = GetForestPathXOffset(445f) - 35f;
             SpawnProp(PlaceholderAssetKey.RockCaveEntrance, new Vector3(caveX, 0, 445f), Quaternion.identity, 1.8f);
+
+            // ── AMBIENT VIGNETTE 3: Stone Giant Alcove & Ancient Colossus Mini-Boss (Z: 430, X: -48) ──
+            Vector3 giantAlcovePos = new Vector3(GetForestPathXOffset(430f) - 48f, GetTerrainHeightY(GetForestPathXOffset(430f) - 48f, 430f), 430f);
+            GameObject giantObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            giantObj.name = "StoneGiant_SleepingDisguise";
+            giantObj.transform.position = giantAlcovePos;
+            giantObj.transform.localScale = new Vector3(2.2f, 2.8f, 2.2f);
+            Enemy.StoneGiantAI giantAI = giantObj.AddComponent<Enemy.StoneGiantAI>();
+
+            // Ancient Colossus Mini-Boss (Unique 1 per forest run)
+            Vector3 colossusPos = new Vector3(GetForestPathXOffset(460f) + 52f, GetTerrainHeightY(GetForestPathXOffset(460f) + 52f, 460f), 460f);
+            GameObject colossusObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            colossusObj.name = "AncientColossus_MiniBoss";
+            colossusObj.transform.position = colossusPos;
+            Enemy.StoneGiantAI colossusAI = colossusObj.AddComponent<Enemy.StoneGiantAI>();
+            colossusAI.SetAsColossusMiniBoss();
 
             if (ForestLandmarkManager.Instance != null)
             {
@@ -1039,6 +1094,17 @@ namespace Roguelite.Environment
 
             horseObj.AddComponent<HorseController>();
             horseObj.AddComponent<MountSystem>();
+        }
+
+        public static GameObject SpawnInteractiveTreasureChest(Vector3 position, Quaternion rotation, ChestRarity forcedRarity = ChestRarity.Common)
+        {
+            GameObject chestGo = new GameObject($"InteractiveTreasureChest_{forcedRarity}");
+            chestGo.transform.position = position;
+            chestGo.transform.rotation = rotation;
+
+            TreasureChest chestComp = chestGo.AddComponent<TreasureChest>();
+            chestComp.chestRarity = forcedRarity;
+            return chestGo;
         }
 
         private void CreateWorldBoundary(Vector3 center, Vector3 size)

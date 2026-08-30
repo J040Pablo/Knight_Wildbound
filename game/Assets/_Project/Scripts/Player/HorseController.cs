@@ -67,7 +67,9 @@ namespace Roguelite.Player
             neck.transform.parent = transform;
             neck.transform.localPosition = new Vector3(0, 1.8f, 0.9f);
             neck.transform.localScale = new Vector3(0.6f, 1.1f, 0.7f);
-            neck.transform.localRotation = Quaternion.Euler(25f, 0, 0);
+            Quaternion nRot = Quaternion.Euler(25f, 0, 0);
+            nRot.Normalize();
+            neck.transform.localRotation = nRot;
             Collider nCol = neck.GetComponent<Collider>();
             if (nCol != null) Destroy(nCol);
             Renderer hR = neck.GetComponent<Renderer>();
@@ -131,7 +133,10 @@ namespace Roguelite.Player
                 }
                 verticalVelocity.y += GRAVITY * Time.deltaTime;
 
-                characterController.Move(verticalVelocity * Time.deltaTime);
+                if (SafeCanMove())
+                {
+                    characterController.Move(verticalVelocity * Time.deltaTime);
+                }
 
                 CurrentState = HorseState.Idle;
                 ResetLegs();
@@ -140,7 +145,7 @@ namespace Roguelite.Player
 
         public void TryJump()
         {
-            if (characterController.isGrounded)
+            if (SafeCanMove() && characterController.isGrounded)
             {
                 verticalVelocity.y = jumpForce;
             }
@@ -180,7 +185,10 @@ namespace Roguelite.Player
                 if (moveDir.sqrMagnitude > 0.001f)
                 {
                     Quaternion targetRot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * turnSpeed);
+                    targetRot.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * turnSpeed);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
 
                 horizontalMove = moveDir * speed;
@@ -193,7 +201,7 @@ namespace Roguelite.Player
             }
 
             // Ground snapping & gravity calculation
-            if (characterController.isGrounded && verticalVelocity.y < 0)
+            if (SafeCanMove() && characterController.isGrounded && verticalVelocity.y < 0)
             {
                 verticalVelocity.y = -2f;
             }
@@ -201,7 +209,15 @@ namespace Roguelite.Player
 
             // SINGLE CharacterController.Move call per frame to avoid PhysX double-call issues
             Vector3 totalVelocity = horizontalMove + verticalVelocity;
-            characterController.Move(totalVelocity * Time.deltaTime);
+            if (SafeCanMove())
+            {
+                characterController.Move(totalVelocity * Time.deltaTime);
+            }
+        }
+
+        private bool SafeCanMove()
+        {
+            return characterController != null && characterController.enabled && characterController.gameObject.activeInHierarchy;
         }
 
         private void AnimateLegs(float speed)
@@ -209,10 +225,10 @@ namespace Roguelite.Player
             legCycle += Time.deltaTime * speed * 2.5f;
             float swingAngle = Mathf.Sin(legCycle) * 20f;
 
-            if (frontLeftLeg != null) frontLeftLeg.localRotation = Quaternion.Euler(swingAngle, 0, 0);
-            if (backRightLeg != null) backRightLeg.localRotation = Quaternion.Euler(swingAngle, 0, 0);
-            if (frontRightLeg != null) frontRightLeg.localRotation = Quaternion.Euler(-swingAngle, 0, 0);
-            if (backLeftLeg != null) backLeftLeg.localRotation = Quaternion.Euler(-swingAngle, 0, 0);
+            if (frontLeftLeg != null) { Quaternion r = Quaternion.Euler(swingAngle, 0, 0); r.Normalize(); frontLeftLeg.localRotation = r; }
+            if (backRightLeg != null) { Quaternion r = Quaternion.Euler(swingAngle, 0, 0); r.Normalize(); backRightLeg.localRotation = r; }
+            if (frontRightLeg != null) { Quaternion r = Quaternion.Euler(-swingAngle, 0, 0); r.Normalize(); frontRightLeg.localRotation = r; }
+            if (backLeftLeg != null) { Quaternion r = Quaternion.Euler(-swingAngle, 0, 0); r.Normalize(); backLeftLeg.localRotation = r; }
         }
 
         private void ResetLegs()

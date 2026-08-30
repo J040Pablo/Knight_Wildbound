@@ -82,7 +82,7 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking) return;
+            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking || Inventory.StealthState.IsPlayerInvisible || !SafeCanMove()) return;
 
             attackTimer -= Time.deltaTime;
             float distToPlayer = GetFlatDistanceToPlayer();
@@ -95,7 +95,11 @@ namespace Roguelite.Enemy
                 if (moveDir.sqrMagnitude > 0.0001f)
                 {
                     moveDir.Normalize();
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 8f);
+                    Quaternion targetRot = Quaternion.LookRotation(moveDir, Vector3.up);
+                    targetRot.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 8f);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
                 characterController.Move(moveDir * enemyData.moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
@@ -121,7 +125,7 @@ namespace Roguelite.Enemy
 
             while (elapsed < leapTime)
             {
-                if (IsDead) yield break;
+                if (IsDead || !SafeCanMove()) yield break;
 
                 // Move forward & arch up
                 float height = Mathf.Sin((elapsed / leapTime) * Mathf.PI) * 2.0f;

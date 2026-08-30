@@ -184,7 +184,10 @@ namespace Roguelite.Player
                 if (moveDirection.sqrMagnitude > 0.001f)
                 {
                     Quaternion targetRotation = Quaternion.LookRotation(moveDirection.normalized, Vector3.up);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
+                    targetRotation.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 12f);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
             }
 
@@ -193,12 +196,15 @@ namespace Roguelite.Player
 
             // Combine final displacement
             Vector3 finalMove = (moveDirection * speedMultiplier) + verticalVelocity + externalKnockback;
-            characterController.Move(finalMove * Time.deltaTime);
+            if (SafeCanMove())
+            {
+                characterController.Move(finalMove * Time.deltaTime);
+            }
         }
 
         private void HandleJumpInput()
         {
-            if (Input.GetButtonDown("Jump") && characterController.isGrounded)
+            if (Input.GetButtonDown("Jump") && SafeCanMove() && characterController.isGrounded)
             {
                 if (playerStats.ConsumeStamina(10f))
                 {
@@ -235,7 +241,9 @@ namespace Roguelite.Player
                 dodgeDir = (forward * moveZ + right * moveX).normalized;
                 if (dodgeDir.sqrMagnitude > 0.001f)
                 {
-                    transform.rotation = Quaternion.LookRotation(dodgeDir.normalized, Vector3.up);
+                    Quaternion rot = Quaternion.LookRotation(dodgeDir.normalized, Vector3.up);
+                    rot.Normalize();
+                    transform.rotation = rot;
                 }
             }
 
@@ -250,6 +258,7 @@ namespace Roguelite.Player
 
             while (elapsed < duration)
             {
+                if (!SafeCanMove()) yield break;
                 characterController.Move(dodgeDir * speed * Time.deltaTime);
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -270,11 +279,19 @@ namespace Roguelite.Player
             externalKnockback += force;
         }
 
+        private bool SafeCanMove()
+        {
+            return characterController != null && characterController.enabled && characterController.gameObject.activeInHierarchy;
+        }
+
         private void ApplyKnockbackDecay()
         {
             if (externalKnockback.magnitude > 0.1f)
             {
-                characterController.Move(externalKnockback * Time.deltaTime);
+                if (SafeCanMove())
+                {
+                    characterController.Move(externalKnockback * Time.deltaTime);
+                }
                 externalKnockback = Vector3.Lerp(externalKnockback, Vector3.zero, Time.deltaTime * 8f);
             }
             else

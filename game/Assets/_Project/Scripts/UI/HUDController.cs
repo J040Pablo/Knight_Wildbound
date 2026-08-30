@@ -108,7 +108,7 @@ namespace Roguelite.UI
 
         private void OnGUI()
         {
-            if (runManager != null && runManager.State != RunState.InRun) return;
+            if (runManager != null && runManager.State == RunState.GameOver) return;
 
             DrawHUD();
             DrawInteractionPrompt();

@@ -112,7 +112,7 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isCharging) return;
+            if (IsDead || playerTransform == null || playerStats.IsDead || isCharging || Inventory.StealthState.IsPlayerInvisible || !SafeCanMove()) return;
 
             attackTimer -= Time.deltaTime;
             float distToPlayer = GetFlatDistanceToPlayer();
@@ -125,7 +125,11 @@ namespace Roguelite.Enemy
                 if (moveDir.sqrMagnitude > 0.0001f)
                 {
                     moveDir.Normalize();
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 12f);
+                    Quaternion targetRot = Quaternion.LookRotation(moveDir, Vector3.up);
+                    targetRot.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 12f);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
                 characterController.Move(moveDir * enemyData.moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
@@ -146,7 +150,9 @@ namespace Roguelite.Enemy
             if (chargeDir.sqrMagnitude > 0.0001f)
             {
                 chargeDir.Normalize();
-                transform.rotation = Quaternion.LookRotation(chargeDir, Vector3.up);
+                Quaternion targetRot = Quaternion.LookRotation(chargeDir, Vector3.up);
+                targetRot.Normalize();
+                transform.rotation = targetRot;
             }
             else
             {
@@ -164,7 +170,7 @@ namespace Roguelite.Enemy
 
             while (elapsed < chargeDuration)
             {
-                if (IsDead) yield break;
+                if (IsDead || !SafeCanMove()) yield break;
 
                 characterController.Move(chargeDir * chargeSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
 

@@ -18,7 +18,6 @@ namespace Roguelite.Enemy
         [SerializeField] private float groundSlamRadius = 7.5f;
 
         private float attackCooldownTimer = 0f;
-        private bool isAttacking = false;
         private bool isPhase2 = false;
 
         public bool IsPhase2 => isPhase2;
@@ -171,8 +170,9 @@ namespace Roguelite.Enemy
             lookDir.y = 0;
             if (lookDir.sqrMagnitude > 0.0001f)
             {
-                lookDir.Normalize();
-                transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+                Quaternion rot = Quaternion.LookRotation(lookDir, Vector3.up);
+                rot.Normalize();
+                transform.rotation = rot;
             }
 
             yield return new WaitForSeconds(0.4f);
@@ -312,7 +312,9 @@ namespace Roguelite.Enemy
             // Summon 2 Corrupted Saplings (small pumpkin/slime AI trees)
             for (int i = 0; i < 2; i++)
             {
-                Vector3 spawnPos = transform.position + Quaternion.Euler(0, i * 180 + 90, 0) * Vector3.forward * 5f;
+                Quaternion spawnRot = Quaternion.Euler(0, i * 180 + 90, 0);
+                spawnRot.Normalize();
+                Vector3 spawnPos = transform.position + spawnRot * Vector3.forward * 5f;
                 GameObject saplingObj = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 saplingObj.name = "CorruptedSapling";
                 saplingObj.transform.position = spawnPos;
@@ -354,14 +356,25 @@ namespace Roguelite.Enemy
                 Progression.ProgressionManager.Instance.AddXP(250);
             }
 
-            // Trigger Victory state in RunManager
+            // Trigger Victory state in RunManager (keeps game running, no popups)
             RunManager runManager = FindFirstObjectByType<RunManager>();
             if (runManager != null)
             {
                 runManager.TriggerVictory();
             }
 
+            if (UI.LootNotificationUI.Instance != null)
+            {
+                UI.LootNotificationUI.Instance.ShowBannerNotification("🌲 HOLLOW TREE BOSS DEFEATED!\nThe forest path is unsealed.", new Color(0.25f, 0.95f, 0.45f), 6.0f);
+            }
+
             base.Die();
+        }
+
+        protected override void SpawnEnemyLoot()
+        {
+            Roguelite.Loot.LootResult bossRewards = Roguelite.Loot.LootTable.ForBoss();
+            Roguelite.Loot.LootDrop.SpawnFromResult(bossRewards, transform.position + Vector3.up * 1.0f);
         }
     }
 }

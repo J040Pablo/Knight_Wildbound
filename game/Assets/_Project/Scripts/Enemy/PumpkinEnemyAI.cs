@@ -11,7 +11,6 @@ namespace Roguelite.Enemy
         [SerializeField] private bool isElite = false;
         [SerializeField] private float jumpAttackCooldown = 3.5f;
 
-        private float attackTimer = 0f;
         private bool isJumping = false;
 
         public bool IsElite => isElite;
@@ -105,7 +104,7 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isJumping) return;
+            if (IsDead || playerTransform == null || playerStats.IsDead || isJumping || Inventory.StealthState.IsPlayerInvisible || !SafeCanMove()) return;
 
             attackTimer -= Time.deltaTime;
             float distToPlayer = GetFlatDistanceToPlayer();
@@ -118,7 +117,11 @@ namespace Roguelite.Enemy
                 if (moveDir.sqrMagnitude > 0.0001f)
                 {
                     moveDir.Normalize();
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 8f);
+                    Quaternion targetRot = Quaternion.LookRotation(moveDir, Vector3.up);
+                    targetRot.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 8f);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
                 characterController.Move(moveDir * moveSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }
@@ -143,7 +146,7 @@ namespace Roguelite.Enemy
 
             while (elapsed < duration)
             {
-                if (IsDead) yield break;
+                if (IsDead || !SafeCanMove()) yield break;
 
                 characterController.Move(jumpDir * (isElite ? 9f : 11f) * Time.deltaTime);
                 elapsed += Time.deltaTime;

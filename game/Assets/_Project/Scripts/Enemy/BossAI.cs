@@ -15,7 +15,6 @@ namespace Roguelite.Enemy
 
         private float meleeAttackTimer = 0f;
         private float specialTimer = 3.0f;
-        private bool isAttacking = false;
         private bool isEnraged = false;
 
         public bool IsEnraged => isEnraged;
@@ -51,7 +50,7 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking) return;
+            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking || Inventory.StealthState.IsPlayerInvisible || !SafeCanMove()) return;
 
             // Check Phase 2 Enrage
             if (!isEnraged && CurrentHP <= MaxHP * 0.5f)
@@ -80,7 +79,11 @@ namespace Roguelite.Enemy
                 if (moveDir.sqrMagnitude > 0.0001f)
                 {
                     moveDir.Normalize();
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDir, Vector3.up), Time.deltaTime * 6f);
+                    Quaternion targetRot = Quaternion.LookRotation(moveDir, Vector3.up);
+                    targetRot.Normalize();
+                    Quaternion slerped = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 6f);
+                    slerped.Normalize();
+                    transform.rotation = slerped;
                 }
                 characterController.Move(moveDir * currentSpeed * Time.deltaTime + new Vector3(0, -9.8f, 0) * Time.deltaTime);
             }

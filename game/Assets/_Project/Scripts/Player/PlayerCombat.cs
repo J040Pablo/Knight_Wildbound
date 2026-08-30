@@ -108,10 +108,18 @@ namespace Roguelite.Player
                 // Ignore hits behind or too close to the player along the camera ray
                 if (hit.distance < playerDistAlongRay - 0.2f) continue;
 
+                // Filter out non-enemy close hits (<3m) so nearby props/ground don't skew reticle angle
+                float distToPlayer = Vector3.Distance(hit.point, playerPos);
+                if (distToPlayer < 3.0f)
+                {
+                    bool isEnemy = hit.collider.GetComponent<Roguelite.Combat.IDamageable>() != null || hit.collider.GetComponentInParent<Roguelite.Combat.IDamageable>() != null;
+                    if (!isEnemy) continue;
+                }
+
                 return hit.point;
             }
 
-            return ray.origin + ray.direction * 50f;
+            return ray.origin + ray.direction * 60f;
         }
 
         public Vector3 GetReticleAimDirection()
@@ -174,7 +182,9 @@ namespace Roguelite.Player
                 if (horizontalAimDir.sqrMagnitude > 0.0001f)
                 {
                     horizontalAimDir.Normalize();
-                    transform.rotation = Quaternion.LookRotation(horizontalAimDir, Vector3.up);
+                    Quaternion rot = Quaternion.LookRotation(horizontalAimDir, Vector3.up);
+                    rot.Normalize();
+                    transform.rotation = rot;
                 }
 
                 if (currentChargeTime >= weaponData.chargeTimeRequired)
@@ -230,7 +240,7 @@ namespace Roguelite.Player
             // Find all potential targets in radius
             Collider[] hits = Physics.OverlapSphere(transform.position, range, enemyLayerMask);
 
-            float totalDamage = (baseDamage + playerStats.CharacterData.baseAttackDamage) * playerStats.DamageMultiplier;
+            float totalDamage = (baseDamage + playerStats.CharacterData.baseAttackDamage + playerStats.FlatDamageBonus) * playerStats.DamageMultiplier;
             bool isCrit = Random.value <= (playerStats.CharacterData.baseCritChance + playerStats.CritChanceBonus);
 
             if (isCrit)

@@ -9,20 +9,37 @@ namespace Roguelite.Progression
     public class ProgressionManager : MonoBehaviour
     {
         private static ProgressionManager instance;
+        private static bool applicationIsQuitting = false;
+
         public static ProgressionManager Instance
         {
             get
             {
+                if (applicationIsQuitting) return null;
+
                 if (instance == null)
                 {
                     instance = FindFirstObjectByType<ProgressionManager>();
-                    if (instance == null)
+                    if (instance == null && !applicationIsQuitting)
                     {
                         GameObject go = new GameObject("ProgressionManager");
                         instance = go.AddComponent<ProgressionManager>();
                     }
                 }
                 return instance;
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            applicationIsQuitting = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
             }
         }
 

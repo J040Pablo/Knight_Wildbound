@@ -17,7 +17,8 @@ namespace Roguelite.UI
 
         private void OnGUI()
         {
-            if (runManager == null || runManager.State == RunState.InRun) return;
+            // Only display game over UI on player death. Boss victory flows seamlessly!
+            if (runManager == null || runManager.State != RunState.GameOver) return;
 
             // Darken background
             GUI.color = new Color(0, 0, 0, 0.85f);

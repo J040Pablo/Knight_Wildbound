@@ -76,27 +76,25 @@ namespace Roguelite.Wave
             switch (difficulty)
             {
                 case EncounterDifficulty.Easy:
-                    // Forest Zone: Gnomes
+                    // Forest Zone: Slimes + Evil Fairies
                     SpawnEnemy<SlimeAI>(spawnPoints[0 % spawnPoints.Count].position, false);
                     SpawnEnemy<SlimeAI>(spawnPoints[1 % spawnPoints.Count].position, false);
-                    SpawnEnemy<SlimeAI>(spawnPoints[2 % spawnPoints.Count].position, false);
-                    SpawnEnemy<SlimeAI>(spawnPoints[3 % spawnPoints.Count].position, false);
+                    SpawnEnemy<FairyEnemyAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     break;
 
                 case EncounterDifficulty.Medium:
-                    // Forest Depths Zone: Gnomes + Mini Trees
-                    SpawnEnemy<SlimeAI>(spawnPoints[0 % spawnPoints.Count].position, false);
-                    SpawnEnemy<SlimeAI>(spawnPoints[1 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[3 % spawnPoints.Count].position, false);
+                    // Forest Depths Zone: Goblins + Poison Mushrooms
+                    SpawnEnemy<GoblinAI>(spawnPoints[0 % spawnPoints.Count].position, false);
+                    SpawnEnemy<GoblinAI>(spawnPoints[1 % spawnPoints.Count].position, false);
+                    SpawnEnemy<PoisonMushroomAI>(spawnPoints[2 % spawnPoints.Count].position, false);
                     break;
 
                 case EncounterDifficulty.Hard:
-                    // Dark Woods Zone: Creatures + Mini Trees
+                    // Dark Woods Zone: Wolves + Fairies + Poison Mushroom
                     SpawnEnemy<WolfAI>(spawnPoints[0 % spawnPoints.Count].position, false);
                     SpawnEnemy<WolfAI>(spawnPoints[1 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[2 % spawnPoints.Count].position, false);
-                    SpawnEnemy<GoblinAI>(spawnPoints[3 % spawnPoints.Count].position, false);
+                    SpawnEnemy<FairyEnemyAI>(spawnPoints[2 % spawnPoints.Count].position, false);
+                    SpawnEnemy<PoisonMushroomAI>(spawnPoints[3 % spawnPoints.Count].position, false);
                     break;
             }
         }

@@ -57,6 +57,11 @@ namespace Roguelite.Core
             TotalKills = 0;
 
             UnlockedUpgradeIDs.Clear();
+
+            // Clear saved inventory & equipment state for a clean run reset
+            if (Inventory.PlayerInventorySave.Instance != null) Inventory.PlayerInventorySave.Instance.ClearSaveData();
+            if (Inventory.InventoryManager.Instance != null) Inventory.InventoryManager.Instance.ResetInventory();
+            if (Inventory.EquipmentManager.Instance != null) Inventory.EquipmentManager.Instance.ResetEquipment();
         }
 
         public void SavePlayerState(PlayerStats stats)

@@ -100,6 +100,9 @@ namespace Roguelite.Player
             while (elapsed < duration)
             {
                 transform.Rotate(Vector3.up, 720f * Time.deltaTime);
+                Quaternion rot = transform.rotation;
+                rot.Normalize();
+                transform.rotation = rot;
 
                 tickTimer += Time.deltaTime;
                 if (tickTimer >= tickInterval)
@@ -138,6 +141,7 @@ namespace Roguelite.Player
             if (safeDir.sqrMagnitude < 0.0001f) safeDir = Vector3.forward;
             Vector3 safeUp = Mathf.Abs(Vector3.Dot(safeDir, Vector3.up)) > 0.99f ? Vector3.forward : Vector3.up;
             Quaternion beamRot = Quaternion.LookRotation(safeDir, safeUp);
+            beamRot.Normalize();
             Vector3 launchPos = transform.position + Vector3.up * 1.0f + safeDir * 1.5f;
 
             GameObject beam = GameObject.CreatePrimitive(PrimitiveType.Cube);

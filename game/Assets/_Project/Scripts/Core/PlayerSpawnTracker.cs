@@ -14,7 +14,6 @@ namespace Roguelite.Core
         private GameObject blueSpherePlayerPos;
 
         private Vector3 lastLoggedPos;
-        private bool isTracking = false;
 
         public static PlayerSpawnTracker Instance { get; private set; }
 
@@ -87,7 +86,6 @@ namespace Roguelite.Core
         public void LogCCDetails(CharacterController cc, Vector3 posBeforeEnable, Vector3 posAfterEnable)
         {
             lastLoggedPos = posAfterEnable;
-            isTracking = true;
         }
 
         public void LogAfterBootstrap(Vector3 pos)

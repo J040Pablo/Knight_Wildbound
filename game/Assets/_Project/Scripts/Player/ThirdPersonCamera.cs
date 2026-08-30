@@ -8,7 +8,7 @@ namespace Roguelite.Player
         public Transform target;
         [SerializeField] private float heightOffset = 1.3f;
         [SerializeField] private float mountedHeightOffset = 2.6f;
-        [SerializeField] private float rightOffset = 1.8f;
+        [SerializeField] private float rightOffset = 1.6f;
 
         [Header("Distance & Angles")]
         [SerializeField] private float distance = 6.0f;
@@ -67,6 +67,7 @@ namespace Roguelite.Player
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
+            rotation.Normalize();
 
             // Dynamic height offset based on mounted state
             float activeHeight = IsMounted ? mountedHeightOffset : heightOffset;
@@ -75,6 +76,9 @@ namespace Roguelite.Player
             Vector3 targetPivot = target.position + Vector3.up * activeHeight;
             Vector3 shoulderOffset = rotation * Vector3.right * rightOffset;
             Vector3 pivotWithShoulder = targetPivot + shoulderOffset;
+
+            // Clamp desired camera distance within min/max bounds
+            distance = Mathf.Clamp(distance, minDistance, maxDistance);
 
             // Desired camera position before collision check
             Vector3 desiredCamPos = pivotWithShoulder - (rotation * Vector3.forward * distance);

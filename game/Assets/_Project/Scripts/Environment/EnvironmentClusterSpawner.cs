@@ -203,6 +203,7 @@ namespace Roguelite.Environment
             if (validatePosition != null && !validatePosition(pos, minClearance)) return false;
 
             Quaternion rot = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+            rot.Normalize();
             GameObject obj = WorldPlaceholderFactory.Build(key, parent, null, scale);
             if (obj != null)
             {

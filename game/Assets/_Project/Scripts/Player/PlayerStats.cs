@@ -23,9 +23,12 @@ namespace Roguelite.Player
 
         // Upgrade Stat Modifiers
         public float DamageMultiplier { get; private set; } = 1.0f;
+        public float FlatDamageBonus { get; private set; } = 0f;
+        public float FlatDamage => (characterData != null ? characterData.baseAttackDamage : 25f) * DamageMultiplier + FlatDamageBonus;
         public float MoveSpeedMultiplier { get; private set; } = 1.0f;
         public float AttackSpeedMultiplier { get; private set; } = 1.0f;
         public float MaxStaminaMultiplier { get; private set; } = 1.0f;
+        public float ExtraMaxStamina { get; private set; } = 0f;
         public float CritChanceBonus { get; private set; } = 0.0f;
         public float ExtraMaxHP { get; private set; } = 0f;
 
@@ -71,7 +74,7 @@ namespace Roguelite.Player
             }
             float prevMaxHP = MaxHP;
             MaxHP = (characterData.baseMaxHP + ExtraMaxHP);
-            MaxStamina = characterData.baseMaxStamina * MaxStaminaMultiplier;
+            MaxStamina = (characterData.baseMaxStamina + ExtraMaxStamina) * MaxStaminaMultiplier;
 
             // Retain HP percentage if MaxHP changes
             if (prevMaxHP > 0)
@@ -86,6 +89,33 @@ namespace Roguelite.Player
 
             OnHealthChanged?.Invoke(CurrentHP, MaxHP);
             OnStaminaChanged?.Invoke(CurrentStamina, MaxStamina);
+        }
+
+        public void ModifyFlatDamage(float delta)
+        {
+            FlatDamageBonus += delta;
+        }
+
+        public void ModifyMoveSpeedMultiplier(float delta)
+        {
+            MoveSpeedMultiplier += delta;
+        }
+
+        public void ModifyDamageMultiplier(float delta)
+        {
+            DamageMultiplier += delta;
+        }
+
+        public void ModifyMaxHP(float delta)
+        {
+            ExtraMaxHP += delta;
+            RecalculateStats();
+        }
+
+        public void ModifyMaxStamina(float delta)
+        {
+            ExtraMaxStamina += delta;
+            RecalculateStats();
         }
 
         public bool ConsumeStamina(float amount)
