@@ -18,7 +18,11 @@ namespace Roguelite.Enemy
         private bool isAwakened = false;
         private float attackTimer = 0f;
 
+        public override bool IsBossEnemy => isColossusMiniBoss;
+        public override string DisplayName => isColossusMiniBoss ? "Ancient Colossus" : "Stone Giant";
+
         public bool IsColossus => isColossusMiniBoss;
+        public bool IsAwakened => isAwakened;
 
         public void SetAsColossusMiniBoss()
         {

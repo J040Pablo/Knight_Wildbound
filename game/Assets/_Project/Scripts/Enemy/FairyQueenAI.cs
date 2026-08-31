@@ -23,6 +23,9 @@ namespace Roguelite.Enemy
         private float hoverTime = 0f;
         private readonly List<GameObject> activeMinions = new List<GameObject>();
         private const int MAX_MINIONS = 2;
+
+        public override bool IsBossEnemy => true;
+        public override string DisplayName => "Fairy Queen";
         private const float SUMMON_COOLDOWN = 20.0f;
 
         protected override void Awake()

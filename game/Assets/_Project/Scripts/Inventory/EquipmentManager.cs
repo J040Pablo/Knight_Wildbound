@@ -63,6 +63,7 @@ namespace Roguelite.Inventory
         public event Action<bool> OnStealthStateChanged;
 
         public float ShadowCooldownRemaining => Mathf.Max(0f, shadowCooldownTimer);
+        public float ShadowCooldownMax => SHADOW_STEALTH_COOLDOWN;
         public bool IsStealthActive => StealthState.IsPlayerInvisible;
 
         private void Awake()

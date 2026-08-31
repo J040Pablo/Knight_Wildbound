@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Roguelite.Combat;
 using Roguelite.Core;
@@ -22,6 +22,9 @@ namespace Roguelite.Enemy
 
         public bool IsPhase2 => isPhase2;
         public event Action<float, float> OnBossHealthChanged;
+
+        public override bool IsBossEnemy => true;
+        public override string DisplayName => "Hollow Tree Guardian";
 
         private List<GameObject> activeSummonedMinions = new List<GameObject>();
 

@@ -100,6 +100,7 @@ namespace Roguelite.Player
 
             if (mountedPlayerCollider != null)
             {
+                mountedPlayerCollider.enabled = false;
                 Destroy(mountedPlayerCollider);
                 mountedPlayerCollider = null;
             }
@@ -111,7 +112,8 @@ namespace Roguelite.Player
             Vector3 candidatePos = transform.position + transform.right * 2.2f + Vector3.up * 0.4f;
             Vector3 safeDismountPos = candidatePos;
 
-            if (Physics.Raycast(candidatePos + Vector3.up * 3.0f, Vector3.down, out RaycastHit hit, 10.0f))
+            int mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+            if (Physics.Raycast(candidatePos + Vector3.up * 3.0f, Vector3.down, out RaycastHit hit, 10.0f, mask))
             {
                 safeDismountPos = hit.point + Vector3.up * 0.05f;
             }
@@ -122,18 +124,18 @@ namespace Roguelite.Player
             // Force PhysX transform sync before re-enabling CharacterController
             Physics.SyncTransforms();
 
-            // 3. Re-enable player controllers & reset velocity state
-            PlayerController pCtrl = player.GetComponent<PlayerController>();
-            if (pCtrl != null)
-            {
-                pCtrl.ResetVelocity();
-                pCtrl.enabled = true;
-            }
-
+            // 3. Re-enable player CharacterController & PlayerController
             CharacterController pCC = player.GetComponent<CharacterController>();
             if (pCC != null)
             {
                 pCC.enabled = true;
+            }
+
+            PlayerController pCtrl = player.GetComponent<PlayerController>();
+            if (pCtrl != null)
+            {
+                pCtrl.enabled = true;
+                pCtrl.ResetVelocity();
             }
 
             // 4. Restore camera target to player and reset aim height

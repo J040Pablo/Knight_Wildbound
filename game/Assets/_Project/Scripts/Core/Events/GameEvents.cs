@@ -5,8 +5,23 @@ using Roguelite.Progression;
 
 namespace Roguelite.Core.Events
 {
+    public enum CombatTextType
+    {
+        Normal,
+        Critical,
+        Heal
+    }
+
     public static class GameEvents
     {
+        // Combat Text (floating damage / heal numbers)
+        public static event Action<Vector3, float, CombatTextType> OnCombatTextRequested;
+
+        public static void TriggerCombatText(Vector3 worldPosition, float amount, CombatTextType type)
+        {
+            OnCombatTextRequested?.Invoke(worldPosition, amount, type);
+        }
+
         // Economy & Items
         public static event Action<int> OnGoldChanged;
         public static event Action<ItemData, int> OnItemAdded;

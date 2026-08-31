@@ -57,6 +57,8 @@ namespace Roguelite.Player
             return Mathf.Clamp01(abilityCooldownTimer / currentAbilityMaxCooldown);
         }
 
+        public float CooldownSecondsRemaining => Mathf.Max(0f, abilityCooldownTimer);
+
         public void TriggerAbility(Vector3 aimDirection)
         {
             if (ProgressionManager.Instance == null) return;

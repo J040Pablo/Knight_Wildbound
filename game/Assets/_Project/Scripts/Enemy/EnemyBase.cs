@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using Roguelite.Data;
 using Roguelite.Combat;
+using Roguelite.Data;
 using Roguelite.Player;
 
 namespace Roguelite.Enemy
@@ -42,6 +42,12 @@ namespace Roguelite.Enemy
         private float maxHPInternal = 50f;
 
         public bool IsDead { get; protected set; } = false;
+
+        /// <summary>Override to true in boss-tier enemy AIs so the HUD shows the big boss health bar for them.</summary>
+        public virtual bool IsBossEnemy => false;
+
+        /// <summary>Override with a proper display name in boss-tier enemy AIs (used by the boss health bar).</summary>
+        public virtual string DisplayName => gameObject.name.Replace("(Clone)", "").Trim();
 
         protected CharacterController characterController;
         protected Transform playerTransform;
@@ -145,6 +151,14 @@ namespace Roguelite.Enemy
 
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);
 
+            if (damageInfo.amount > 0f)
+            {
+                Roguelite.Core.Events.GameEvents.TriggerCombatText(
+                    transform.position + Vector3.up * (IsBossEnemy ? 2.5f : 1.5f),
+                    damageInfo.amount,
+                    damageInfo.isCritical ? Roguelite.Core.Events.CombatTextType.Critical : Roguelite.Core.Events.CombatTextType.Normal);
+            }
+
             // Apply Knockback
             if (damageInfo.knockbackForce > 0)
             {
@@ -183,6 +197,11 @@ namespace Roguelite.Enemy
             {
                 StartCoroutine(FlashColor(Color.green));
             }
+
+            Roguelite.Core.Events.GameEvents.TriggerCombatText(
+                transform.position + Vector3.up * (IsBossEnemy ? 2.5f : 1.5f),
+                amount,
+                Roguelite.Core.Events.CombatTextType.Heal);
         }
 
         public float MoveSpeedMultiplier { get; set; } = 1.0f;

@@ -152,6 +152,14 @@ namespace Roguelite.Player
             if (IsDead) return;
             CurrentHP = Mathf.Min(CurrentHP + amount, MaxHP);
             OnHealthChanged?.Invoke(CurrentHP, MaxHP);
+
+            if (amount > 0f)
+            {
+                Roguelite.Core.Events.GameEvents.TriggerCombatText(
+                    transform.position + Vector3.up * 1.8f,
+                    amount,
+                    Roguelite.Core.Events.CombatTextType.Heal);
+            }
         }
 
         public void TakeDamage(DamageInfo damageInfo)
@@ -182,6 +190,14 @@ namespace Roguelite.Player
 
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);
             OnHealthChanged?.Invoke(CurrentHP, MaxHP);
+
+            if (damageInfo.amount > 0f)
+            {
+                Roguelite.Core.Events.GameEvents.TriggerCombatText(
+                    transform.position + Vector3.up * 1.8f,
+                    damageInfo.amount,
+                    damageInfo.isCritical ? Roguelite.Core.Events.CombatTextType.Critical : Roguelite.Core.Events.CombatTextType.Normal);
+            }
 
             if (CurrentHP <= 0)
             {

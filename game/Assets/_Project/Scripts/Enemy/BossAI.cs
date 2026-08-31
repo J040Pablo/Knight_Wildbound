@@ -18,6 +18,9 @@ namespace Roguelite.Enemy
         private bool isEnraged = false;
 
         public bool IsEnraged => isEnraged;
+
+        public override bool IsBossEnemy => true;
+        public override string DisplayName => string.IsNullOrEmpty(gameObject.name) ? "Boss" : gameObject.name.Replace("(Clone)", "").Trim();
         public event Action<float, float> OnBossHealthChanged;
 
         protected override void Awake()
