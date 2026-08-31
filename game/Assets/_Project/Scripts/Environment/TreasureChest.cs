@@ -64,7 +64,7 @@ namespace Roguelite.Environment
             }
         }
 
-        public string InteractionPrompt => isOpened ? "" : $"Open {chestRarity} Chest [E]";
+        public string InteractionPrompt => isOpened ? "" : $"F — Abrir Baú ({chestRarity})";
 
         public bool CanInteract(GameObject player)
         {

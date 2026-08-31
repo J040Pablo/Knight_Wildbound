@@ -75,6 +75,12 @@ namespace Roguelite.Core
                 inputObj.AddComponent<InputStateManager>();
             }
 
+            if (CharacterWindowUI.Instance == null)
+            {
+                GameObject charWinObj = new GameObject("CharacterWindowUI");
+                charWinObj.AddComponent<CharacterWindowUI>();
+            }
+
             if (InventoryUI.Instance == null)
             {
                 GameObject invUiObj = new GameObject("InventoryUI");

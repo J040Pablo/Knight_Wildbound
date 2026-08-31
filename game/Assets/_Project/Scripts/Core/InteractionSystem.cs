@@ -6,7 +6,7 @@ namespace Roguelite.Core
     {
         [Header("Interaction Config")]
         [SerializeField] private float interactRange = 3.5f;
-        [SerializeField] private KeyCode interactKey = KeyCode.E;
+        [SerializeField] private KeyCode interactKey = KeyCode.F;
 
         public IInteractable CurrentInteractable { get; private set; }
         public string CurrentPrompt => CurrentInteractable != null ? CurrentInteractable.InteractionPrompt : string.Empty;

@@ -18,10 +18,10 @@ namespace Roguelite.Environment
             {
                 switch (targetClass)
                 {
-                    case CharacterType.Mage: return "E — Pick up Staff (Mage)";
-                    case CharacterType.Druid: return "E — Pick up Nature Staff (Druid)";
+                    case CharacterType.Mage: return "F — Selecionar Cajado (Mago)";
+                    case CharacterType.Druid: return "F — Selecionar Cajado da Natureza (Druida)";
                     case CharacterType.Knight:
-                    default: return "E — Pick up Sword (Knight)";
+                    default: return "F — Selecionar Espada (Guerreiro)";
                 }
             }
         }
@@ -99,7 +99,7 @@ namespace Roguelite.Environment
             // 5. Trigger notification banner
             if (Wave.EncounterManager.Instance != null)
             {
-                Wave.EncounterManager.Instance.TriggerBanner($"⚔️ {targetClass.ToString().ToUpper()} CLASS UNLOCKED! Press [Q] for Masteries!");
+                Wave.EncounterManager.Instance.TriggerBanner($"⚔️ CLASSE {targetClass.ToString().ToUpper()} DESBLOQUEADA! Pressione [E] para o Menu de Maestrias!");
             }
         }
 

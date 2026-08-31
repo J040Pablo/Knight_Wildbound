@@ -98,6 +98,7 @@ namespace Roguelite.UI
             CanvasRoot.gameObject.AddComponent<HUDBossBarWidget>();
             CanvasRoot.gameObject.AddComponent<HUDInteractionPromptWidget>();
             CanvasRoot.gameObject.AddComponent<HUDFloatingCombatText>();
+            CanvasRoot.gameObject.AddComponent<HUDCrosshairWidget>();
         }
 
         private void OnDestroy()

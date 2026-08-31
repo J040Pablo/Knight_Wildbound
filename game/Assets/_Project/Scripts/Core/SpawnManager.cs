@@ -189,7 +189,7 @@ namespace Roguelite.Core
             return true;
         }
 
-        public bool ValidateEnemySpawnPosition(Vector3 testPos, float clearanceRadius, Vector3 playerPos, List<Vector3> existingEnemyPositions, out Vector3 validGroundPos, float minPlayerDist = 8.0f, float minEnemyDist = 2.0f)
+        public bool ValidateEnemySpawnPosition(Vector3 testPos, float clearanceRadius, Vector3 playerPos, List<Vector3> existingEnemyPositions, out Vector3 validGroundPos, float minPlayerDist = 50.0f, float minEnemyDist = 2.0f)
         {
             validGroundPos = testPos;
 
@@ -199,7 +199,7 @@ namespace Roguelite.Core
                 return false;
             }
 
-            // 2. Distance check from Player (minimum 8-10 meters to prevent spawning directly on top of player)
+            // 2. Distance check from Player (minimum 50 meters safe sanctuary radius)
             if (playerPos != Vector3.zero && Vector3.Distance(validGroundPos, playerPos) < minPlayerDist)
             {
                 return false;

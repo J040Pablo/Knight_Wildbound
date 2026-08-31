@@ -50,7 +50,7 @@ namespace Roguelite.Core
 
         private void Update()
         {
-            if (IsDialogueActive && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)))
+            if (IsDialogueActive && (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0)))
             {
                 AdvanceOrCloseDialogue();
             }
@@ -103,7 +103,7 @@ namespace Roguelite.Core
             GUI.skin.label.fontStyle = FontStyle.BoldAndItalic;
             GUI.skin.label.alignment = TextAnchor.MiddleRight;
             GUI.color = new Color(0.95f, 0.85f, 0.45f, 0.9f);
-            GUI.Label(hintRect, "[Press E, SPACE, or CLICK to Continue →]");
+            GUI.Label(hintRect, "[Pressione F, ESPAÇO ou CLIQUE para Continuar →]");
 
             // Reset label skin alignment
             GUI.skin.label.alignment = TextAnchor.UpperLeft;

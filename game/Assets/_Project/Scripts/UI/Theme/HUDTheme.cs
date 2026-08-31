@@ -160,7 +160,7 @@ namespace Roguelite.UI.Theme
                     Color baseColor = fill;
                     if (border > 0)
                     {
-                        float borderT = Mathf.Clamp01(0.5f - (d + border));
+                        float borderT = Mathf.Clamp01((d + border) / border);
                         baseColor = Color.Lerp(fill, borderColor, borderT);
                     }
                     float a = Mathf.Clamp01(0.5f - d);

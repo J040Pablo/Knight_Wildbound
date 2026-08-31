@@ -13,7 +13,7 @@ namespace Roguelite.Player
 
         public bool IsPlayerMounted => mountedPlayer != null;
 
-        public string InteractionPrompt => IsPlayerMounted ? "E — Dismount" : "E — Mount Horse";
+        public string InteractionPrompt => IsPlayerMounted ? "F — Desmontar" : "F — Montar no Cavalo";
 
         public float CurrentHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().CurrentHP : 100f;
         public float MaxHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().MaxHP : 100f;

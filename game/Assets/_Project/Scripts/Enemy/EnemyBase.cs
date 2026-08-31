@@ -83,9 +83,9 @@ namespace Roguelite.Enemy
         {
             Quaternion rot = transform.rotation;
             float sqrMag = rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w;
-            if (sqrMag < 0.001f)
+            if (sqrMag < 0.99f || sqrMag > 1.01f)
             {
-                transform.rotation = Quaternion.identity;
+                transform.rotation = (sqrMag < 0.001f) ? Quaternion.identity : Quaternion.Normalize(rot);
             }
 
             characterController = GetComponent<CharacterController>();

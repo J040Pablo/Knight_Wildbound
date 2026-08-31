@@ -20,9 +20,13 @@ namespace Roguelite.Enemy
         [SerializeField] private float hoverHeight = 2.0f;
         [SerializeField] private float attackCooldown = 3.5f;
 
+        [SerializeField] private float detectionRange = 14f;
+
         private float attackTimer = 0f;
         private float hoverTime = 0f;
         private Vector3 targetHoverPos;
+        private Vector3 spawnPosition;
+        private bool isAggroed = false;
 
         // Forest Witch Summon Limits (User specified caps)
         private int totalSummonsExecuted = 0;
@@ -43,7 +47,8 @@ namespace Roguelite.Enemy
         protected override void Start()
         {
             base.Start();
-            targetHoverPos = transform.position;
+            spawnPosition = transform.position;
+            targetHoverPos = spawnPosition;
 
             if (meshRenderer != null)
             {
@@ -59,16 +64,47 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking || !SafeCanMove()) return;
+            if (IsDead || isAttacking || !SafeCanMove()) return;
 
             // Hover float animation
             hoverTime += Time.deltaTime;
             float hoverY = Mathf.Sin(hoverTime * 3f) * 0.4f + hoverHeight;
 
-            attackTimer -= Time.deltaTime;
-            if (summonCooldownTimer > 0f) summonCooldownTimer -= Time.deltaTime;
+            if (playerTransform == null || playerStats == null || playerStats.IsDead)
+            {
+                // Idle hover around spawn position
+                Vector3 idlePos = spawnPosition + Vector3.up * hoverY;
+                transform.position = Vector3.MoveTowards(transform.position, idlePos, Time.deltaTime * 2f);
+                return;
+            }
 
             float dist = Vector3.Distance(transform.position, playerTransform.position);
+
+            // Detection check: Only aggro if player comes within detectionRange (14m)
+            if (!isAggroed)
+            {
+                if (dist <= detectionRange)
+                {
+                    isAggroed = true;
+                }
+                else
+                {
+                    // Idle hover at spawn point when unaggroed
+                    Vector3 idlePos = spawnPosition + Vector3.up * hoverY;
+                    transform.position = Vector3.MoveTowards(transform.position, idlePos, Time.deltaTime * 2f);
+                    return;
+                }
+            }
+
+            // De-aggro if player runs away > 28m
+            if (dist > 28f)
+            {
+                isAggroed = false;
+                return;
+            }
+
+            attackTimer -= Time.deltaTime;
+            if (summonCooldownTimer > 0f) summonCooldownTimer -= Time.deltaTime;
 
             // Keep distance / move to hover target
             Vector3 desiredPos = playerTransform.position + (transform.position - playerTransform.position).normalized * 7.0f;

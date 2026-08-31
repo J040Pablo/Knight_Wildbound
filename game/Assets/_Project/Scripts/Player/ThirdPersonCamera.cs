@@ -1,7 +1,14 @@
 using UnityEngine;
+using Roguelite.UI;
+using Roguelite.Core;
 
 namespace Roguelite.Player
 {
+    /// <summary>
+    /// High-performance 3rd Person Over-The-Shoulder Camera Controller.
+    /// Features zero-allocation per-frame execution, non-allocating Physics queries,
+    /// dynamic obstacle collision avoidance, terrain grounding clamp, and smooth orbit looking.
+    /// </summary>
     public class ThirdPersonCamera : MonoBehaviour
     {
         [Header("Target Settings")]
@@ -23,14 +30,19 @@ namespace Roguelite.Player
         public float maxPitch = 85.0f;
 
         [Header("Smoothing & Collision")]
-        public float smoothSpeed = 14f;
+        public float smoothSpeed = 16f;
         [SerializeField] private LayerMask collisionLayers;
 
         public bool IsMounted { get; set; } = false;
 
+        private Camera cachedCamera;
+        private Transform cachedTargetRoot;
         private Vector3 currentVelocity;
         private float shakeTimer = 0f;
         private float shakeIntensity = 0f;
+
+        // Non-allocating raycast buffer to prevent per-frame GC allocations
+        private static readonly RaycastHit[] hitBuffer = new RaycastHit[16];
 
         public void TriggerShake(float intensity, float duration)
         {
@@ -40,17 +52,27 @@ namespace Roguelite.Player
 
         private void Start()
         {
+            cachedCamera = GetComponent<Camera>();
+            if (cachedCamera != null)
+            {
+                cachedCamera.nearClipPlane = 0.05f;
+                cachedCamera.farClipPlane = 350f; // Extended 350m far clip plane
+                cachedCamera.useOcclusionCulling = false; // Disabled unbaked Occlusion Culling to prevent CPU hitching
+            }
+
             if (collisionLayers == 0)
             {
                 collisionLayers = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
             }
 
-            Camera cam = GetComponent<Camera>();
-            if (cam != null)
+            CacheTargetReferences();
+        }
+
+        public void CacheTargetReferences()
+        {
+            if (target != null)
             {
-                cam.nearClipPlane = 0.05f; // Prevent near-plane slicing into 3D terrain surface
-                cam.farClipPlane = 1000f;   // Generous far clip plane for continuous open world
-                cam.useOcclusionCulling = false; // Disable unbaked occlusion culling for procedural objects
+                cachedTargetRoot = target.root;
             }
         }
 
@@ -58,15 +80,22 @@ namespace Roguelite.Player
         {
             if (target == null) return;
 
-            // Block mouse orbit look while menu is open or in UI mode
-            if (UI.MasteryScreenUI.IsAnyMenuOpen || (Roguelite.Core.InputStateManager.Instance != null && Roguelite.Core.InputStateManager.Instance.CurrentMode == Roguelite.Core.InputMode.UI)) return;
+            // Block camera orbit when menu or UI mode is active (Zero string allocation)
+            if (MasteryScreenUI.IsAnyMenuOpen) return;
+            if (InputStateManager.Instance != null && InputStateManager.Instance.CurrentMode == InputMode.UI) return;
+
+            // Cache target root if updated dynamically (e.g., mounting horse)
+            if (cachedTargetRoot != target.root)
+            {
+                cachedTargetRoot = target.root;
+            }
 
             // Mouse orbit look input
             yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
             pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0);
+            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
             rotation.Normalize();
 
             // Dynamic height offset based on mounted state
@@ -83,37 +112,46 @@ namespace Roguelite.Player
             // Desired camera position before collision check
             Vector3 desiredCamPos = pivotWithShoulder - (rotation * Vector3.forward * distance);
 
-            // Camera Obstacle Collision Avoidance
+            // Non-allocating Camera Obstacle Collision Avoidance
             float currentDistance = distance;
-            Ray ray = new Ray(targetPivot, (desiredCamPos - targetPivot).normalized);
-            float maxRayDist = Vector3.Distance(targetPivot, desiredCamPos);
+            Vector3 rayDir = (desiredCamPos - targetPivot);
+            float maxRayDist = rayDir.magnitude;
 
-            // SphereCast all hits to properly ignore Player, Horse, and rider children
-            RaycastHit[] hits = Physics.SphereCastAll(ray, 0.35f, maxRayDist, collisionLayers);
-            float closestHitDist = maxRayDist;
-
-            foreach (var hit in hits)
+            if (maxRayDist > 0.001f)
             {
-                if (hit.collider == null || hit.collider.isTrigger) continue;
+                Ray ray = new Ray(targetPivot, rayDir / maxRayDist);
+                int hitCount = Physics.SphereCastNonAlloc(ray, 0.30f, hitBuffer, maxRayDist, collisionLayers);
+                float closestHitDist = maxRayDist;
 
-                // Explicitly ignore Player, Horse, and target hierarchy
-                if (IsIgnoredCameraCollider(hit.collider)) continue;
-
-                if (hit.distance < closestHitDist)
+                for (int i = 0; i < hitCount; i++)
                 {
-                    closestHitDist = hit.distance;
-                }
-            }
+                    RaycastHit hit = hitBuffer[i];
+                    Collider col = hit.collider;
+                    if (col == null || col.isTrigger) continue;
 
-            if (closestHitDist < maxRayDist)
-            {
-                currentDistance = Mathf.Clamp(closestHitDist - 0.2f, minDistance, distance);
+                    // Fast non-allocating hierarchy & tag filter
+                    Transform colTransform = col.transform;
+                    if (colTransform == target || colTransform == cachedTargetRoot || colTransform.root == cachedTargetRoot || col.CompareTag("Player"))
+                    {
+                        continue;
+                    }
+
+                    if (hit.distance < closestHitDist)
+                    {
+                        closestHitDist = hit.distance;
+                    }
+                }
+
+                if (closestHitDist < maxRayDist)
+                {
+                    currentDistance = Mathf.Clamp(closestHitDist - 0.15f, minDistance, distance);
+                }
             }
 
             Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentDistance);
 
             // Camera Screen Shake Offset
-            if (shakeTimer > 0)
+            if (shakeTimer > 0f)
             {
                 shakeTimer -= Time.deltaTime;
                 Vector3 shakeOffset = Random.insideUnitSphere * shakeIntensity * Mathf.Clamp01(shakeTimer);
@@ -127,33 +165,9 @@ namespace Roguelite.Player
                 finalCamPos.y = groundH + 0.8f;
             }
 
-            // Smooth Damping follow
+            // Zero-alloc Smooth Damping follow
             transform.position = Vector3.SmoothDamp(transform.position, finalCamPos, ref currentVelocity, 1.0f / smoothSpeed);
-
             transform.rotation = rotation;
-        }
-
-        private bool IsIgnoredCameraCollider(Collider col)
-        {
-            if (col == null) return true;
-
-            // Check tag
-            if (col.CompareTag("Player")) return true;
-
-            // Check name patterns
-            string colName = col.gameObject.name.ToLower();
-            if (colName.Contains("player") || colName.Contains("horse") || colName.Contains("saddle") || colName.Contains("leg"))
-            {
-                return true;
-            }
-
-            // Check hierarchy relative to current target
-            if (target != null && (col.transform == target || col.transform.IsChildOf(target) || target.IsChildOf(col.transform)))
-            {
-                return true;
-            }
-
-            return false;
         }
 
         public Vector3 GetForwardVector()

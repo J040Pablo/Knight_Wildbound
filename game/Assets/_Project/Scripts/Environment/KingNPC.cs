@@ -11,7 +11,7 @@ namespace Roguelite.Environment
 
         public bool HasFinishedDialogue { get; private set; } = false;
 
-        public string InteractionPrompt => HasFinishedDialogue ? "E — Speak with King" : "E — Talk to King";
+        public string InteractionPrompt => "F — Falar com o Rei";
 
         private void Awake()
         {

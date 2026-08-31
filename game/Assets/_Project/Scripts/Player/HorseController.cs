@@ -50,73 +50,90 @@ namespace Roguelite.Player
                 transform.rotation = Quaternion.identity;
             }
             characterController = GetComponent<CharacterController>();
+            // Ensure horse root is free from static prop LODGroup culling
+            LODGroup lodGroup = GetComponent<LODGroup>();
+            if (lodGroup != null) Destroy(lodGroup);
+
             BuildPlaceholderHorseVisuals();
         }
 
         private void BuildPlaceholderHorseVisuals()
         {
-            // Simple low-poly placeholder geometry
-            // 1. Torso/Body
+            // If visual children already exist, clear unwanted duplicates
+            Transform existingBody = transform.Find("HorseBody_Visual");
+            if (existingBody != null) return;
+
+            Color chestnut = new Color(0.45f, 0.25f, 0.12f);
+            Color darkBrown = new Color(0.35f, 0.20f, 0.10f);
+
+            // 1. Torso / Main Body
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
             body.name = "HorseBody_Visual";
-            body.transform.parent = transform;
+            body.transform.SetParent(transform, false);
             body.transform.localPosition = new Vector3(0, 1.1f, 0);
             body.transform.localScale = new Vector3(1.0f, 1.0f, 2.2f);
-            Collider bCol = body.GetComponent<Collider>();
-            if (bCol != null) Destroy(bCol);
-            Renderer bR = body.GetComponent<Renderer>();
-            if (bR != null) bR.material.color = new Color(0.45f, 0.25f, 0.12f); // Chestnut brown
+            StripColliderAndEnableShadows(body, chestnut);
 
-            // 2. Neck & Head
+            // 2. Neck
             GameObject neck = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            neck.name = "HorseHead_Visual";
-            neck.transform.parent = transform;
-            neck.transform.localPosition = new Vector3(0, 1.8f, 0.9f);
-            neck.transform.localScale = new Vector3(0.6f, 1.1f, 0.7f);
-            Quaternion nRot = Quaternion.Euler(25f, 0, 0);
-            nRot.Normalize();
-            neck.transform.localRotation = nRot;
-            Collider nCol = neck.GetComponent<Collider>();
-            if (nCol != null) Destroy(nCol);
-            Renderer hR = neck.GetComponent<Renderer>();
-            if (hR != null) hR.material.color = new Color(0.40f, 0.22f, 0.10f);
+            neck.name = "HorseNeck_Visual";
+            neck.transform.SetParent(transform, false);
+            neck.transform.localPosition = new Vector3(0, 1.6f, 0.8f);
+            neck.transform.localScale = new Vector3(0.55f, 0.9f, 0.6f);
+            neck.transform.localRotation = Quaternion.Euler(30f, 0, 0);
+            StripColliderAndEnableShadows(neck, chestnut);
 
-            // 3. Saddle (Mount Socket location indicator)
+            // 3. Head & Muzzle
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            head.name = "HorseHead_Visual";
+            head.transform.SetParent(transform, false);
+            head.transform.localPosition = new Vector3(0, 1.95f, 1.15f);
+            head.transform.localScale = new Vector3(0.5f, 0.45f, 0.75f);
+            head.transform.localRotation = Quaternion.Euler(15f, 0, 0);
+            StripColliderAndEnableShadows(head, darkBrown);
+
+            // 4. Saddle (Mount Socket indicator)
             GameObject saddle = GameObject.CreatePrimitive(PrimitiveType.Cube);
             saddle.name = "HorseSaddle_Visual";
-            saddle.transform.parent = transform;
+            saddle.transform.SetParent(transform, false);
             saddle.transform.localPosition = new Vector3(0, 1.65f, 0.1f);
             saddle.transform.localScale = new Vector3(0.85f, 0.2f, 0.85f);
-            Collider sCol = saddle.GetComponent<Collider>();
-            if (sCol != null) Destroy(sCol);
-            Renderer sR = saddle.GetComponent<Renderer>();
-            if (sR != null) sR.material.color = new Color(0.2f, 0.15f, 0.1f); // Dark leather
+            StripColliderAndEnableShadows(saddle, new Color(0.2f, 0.15f, 0.1f));
 
             // Socket transform for player mounting point
             GameObject socketObj = new GameObject("MountSocket");
-            socketObj.transform.parent = transform;
+            socketObj.transform.SetParent(transform, false);
             socketObj.transform.localPosition = new Vector3(0, 1.8f, 0.1f);
             mountSocket = socketObj.transform;
 
-            // 4. Legs for walking animation
-            frontLeftLeg = CreateLeg("Leg_FL", new Vector3(-0.4f, 0.5f, 0.8f));
-            frontRightLeg = CreateLeg("Leg_FR", new Vector3(0.4f, 0.5f, 0.8f));
-            backLeftLeg = CreateLeg("Leg_BL", new Vector3(-0.4f, 0.5f, -0.8f));
-            backRightLeg = CreateLeg("Leg_BR", new Vector3(0.4f, 0.5f, -0.8f));
+            // 5. 4 Solid Legs for animation
+            frontLeftLeg = CreateLeg("Leg_FL", new Vector3(-0.38f, 0.5f, 0.75f), darkBrown);
+            frontRightLeg = CreateLeg("Leg_FR", new Vector3(0.38f, 0.5f, 0.75f), darkBrown);
+            backLeftLeg = CreateLeg("Leg_BL", new Vector3(-0.38f, 0.5f, -0.75f), darkBrown);
+            backRightLeg = CreateLeg("Leg_BR", new Vector3(0.38f, 0.5f, -0.75f), darkBrown);
         }
 
-        private Transform CreateLeg(string legName, Vector3 localPos)
+        private Transform CreateLeg(string legName, Vector3 localPos, Color color)
         {
             GameObject leg = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             leg.name = legName;
-            leg.transform.parent = transform;
+            leg.transform.SetParent(transform, false);
             leg.transform.localPosition = localPos;
-            leg.transform.localScale = new Vector3(0.25f, 0.5f, 0.25f);
-            Collider lCol = leg.GetComponent<Collider>();
-            if (lCol != null) Destroy(lCol);
-            Renderer r = leg.GetComponent<Renderer>();
-            if (r != null) r.material.color = new Color(0.35f, 0.20f, 0.10f);
+            leg.transform.localScale = new Vector3(0.22f, 0.5f, 0.22f);
+            StripColliderAndEnableShadows(leg, color);
             return leg.transform;
+        }
+
+        private void StripColliderAndEnableShadows(GameObject go, Color color)
+        {
+            Collider c = go.GetComponent<Collider>();
+            if (c != null) Destroy(c);
+            if (go.TryGetComponent<Renderer>(out var r))
+            {
+                r.material.color = color;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                r.receiveShadows = true;
+            }
         }
 
         public void SetMountedState(bool mounted)

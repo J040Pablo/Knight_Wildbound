@@ -256,6 +256,9 @@ namespace Roguelite.Environment
             {
                 startingRegion.ApplyRegionSettings();
             }
+
+            // Perform World Rendering Performance Optimization
+            WorldOptimizationManager.OptimizeWorld();
         }
 
         private void BuildContinuousTerrainMesh()
@@ -322,11 +325,15 @@ namespace Roguelite.Environment
             }
             sun.transform.rotation = Quaternion.Euler(52f, -35f, 0f);
 
-            // Configure flat neutral ambient lighting & disable fog for clear baseline
+            // Configure flat neutral ambient lighting & enable horizon fog for smooth performance
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.45f, 0.45f, 0.45f);
             RenderSettings.ambientIntensity = 0.50f;
-            RenderSettings.fog = false;
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color(0.38f, 0.49f, 0.61f);
+            RenderSettings.fogStartDistance = 50f;
+            RenderSettings.fogEndDistance = 210f;
         }
 
         private GameObject SpawnProp(PlaceholderAssetKey key, Vector3 worldPos, Quaternion rot, float scale = 1f, Color? color = null)
@@ -475,6 +482,29 @@ namespace Roguelite.Environment
 
             CreatePlayerSpawnPoint("RuinsPlayerSpawn", new Vector3(0, 0.5f, 8.0f), Quaternion.identity);
 
+            // ── TWO STONE GIANTS GUARDING UPPER RUINS EXIT GATE (Z: 48 & Z: 52) ──
+            float groundY1 = GetTerrainHeightY(-10f, 48f);
+            GameObject giant1 = new GameObject("StoneGiant_Ruins_Left");
+            giant1.transform.position = new Vector3(-10f, groundY1, 48f);
+            CharacterController gCC1 = giant1.AddComponent<CharacterController>();
+            gCC1.height = 3.2f;
+            gCC1.radius = 1.2f;
+            gCC1.center = new Vector3(0, 1.6f, 0);
+            giant1.AddComponent<Enemy.StoneGiantAI>();
+
+            float groundY2 = GetTerrainHeightY(10f, 52f);
+            GameObject giant2 = new GameObject("StoneGiant_Ruins_Right");
+            giant2.transform.position = new Vector3(10f, groundY2, 52f);
+            CharacterController gCC2 = giant2.AddComponent<CharacterController>();
+            gCC2.height = 3.2f;
+            gCC2.radius = 1.2f;
+            gCC2.center = new Vector3(0, 1.6f, 0);
+            giant2.AddComponent<Enemy.StoneGiantAI>();
+
+            // Ruined Archway & Pillars for Stone Giant Gate
+            SpawnProp(PlaceholderAssetKey.RuinPillar, new Vector3(-14f, 0, 48f), Quaternion.identity, 1.4f);
+            SpawnProp(PlaceholderAssetKey.RuinPillar, new Vector3(14f, 0, 52f), Quaternion.identity, 1.4f);
+
             GameObject exitGate = SpawnProp(PlaceholderAssetKey.ExitGate, new Vector3(0, 0f, 56f), Quaternion.identity);
             exitGate.name = "RuinsExitGate";
             exitGate.AddComponent<BoxCollider>();
@@ -547,18 +577,6 @@ namespace Roguelite.Environment
             Vector3 ritualPos = new Vector3(GetForestPathXOffset(140f) - 42f, GetTerrainHeightY(GetForestPathXOffset(140f) - 42f, 140f), 140f);
             SpawnProp(PlaceholderAssetKey.LandmarkGiantObelisk, ritualPos, Quaternion.identity, 1.5f);
 
-            GameObject fairy1 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            fairy1.name = "Ambient_Fairy1";
-            fairy1.transform.position = ritualPos + new Vector3(-2f, 2f, 0f);
-            fairy1.transform.localScale = Vector3.one * 0.5f;
-            fairy1.AddComponent<Enemy.FairyEnemyAI>();
-
-            GameObject fairy2 = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            fairy2.name = "Ambient_Fairy2";
-            fairy2.transform.position = ritualPos + new Vector3(2f, 2.5f, 1f);
-            fairy2.transform.localScale = Vector3.one * 0.5f;
-            fairy2.AddComponent<Enemy.FairyEnemyAI>();
-
             float meadowX = GetForestPathXOffset(85f) - 15f;
             CreateHorseSpawnPoint("HorseMeadowSpawn", new Vector3(meadowX, 0f, 85f), Quaternion.identity);
             CreateFriendlyHorse(new Vector3(meadowX, 0f, 85f));
@@ -606,6 +624,48 @@ namespace Roguelite.Environment
             // Root-Bound Hidden Chest inside Toxic Swamp
             var rootChest = SpawnInteractiveTreasureChest(swampPos + new Vector3(3f, 0, 3f), Quaternion.Euler(0, 45f, 0), ChestRarity.Rare);
             if (rootChest != null) rootChest.name = "RootBoundHazardChest";
+
+            // ── FAIRY QUEEN BOSS ARENA (Deep Forest Sacred Glade - Z: 230, X: -25) ──
+            float queenX = GetForestPathXOffset(230f) - 25f;
+            float queenY = GetTerrainHeightY(queenX, 230f);
+            Vector3 queenPos = new Vector3(queenX, queenY + 0.5f, 230f);
+
+            // Sacred Glade Environment Storytelling
+            SpawnProp(PlaceholderAssetKey.ForgottenShrine, new Vector3(queenX, queenY, 230f), Quaternion.identity, 1.6f);
+            SpawnProp(PlaceholderAssetKey.LandmarkGiantAncestralTree, new Vector3(queenX - 12f, queenY, 235f), Quaternion.identity, 2.2f);
+
+            // Ring of 6 Ruined Pillars around Fairy Queen Shrine (radius 9m)
+            for (int i = 0; i < 6; i++)
+            {
+                float angle = i * (Mathf.PI * 2f / 6f);
+                Vector3 pillarPos = new Vector3(queenX + Mathf.Cos(angle) * 9f, queenY, 230f + Mathf.Sin(angle) * 9f);
+                var pillar = SpawnProp(PlaceholderAssetKey.RuinPillar, pillarPos, Quaternion.identity, 1.3f);
+                pillar.AddComponent<BoxCollider>();
+            }
+
+            // Magical Crystals, Fairy Statues, and Flowers
+            SpawnProp(PlaceholderAssetKey.GlowingCrystal, new Vector3(queenX - 5f, queenY, 226f), Quaternion.identity, 1.6f);
+            SpawnProp(PlaceholderAssetKey.GlowingCrystal, new Vector3(queenX + 5f, queenY, 234f), Quaternion.identity, 1.6f);
+            SpawnProp(PlaceholderAssetKey.RuinStatue, new Vector3(queenX - 8f, queenY, 225f), Quaternion.Euler(0, 45f, 0), 1.4f);
+            SpawnProp(PlaceholderAssetKey.RuinStatue, new Vector3(queenX + 8f, queenY, 225f), Quaternion.Euler(0, -45f, 0), 1.4f);
+            SpawnProp(PlaceholderAssetKey.FlowerCluster, new Vector3(queenX - 3f, queenY, 229f), Quaternion.identity, 1.3f);
+            SpawnProp(PlaceholderAssetKey.FlowerCluster, new Vector3(queenX + 4f, queenY, 231f), Quaternion.identity, 1.3f);
+
+            // Instantiate Fairy Queen Mini-Boss
+            GameObject queenObj = new GameObject("FairyQueen_MiniBoss");
+            queenObj.transform.position = queenPos + new Vector3(0, 0.5f, 0);
+
+            CharacterController qCC = queenObj.AddComponent<CharacterController>();
+            qCC.height = 2.2f;
+            qCC.radius = 0.7f;
+            qCC.center = new Vector3(0, 1.1f, 0);
+
+            queenObj.AddComponent<Enemy.FairyQueenAI>();
+
+            if (ForestLandmarkManager.Instance != null)
+            {
+                ForestLandmarkManager.Instance.RegisterLandmark("Deep Forest Fairy Glade", LandmarkType.AncientAltar, queenPos, null, 25f);
+            }
 
             CreateEncounterZone("DeepForestCombatZone", GetForestPathXOffset(220f), 220f, EncounterDifficulty.Medium);
 
@@ -735,25 +795,12 @@ namespace Roguelite.Environment
             float shrineY = GetTerrainHeightY(shrineX, 515f);
             SpawnProp(PlaceholderAssetKey.ForgottenShrine, new Vector3(shrineX, shrineY, 515f), Quaternion.identity, 1.6f);
             SpawnProp(PlaceholderAssetKey.LoreSignPost, new Vector3(shrineX + 4f, shrineY, 513f), Quaternion.identity, 1.2f);
-
-            // ── FAIRY QUEEN MINI-BOSS ARENA (Ancient Grove Sacred Clearing) ──
-            Vector3 queenPos = new Vector3(shrineX - 20f, GetTerrainHeightY(shrineX - 20f, 525f) + 1.0f, 525f);
-            SpawnProp(PlaceholderAssetKey.LandmarkGiantAncestralTree, queenPos, Quaternion.identity, 2.4f);
-
-            GameObject queenObj = new GameObject("FairyQueen_MiniBoss");
-            queenObj.transform.position = queenPos + new Vector3(0, 0.5f, 0);
-
-            CharacterController qCC = queenObj.AddComponent<CharacterController>();
-            qCC.height = 2.2f;
-            qCC.radius = 0.7f;
-            qCC.center = new Vector3(0, 1.1f, 0);
-
-            queenObj.AddComponent<Enemy.FairyQueenAI>();
+            SpawnProp(PlaceholderAssetKey.LandmarkGiantAncestralTree, new Vector3(shrineX - 20f, GetTerrainHeightY(shrineX - 20f, 525f), 525f), Quaternion.identity, 2.4f);
 
             if (ForestLandmarkManager.Instance != null)
             {
                 ForestLandmarkManager.Instance.RegisterLandmark("Forgotten Shrine", LandmarkType.AncientAltar, new Vector3(shrineX, 0, 515f), null, 18f);
-                ForestLandmarkManager.Instance.RegisterLandmark("Sacred Fairy Tree", LandmarkType.AncestralTree, queenPos, null, 25f);
+                ForestLandmarkManager.Instance.RegisterLandmark("Sacred Ancestral Tree", LandmarkType.AncestralTree, new Vector3(shrineX - 20f, 0, 525f), null, 25f);
             }
 
             CreateEncounterZone("AncientGroveCombatZone", GetForestPathXOffset(520f), 520f, EncounterDifficulty.Hard);

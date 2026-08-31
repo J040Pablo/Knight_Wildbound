@@ -18,9 +18,17 @@ namespace Roguelite.Enemy
         [SerializeField] private float pulseRadius = 8.0f;
         [SerializeField] private float pulseDamage = 28.0f;
 
+        [Header("Detection & Leash Settings")]
+        [SerializeField] private float detectionRange = 8.0f;  // 8m detection radius
+        [SerializeField] private float combatRange = 6.0f;     // 6m attack start radius
+        [SerializeField] private float chaseLimit = 18.0f;     // 18m maximum chase distance
+        [SerializeField] private float returnRadius = 20.0f;    // 20m return radius threshold
+
         private float attackTimer = 0f;
         private float summonCooldownTimer = 0f;
         private float hoverTime = 0f;
+        private Vector3 arenaCenterPos;
+        private bool isAggroed = false;
         private readonly List<GameObject> activeMinions = new List<GameObject>();
         private const int MAX_MINIONS = 2;
 
@@ -38,6 +46,7 @@ namespace Roguelite.Enemy
         protected override void Start()
         {
             base.Start();
+            arenaCenterPos = transform.position;
             BuildFairyQueenVisuals();
         }
 
@@ -98,18 +107,74 @@ namespace Roguelite.Enemy
         protected override void Update()
         {
             base.Update();
-            if (IsDead || playerTransform == null || playerStats.IsDead || isAttacking || !SafeCanMove()) return;
+            if (IsDead || isAttacking || !SafeCanMove()) return;
 
             hoverTime += Time.deltaTime;
             float hoverY = Mathf.Sin(hoverTime * 2.5f) * 0.5f + hoverHeight;
 
+            // Idle state when player is not present or dead
+            if (playerTransform == null || playerStats == null || playerStats.IsDead)
+            {
+                ReturnToArenaCenter(hoverY);
+                return;
+            }
+
+            float distFromCenter = Vector3.Distance(transform.position, arenaCenterPos);
+            float distToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            float playerDistFromCenter = Vector3.Distance(playerTransform.position, arenaCenterPos);
+
+            // Arena Leash Check: If player or Fairy Queen moves beyond returnRadius (20m), leash & reset
+            if (playerDistFromCenter > returnRadius || distFromCenter > returnRadius)
+            {
+                if (isAggroed)
+                {
+                    ResetBossState();
+                }
+                ReturnToArenaCenter(hoverY);
+                return;
+            }
+
+            // Line-of-sight wall obstruction check (No detecting or attacking through walls)
+            bool hasLineOfSight = true;
+            Vector3 eyePos = transform.position + Vector3.up * 1.5f;
+            Vector3 targetEyePos = playerTransform.position + Vector3.up * 1.0f;
+            Vector3 eyeDir = targetEyePos - eyePos;
+
+            if (Physics.Raycast(eyePos, eyeDir.normalized, out RaycastHit wallHit, distToPlayer))
+            {
+                if (!wallHit.collider.isTrigger && !wallHit.collider.CompareTag("Player") && wallHit.distance < distToPlayer - 0.5f)
+                {
+                    hasLineOfSight = false;
+                }
+            }
+
+            // Detection check: Only activate when player enters 8m detection range WITH line-of-sight inside arena (18m limit)
+            if (!isAggroed)
+            {
+                if (distToPlayer <= detectionRange && hasLineOfSight && playerDistFromCenter <= chaseLimit)
+                {
+                    isAggroed = true;
+                    Debug.Log("👑 [FAIRY QUEEN] — Boss Battle Activated in Ruins Arena (8m Detection)!");
+                }
+                else
+                {
+                    ReturnToArenaCenter(hoverY);
+                    return;
+                }
+            }
+
+            // If line-of-sight lost or player leaves chase limit (18m), disengage and return to center
+            if (!hasLineOfSight || playerDistFromCenter > chaseLimit)
+            {
+                ReturnToArenaCenter(hoverY);
+                return;
+            }
+
             attackTimer -= Time.deltaTime;
             if (summonCooldownTimer > 0f) summonCooldownTimer -= Time.deltaTime;
 
-            float dist = Vector3.Distance(transform.position, playerTransform.position);
-
-            // Hover & movement positioning
-            Vector3 targetPos = playerTransform.position + (transform.position - playerTransform.position).normalized * 8.0f;
+            // Hover & combat positioning (target combat range 9m)
+            Vector3 targetPos = playerTransform.position + (transform.position - playerTransform.position).normalized * combatRange;
             targetPos.y = playerTransform.position.y + hoverY;
             transform.position = Vector3.MoveTowards(transform.position, targetPos, Time.deltaTime * 6.5f);
 
@@ -126,7 +191,7 @@ namespace Roguelite.Enemy
             }
 
             // Blink away if player gets too close (< 4m)
-            if (dist < 4.0f && !isAttacking)
+            if (distToPlayer < 4.0f && !isAttacking)
             {
                 BlinkAway();
                 return;
@@ -140,7 +205,7 @@ namespace Roguelite.Enemy
                 {
                     StartCoroutine(PerformFairySummon());
                 }
-                else if (dist <= pulseRadius && rand < 0.35f)
+                else if (distToPlayer <= pulseRadius && rand < 0.35f)
                 {
                     StartCoroutine(PerformEnchantedPulse());
                 }
@@ -342,6 +407,19 @@ namespace Roguelite.Enemy
 
             Debug.Log("👑 [FAIRY QUEEN DEFEATED] — 150 XP + Fairy Queen Crown + Epic Chest Awarded!");
             base.Die();
+        }
+
+        private void ReturnToArenaCenter(float hoverY)
+        {
+            Vector3 target = arenaCenterPos + Vector3.up * hoverY;
+            transform.position = Vector3.MoveTowards(transform.position, target, Time.deltaTime * 4f);
+        }
+
+        private void ResetBossState()
+        {
+            isAggroed = false;
+            CurrentHP = MaxHP;
+            Debug.Log("👑 [FAIRY QUEEN] — Player left arena! Boss returned to center & health reset to 100%.");
         }
     }
 }
