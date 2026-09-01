@@ -775,25 +775,119 @@ namespace Roguelite.UI
             lblTxt.alignment = TextAlignmentOptions.Center;
         }
 
+        private TextMeshProUGUI cameraBobBtnText;
+
         private void BuildSettingsPanels()
         {
             settingsLeftPanel = CreateRect("SettingsLeftPanel", leftPageRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             settingsRightPanel = CreateRect("SettingsRightPanel", rightPageRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            GameObject titleObj = CreateRect("Title", settingsLeftPanel.transform, new Vector2(0.05f, 0.85f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
+            // Left Page: Camera & Gameplay Settings
+            GameObject titleObj = CreateRect("Title", settingsLeftPanel.transform, new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.96f), Vector2.zero, Vector2.zero);
             TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
-            titleText.text = "CONFIGURAÇÕES";
+            titleText.text = "CONFIGURAÇÕES DO JOGO";
             titleText.fontSize = 19;
             titleText.fontStyle = FontStyles.Bold;
             titleText.color = new Color(0.28f, 0.18f, 0.10f);
             titleText.alignment = TextAlignmentOptions.Center;
 
-            GameObject descObj = CreateRect("Desc", settingsRightPanel.transform, new Vector2(0.1f, 0.4f), new Vector2(0.9f, 0.8f), Vector2.zero, Vector2.zero);
-            TextMeshProUGUI descText = descObj.AddComponent<TextMeshProUGUI>();
-            descText.text = "Ajustes de Som, Gráficos e Teclas.\n\nUse [E] ou [ESC] para fechar o Grimório.";
-            descText.fontSize = 13;
-            descText.color = new Color(0.35f, 0.25f, 0.18f);
-            descText.alignment = TextAlignmentOptions.Center;
+            // Camera Bobbing Box Container
+            GameObject bobBox = CreateRect("BobbingBox", settingsLeftPanel.transform, new Vector2(0.06f, 0.55f), new Vector2(0.94f, 0.82f), Vector2.zero, Vector2.zero);
+            bobBox.AddComponent<Image>().color = new Color(0.22f, 0.16f, 0.10f, 0.15f);
+            bobBox.AddComponent<Outline>().effectColor = new Color(0.40f, 0.30f, 0.20f, 0.4f);
+
+            GameObject bobTitleObj = CreateRect("BobTitle", bobBox.transform, new Vector2(0.05f, 0.65f), new Vector2(0.95f, 0.92f), Vector2.zero, Vector2.zero);
+            TextMeshProUGUI bobTitleTxt = bobTitleObj.AddComponent<TextMeshProUGUI>();
+            bobTitleTxt.text = "MOVIMENTO DA CÂMERA";
+            bobTitleTxt.fontSize = 13;
+            bobTitleTxt.fontStyle = FontStyles.Bold;
+            bobTitleTxt.color = new Color(0.30f, 0.20f, 0.12f);
+
+            GameObject bobDescObj = CreateRect("BobDesc", bobBox.transform, new Vector2(0.05f, 0.35f), new Vector2(0.95f, 0.62f), Vector2.zero, Vector2.zero);
+            TextMeshProUGUI bobDescTxt = bobDescObj.AddComponent<TextMeshProUGUI>();
+            bobDescTxt.text = "Balanço natural da cabeça ao andar, correr e cavalgar.";
+            bobDescTxt.fontSize = 10;
+            bobDescTxt.color = new Color(0.40f, 0.30f, 0.20f);
+
+            // Cycle Button
+            GameObject btnObj = CreateRect("CycleBtn", bobBox.transform, new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.33f), Vector2.zero, Vector2.zero);
+            Image btnBg = btnObj.AddComponent<Image>();
+            btnBg.color = new Color(0.35f, 0.25f, 0.15f);
+
+            Button cycleBtn = btnObj.AddComponent<Button>();
+            cycleBtn.targetGraphic = btnBg;
+            cycleBtn.onClick.AddListener(CycleCameraBobbingSetting);
+
+            GameObject btnLblObj = CreateRect("Label", btnObj.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            cameraBobBtnText = btnLblObj.AddComponent<TextMeshProUGUI>();
+            cameraBobBtnText.fontSize = 11;
+            cameraBobBtnText.fontStyle = FontStyles.Bold;
+            cameraBobBtnText.color = Color.white;
+            cameraBobBtnText.alignment = TextAlignmentOptions.Center;
+
+            RefreshCameraBobbingButtonUI();
+
+            // Right Page: Keybinds Reference Guide
+            GameObject rTitleObj = CreateRect("RightTitle", settingsRightPanel.transform, new Vector2(0.05f, 0.88f), new Vector2(0.95f, 0.96f), Vector2.zero, Vector2.zero);
+            TextMeshProUGUI rTitleText = rTitleObj.AddComponent<TextMeshProUGUI>();
+            rTitleText.text = "GUIA DE CONTROLES";
+            rTitleText.fontSize = 19;
+            rTitleText.fontStyle = FontStyles.Bold;
+            rTitleText.color = new Color(0.28f, 0.18f, 0.10f);
+            rTitleText.alignment = TextAlignmentOptions.Center;
+
+            GameObject keyBox = CreateRect("KeyBox", settingsRightPanel.transform, new Vector2(0.06f, 0.15f), new Vector2(0.94f, 0.84f), Vector2.zero, Vector2.zero);
+            keyBox.AddComponent<Image>().color = new Color(0.22f, 0.16f, 0.10f, 0.15f);
+            keyBox.AddComponent<Outline>().effectColor = new Color(0.40f, 0.30f, 0.20f, 0.4f);
+
+            GameObject keyTextObj = CreateRect("Text", keyBox.transform, new Vector2(0.06f, 0.05f), new Vector2(0.94f, 0.95f), Vector2.zero, Vector2.zero);
+            TextMeshProUGUI keyTxt = keyTextObj.AddComponent<TextMeshProUGUI>();
+            keyTxt.fontSize = 12;
+            keyTxt.color = new Color(0.28f, 0.20f, 0.12f);
+            keyTxt.lineSpacing = 6f;
+            keyTxt.text =
+                "<b>[WASD]</b> — Movimentação\n" +
+                "<b>[Mouse]</b> — Orbitar Câmera & Mirar\n" +
+                "<b>[Shift]</b> — Correr (Consome Stamina)\n" +
+                "<b>[Espaço]</b> — Esquivar / Pular\n" +
+                "<b>[Botão Esq.]</b> — Ataque Principal\n" +
+                "<b>[Botão Dir.]</b> — Habilidade Secundaria\n" +
+                "<b>[E]</b> — Abrir / Fechar Grimório\n" +
+                "<b>[Tab]</b> — Alternar Abas\n" +
+                "<b>[F]</b> — Interagir / Montar Cavalo";
+        }
+
+        private void CycleCameraBobbingSetting()
+        {
+            CameraBobbing bobbing = FindFirstObjectByType<CameraBobbing>();
+            float current = bobbing != null ? bobbing.IntensityMultiplier : 1.0f;
+
+            float next;
+            if (current < 0.2f) next = 0.5f;       // Off -> Weak
+            else if (current < 0.7f) next = 1.0f;  // Weak -> Normal
+            else if (current < 1.2f) next = 1.5f;  // Normal -> Strong
+            else next = 0.0f;                      // Strong -> Off
+
+            if (bobbing != null)
+            {
+                bobbing.IntensityMultiplier = next;
+            }
+
+            Core.Save.SaveManager.Instance?.SaveAll();
+            RefreshCameraBobbingButtonUI();
+        }
+
+        private void RefreshCameraBobbingButtonUI()
+        {
+            if (cameraBobBtnText == null) return;
+
+            CameraBobbing bobbing = FindFirstObjectByType<CameraBobbing>();
+            float val = bobbing != null ? bobbing.IntensityMultiplier : 1.0f;
+
+            if (val < 0.2f) cameraBobBtnText.text = "DESLIGADO (0%)";
+            else if (val < 0.7f) cameraBobBtnText.text = "FRACO (50%)";
+            else if (val < 1.2f) cameraBobBtnText.text = "NORMAL (100%)";
+            else cameraBobBtnText.text = "FORTE (150%)";
         }
 
         // =========================================================================
@@ -806,6 +900,7 @@ namespace Roguelite.UI
             RefreshGoldDisplay();
             UpdateRealtimeStats();
             RefreshMasteryUI();
+            RefreshCameraBobbingButtonUI();
         }
 
         private void RefreshEquipSlots()

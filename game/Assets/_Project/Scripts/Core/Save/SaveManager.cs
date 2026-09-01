@@ -5,6 +5,7 @@ using Roguelite.Core.Events;
 using Roguelite.Items;
 using Roguelite.Inventory;
 using Roguelite.Progression;
+using Roguelite.Player;
 
 namespace Roguelite.Core.Save
 {
@@ -42,6 +43,7 @@ namespace Roguelite.Core.Save
         public float masterVolume = 1f;
         public float musicVolume = 0.8f;
         public float sfxVolume = 0.8f;
+        public float cameraBobIntensity = 1.0f;
     }
 
     public class SaveManager : MonoBehaviour
@@ -176,6 +178,13 @@ namespace Roguelite.Core.Save
                 data.chosenSpecializationPath = ProgressionManager.Instance.ChosenSpecializationPath.ToString();
             }
 
+            // 5. Camera Bobbing Settings
+            CameraBobbing camBob = FindFirstObjectByType<CameraBobbing>();
+            if (camBob != null)
+            {
+                data.cameraBobIntensity = camBob.IntensityMultiplier;
+            }
+
             string json = JsonUtility.ToJson(data, true);
             PlayerPrefs.SetString(SAVE_KEY, json);
             PlayerPrefs.Save();
@@ -256,6 +265,13 @@ namespace Roguelite.Core.Save
                     {
                         ProgressionManager.Instance.LoadSpecializationPath(specPath);
                     }
+                }
+
+                // 5. Camera Bobbing Intensity
+                CameraBobbing camBob = FindFirstObjectByType<CameraBobbing>();
+                if (camBob != null)
+                {
+                    camBob.IntensityMultiplier = data.cameraBobIntensity;
                 }
 
                 Debug.Log("[SaveManager] Unified save data successfully loaded.");

@@ -5,9 +5,13 @@ using Roguelite.Core;
 namespace Roguelite.Player
 {
     /// <summary>
-    /// High-performance 3rd Person Over-The-Shoulder Camera Controller.
-    /// Features zero-allocation per-frame execution, non-allocating Physics queries,
-    /// dynamic obstacle collision avoidance, terrain grounding clamp, and smooth orbit looking.
+    /// AAA-Quality 3rd Person Over-The-Shoulder Camera Controller (Elden Ring / Genshin / BOTW Standard).
+    /// Features:
+    /// 1. Zero input lag 1:1 raw mouse orbit responsiveness (lockstep rotation & position calculation).
+    /// 2. Smooth target pivot tracking without position/rotation phase misalignment.
+    /// 3. Smooth obstacle collision distance interpolation to eliminate camera popping.
+    /// 4. Decoupled, non-filtered locomotion head bobbing & screen shake.
+    /// 5. Zero per-frame memory allocation.
     /// </summary>
     public class ThirdPersonCamera : MonoBehaviour
     {
@@ -30,14 +34,25 @@ namespace Roguelite.Player
         public float maxPitch = 85.0f;
 
         [Header("Smoothing & Collision")]
-        public float smoothSpeed = 16f;
+        public float followSmoothTime = 0.03f; // Ultra-smooth pivot follow without lag
+        public float collisionSmoothTime = 0.05f; // Smooth obstacle avoidance without distance popping
         [SerializeField] private LayerMask collisionLayers;
+
+        [Header("Locomotion Head Bobbing")]
+        [SerializeField] private CameraBobbing cameraBobbing;
 
         public bool IsMounted { get; set; } = false;
 
         private Camera cachedCamera;
         private Transform cachedTargetRoot;
-        private Vector3 currentVelocity;
+        
+        // Pivot and collision distance smooth damp states
+        private Vector3 currentPivotPos;
+        private Vector3 pivotDampVelocity;
+        private float currentCollisionDistance;
+        private float collisionDistVelocity;
+        private bool isInitialized = false;
+
         private float shakeTimer = 0f;
         private float shakeIntensity = 0f;
 
@@ -60,12 +75,22 @@ namespace Roguelite.Player
                 cachedCamera.useOcclusionCulling = false; // Disabled unbaked Occlusion Culling to prevent CPU hitching
             }
 
+            if (cameraBobbing == null)
+            {
+                cameraBobbing = GetComponent<CameraBobbing>();
+                if (cameraBobbing == null)
+                {
+                    cameraBobbing = gameObject.AddComponent<CameraBobbing>();
+                }
+            }
+
             if (collisionLayers == 0)
             {
                 collisionLayers = ~LayerMask.GetMask("Ignore Raycast", "UI", "Player", "Water");
             }
 
             CacheTargetReferences();
+            currentCollisionDistance = distance;
         }
 
         public void CacheTargetReferences()
@@ -90,36 +115,42 @@ namespace Roguelite.Player
                 cachedTargetRoot = target.root;
             }
 
-            // Mouse orbit look input
-            yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-            pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+            // 1. Raw Mouse Look Input (Zero artificial software lag)
+            yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
+            pitch -= Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-            rotation.Normalize();
+            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f).normalized;
 
-            // Dynamic height offset based on mounted state
+            // 2. Pivot Target Position Handling (Smooth follow player target without position/rotation phase disconnect)
             float activeHeight = IsMounted ? mountedHeightOffset : heightOffset;
+            Vector3 rawTargetPivot = target.position + Vector3.up * activeHeight;
 
-            // Pivot point calculated with right and height offset for Over-The-Shoulder view
-            Vector3 targetPivot = target.position + Vector3.up * activeHeight;
+            if (!isInitialized)
+            {
+                currentPivotPos = rawTargetPivot;
+                isInitialized = true;
+            }
+            else
+            {
+                currentPivotPos = Vector3.SmoothDamp(currentPivotPos, rawTargetPivot, ref pivotDampVelocity, followSmoothTime);
+            }
+
+            // 3. Shoulder Pivot & Ideal Camera Distance
             Vector3 shoulderOffset = rotation * Vector3.right * rightOffset;
-            Vector3 pivotWithShoulder = targetPivot + shoulderOffset;
+            Vector3 pivotWithShoulder = currentPivotPos + shoulderOffset;
 
-            // Clamp desired camera distance within min/max bounds
             distance = Mathf.Clamp(distance, minDistance, maxDistance);
+            Vector3 unconstrainedCamPos = pivotWithShoulder - (rotation * Vector3.forward * distance);
 
-            // Desired camera position before collision check
-            Vector3 desiredCamPos = pivotWithShoulder - (rotation * Vector3.forward * distance);
-
-            // Non-allocating Camera Obstacle Collision Avoidance
-            float currentDistance = distance;
-            Vector3 rayDir = (desiredCamPos - targetPivot);
+            // 4. Non-allocating Obstacle Collision Check & Distance Smoothing
+            float targetCollisionDistance = distance;
+            Vector3 rayDir = (unconstrainedCamPos - currentPivotPos);
             float maxRayDist = rayDir.magnitude;
 
             if (maxRayDist > 0.001f)
             {
-                Ray ray = new Ray(targetPivot, rayDir / maxRayDist);
+                Ray ray = new Ray(currentPivotPos, rayDir / maxRayDist);
                 int hitCount = Physics.SphereCastNonAlloc(ray, 0.30f, hitBuffer, maxRayDist, collisionLayers);
                 float closestHitDist = maxRayDist;
 
@@ -144,13 +175,30 @@ namespace Roguelite.Player
 
                 if (closestHitDist < maxRayDist)
                 {
-                    currentDistance = Mathf.Clamp(closestHitDist - 0.15f, minDistance, distance);
+                    targetCollisionDistance = Mathf.Clamp(closestHitDist - 0.15f, minDistance, distance);
                 }
             }
 
-            Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentDistance);
+            // Smoothly interpolate collision distance to prevent camera popping when passing obstacles
+            currentCollisionDistance = Mathf.SmoothDamp(currentCollisionDistance, targetCollisionDistance, ref collisionDistVelocity, collisionSmoothTime);
 
-            // Camera Screen Shake Offset
+            Vector3 finalCamPos = pivotWithShoulder - (rotation * Vector3.forward * currentCollisionDistance);
+
+            // 5. Update & Apply Locomotion Head Bobbing Offset
+            Vector3 bobPosOffset = Vector3.zero;
+            Quaternion bobRotOffset = Quaternion.identity;
+
+            if (cameraBobbing != null)
+            {
+                cameraBobbing.UpdateBobbing(Time.deltaTime);
+                Vector3 localBob = cameraBobbing.CurrentPositionOffset;
+                bobPosOffset = (rotation * Vector3.right * localBob.x) + (rotation * Vector3.up * localBob.y) + (rotation * Vector3.forward * localBob.z);
+                bobRotOffset = cameraBobbing.CurrentRotationOffset;
+            }
+
+            finalCamPos += bobPosOffset;
+
+            // 6. Camera Screen Shake Offset (Independent from Locomotion Bobbing)
             if (shakeTimer > 0f)
             {
                 shakeTimer -= Time.deltaTime;
@@ -158,16 +206,17 @@ namespace Roguelite.Player
                 finalCamPos += shakeOffset;
             }
 
-            // Ground Collision Clamp: Camera MUST NEVER clip below terrain surface!
+            // 7. Ground Collision Clamp: Camera MUST NEVER clip below terrain surface!
             float groundH = Roguelite.Environment.SceneEnvironmentBuilder.GetTerrainHeightY(finalCamPos.x, finalCamPos.z);
             if (finalCamPos.y < groundH + 0.8f)
             {
                 finalCamPos.y = groundH + 0.8f;
             }
 
-            // Zero-alloc Smooth Damping follow
-            transform.position = Vector3.SmoothDamp(transform.position, finalCamPos, ref currentVelocity, 1.0f / smoothSpeed);
-            transform.rotation = rotation;
+            // 8. Lockstep Transform Update (Position & Rotation applied simultaneously)
+            transform.position = finalCamPos;
+            Quaternion finalRot = rotation * bobRotOffset;
+            transform.rotation = finalRot.normalized;
         }
 
         public Vector3 GetForwardVector()
