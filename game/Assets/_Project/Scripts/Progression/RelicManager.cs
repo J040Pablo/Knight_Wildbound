@@ -79,7 +79,7 @@ namespace Roguelite.Progression
             if (string.IsNullOrEmpty(relicId)) return false;
             if (HasRelic(relicId))
             {
-                Debug.Log($"[RelicManager] Relic '{relicId}' already collected. Ignoring duplicate.");
+                // Debug.Log($"[RelicManager] Relic '{relicId}' already collected. Ignoring duplicate.");
                 return false;
             }
 
@@ -88,7 +88,7 @@ namespace Roguelite.Progression
 
             ApplyRelicPassive(relicId);
 
-            Debug.Log($"[RelicManager] 🏆 CAMPAIGN RELIC OBTAINED: '{relicItem?.itemName ?? relicId}'");
+            // Debug.Log($"[RelicManager] 🏆 CAMPAIGN RELIC OBTAINED: '{relicItem?.itemName ?? relicId}'");
             OnRelicCollected?.Invoke(relicItem);
             return true;
         }

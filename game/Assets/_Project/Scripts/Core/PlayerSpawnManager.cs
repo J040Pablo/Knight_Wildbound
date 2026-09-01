@@ -90,7 +90,7 @@ namespace Roguelite.Core
 
                 if (TryFindNearestValidPosition(targetPosition, clearanceRadius, out validGroundPos))
                 {
-                    Debug.Log($"[PlayerSpawnManager] Found fallback spawn position at {validGroundPos}");
+                    // Debug.Log($"[PlayerSpawnManager] Found fallback spawn position at {validGroundPos}");
                 }
                 else
                 {
@@ -132,7 +132,7 @@ namespace Roguelite.Core
 
             if (tracker != null) tracker.LogCCDetails(cc, posBeforeCCEnable, posAfterCCEnable);
 
-            Debug.Log($"[PlayerSpawnManager] Player successfully spawned at ({validGroundPos.x:F2}, {validGroundPos.y:F2}, {validGroundPos.z:F2}) in scene '{SceneManager.GetActiveScene().name}'");
+            // Debug.Log($"[PlayerSpawnManager] Player successfully spawned at ({validGroundPos.x:F2}, {validGroundPos.y:F2}, {validGroundPos.z:F2}) in scene '{SceneManager.GetActiveScene().name}'");
             return true;
         }
 

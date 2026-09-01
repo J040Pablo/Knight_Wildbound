@@ -76,7 +76,7 @@ namespace Roguelite.Core.Managers
             }
 
             activeEnemies.Add(enemyGO);
-            Debug.Log($"[EnemySpawner] Spawned {definition.enemyName} at {validPos}");
+            // Debug.Log($"[EnemySpawner] Spawned {definition.enemyName} at {validPos}");
             return enemyGO;
         }
 

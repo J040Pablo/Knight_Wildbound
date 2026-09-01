@@ -32,7 +32,13 @@ namespace Roguelite.Environment
         public void UnlockBarrier()
         {
             isUnlocked = true;
-            Debug.Log("[BarrierHealth] Corrupted barrier is now unlocked and damageable!");
+            // Debug.Log("[BarrierHealth] Corrupted barrier is now unlocked and damageable!");
+        }
+
+        public void SetMaxHealth(float hp)
+        {
+            maxHealth = hp;
+            currentHealth = hp;
         }
 
         public void TakeDamage(DamageInfo damageInfo)
@@ -53,7 +59,7 @@ namespace Roguelite.Environment
             // Spawn hit impact feedback
             SpawnHitImpact(damageInfo.knockbackDirection);
 
-            Debug.Log($"[BarrierHealth] Barrier took {damageInfo.amount:F1} damage. HP: {currentHealth}/{maxHealth}");
+            // Debug.Log($"[BarrierHealth] Barrier took {damageInfo.amount:F1} damage. HP: {currentHealth}/{maxHealth}");
 
             if (currentHealth <= 0)
             {

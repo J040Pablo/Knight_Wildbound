@@ -19,7 +19,7 @@ namespace Roguelite.Core
             {
                 if (CurrentInteractable.CanInteract(gameObject))
                 {
-                    Debug.Log("[Interaction] Hit interactable");
+                    // Debug.Log("[Interaction] Hit interactable");
                     CurrentInteractable.Interact(gameObject);
                 }
             }

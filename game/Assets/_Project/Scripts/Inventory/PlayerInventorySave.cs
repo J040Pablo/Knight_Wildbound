@@ -102,7 +102,7 @@ namespace Roguelite.Inventory
             string json = JsonUtility.ToJson(packet);
             PlayerPrefs.SetString(SAVE_KEY, json);
             PlayerPrefs.Save();
-            Debug.Log("[PlayerInventorySave (Legacy)] Inventory, Equipment, and Relics saved.");
+            // Debug.Log("[PlayerInventorySave (Legacy)] Inventory, Equipment, and Relics saved.");
         }
 
         public void SaveInventory(InventoryManager manager)
@@ -114,7 +114,7 @@ namespace Roguelite.Inventory
         {
             PlayerPrefs.DeleteKey(SAVE_KEY);
             PlayerPrefs.Save();
-            Debug.Log("[PlayerInventorySave] Saved data deleted for fresh run.");
+            // Debug.Log("[PlayerInventorySave] Saved data deleted for fresh run.");
         }
 
         public void SaveEquipment(EquipmentManager manager)
@@ -188,7 +188,7 @@ namespace Roguelite.Inventory
                     }
                 }
 
-                Debug.Log("[PlayerInventorySave] State successfully loaded.");
+                // Debug.Log("[PlayerInventorySave] State successfully loaded.");
             }
             catch (Exception ex)
             {

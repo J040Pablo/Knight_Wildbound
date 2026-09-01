@@ -71,7 +71,7 @@ namespace Roguelite.Environment
             manager.OptimizeShadowsAndSmallProps();
             manager.BuildDynamicLODGroups();
 
-            Debug.Log("[WorldOptimizationManager] World rendering optimization pass executed cleanly!");
+            // Debug.Log("[WorldOptimizationManager] World rendering optimization pass executed cleanly!");
         }
 
         public void ApplyCameraAndQualitySettings()
@@ -134,7 +134,7 @@ namespace Roguelite.Environment
                 }
             }
 
-            Debug.Log($"[WorldOptimizationManager] Disabled shadow casting on {disabledShadowCount} minor decoration renderers.");
+            // Debug.Log($"[WorldOptimizationManager] Disabled shadow casting on {disabledShadowCount} minor decoration renderers.");
         }
 
         public void BuildDynamicLODGroups()
@@ -209,7 +209,7 @@ namespace Roguelite.Environment
                 lodGroupsCreated++;
             }
 
-            Debug.Log($"[WorldOptimizationManager] Dynamically constructed {lodGroupsCreated} smooth 3-stage LODGroup components.");
+            // Debug.Log($"[WorldOptimizationManager] Dynamically constructed {lodGroupsCreated} smooth 3-stage LODGroup components.");
         }
 
         private bool IsProtectedEntity(GameObject go)

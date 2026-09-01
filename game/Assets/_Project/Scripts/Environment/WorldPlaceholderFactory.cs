@@ -109,6 +109,7 @@ namespace Roguelite.Environment
                 PlaceholderAssetKey.AbandonedCamp     => MakeAbandonedCamp("PH_AbandonedCamp", parent, scale),
                 PlaceholderAssetKey.LoreSignPost      => MakeLoreSign("PH_LoreSign", parent, scale),
                 PlaceholderAssetKey.DestroyedWagon    => MakeWagon("PH_Wagon",      parent, scale),
+                PlaceholderAssetKey.FairyHouseRoot    => MakeTent("PH_FairyHouse", parent, colorOverride ?? new Color(0.65f, 0.40f, 0.75f), scale),
 
                 // NPCs
                 PlaceholderAssetKey.KingNPC           => MakeKingNPC("PH_King",     parent),
@@ -837,7 +838,7 @@ namespace Roguelite.Environment
         /// Remove the primitive's default collider (caller adds their own if needed).
         private static void Strip(GameObject g)
         {
-            if (g.TryGetComponent<Collider>(out var col)) Object.DestroyImmediate(col);
+            if (g.TryGetComponent<Collider>(out var col)) Object.Destroy(col);
         }
     }
 }

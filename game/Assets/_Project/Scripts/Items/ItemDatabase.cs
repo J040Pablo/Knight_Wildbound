@@ -56,6 +56,19 @@ namespace Roguelite.Items
                         i.moveSpeedBonusPercent = 0.05f;
                     });
 
+                case "material_fairy_dust":
+                    return With(ItemData.Create(id, "Fairy Dust", "Glowing magical powder (+15 Damage & +10% Speed).", ItemCategory.Consumable, ItemRarity.Legendary, "✨", 180, false, 1), i =>
+                    {
+                        i.flatDamageBonus = 15f;
+                        i.moveSpeedBonusPercent = 0.10f;
+                        i.healAmount = 50f;
+                    });
+
+                case "key_crystal_fairy_gate":
+                    return With(ItemData.Create(id, "Chave Cristalina", "Chave magica de cristal que abre a Ponte Real do Reino das Fadas.", ItemCategory.QuestItem, ItemRarity.Epic, "🔑", 100, false, 1), i =>
+                    {
+                    });
+
                 // ── Tree Boss Unique Equipment ───────────────────────
                 case "weapon_rootbreaker_axe":
                     return With(ItemData.Create(id, "Rootbreaker Axe", "Heavy greataxe carved from corrupted elder wood (+30 Damage).", ItemCategory.Weapon, ItemRarity.Epic, "🪓", 120, false, 1), i =>

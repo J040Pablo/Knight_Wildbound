@@ -62,7 +62,7 @@ namespace Roguelite.Environment
             BiomeRegionTrigger.OnRegionChanged -= OnRegionChanged;
             BiomeRegionTrigger.OnRegionChanged += OnRegionChanged;
 
-            Debug.Log($"[STYLIZED SKY] Initialized Built-in Skybox & {cloudClusters.Count} Low-Poly Clouds.");
+            // Debug.Log($"[STYLIZED SKY] Initialized Built-in Skybox & {cloudClusters.Count} Low-Poly Clouds.");
         }
 
         private void SetupSkyboxMaterial()

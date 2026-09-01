@@ -157,7 +157,7 @@ namespace Roguelite.Inventory
             SetSlot(slot, item);
             ApplyStatBonuses(item);
 
-            Debug.Log($"[EquipmentManager] Equipped '{item.itemName}' into {slot} slot.");
+            // Debug.Log($"[EquipmentManager] Equipped '{item.itemName}' into {slot} slot.");
             OnEquipmentChanged?.Invoke(slot, item);
 
             // Save state
@@ -223,7 +223,7 @@ namespace Roguelite.Inventory
 
             InventoryManager.Instance?.AddItem(oldItem, 1);
 
-            Debug.Log($"[EquipmentManager] Unequipped {slot} slot ('{oldItem.itemName}').");
+            // Debug.Log($"[EquipmentManager] Unequipped {slot} slot ('{oldItem.itemName}').");
             OnEquipmentChanged?.Invoke(slot, null);
 
             PlayerInventorySave.Instance?.SaveEquipment(this);
@@ -237,7 +237,7 @@ namespace Roguelite.Inventory
             beltSlot = null;
             ringSlot1 = null;
             ringSlot2 = null;
-            Debug.Log("[EquipmentManager] Equipment reset to empty for fresh run.");
+            // Debug.Log("[EquipmentManager] Equipment reset to empty for fresh run.");
         }
 
         private void SetSlot(EquipmentSlot slot, ItemData item)
@@ -291,7 +291,7 @@ namespace Roguelite.Inventory
 
             if (shadowCooldownTimer > 0f)
             {
-                Debug.Log($"[Ring of Shadows] Ability on cooldown! {shadowCooldownTimer:F1}s remaining.");
+                // Debug.Log($"[Ring of Shadows] Ability on cooldown! {shadowCooldownTimer:F1}s remaining.");
                 return;
             }
 
@@ -300,7 +300,7 @@ namespace Roguelite.Inventory
             StealthState.IsPlayerInvisible = true;
             StealthState.InvisibilityDurationRemaining = SHADOW_STEALTH_DURATION;
 
-            Debug.Log("🌑 [SHADOWS EMBRACE YOU] — Player is now INVISIBLE for 10 seconds!");
+            // Debug.Log("🌑 [SHADOWS EMBRACE YOU] — Player is now INVISIBLE for 10 seconds!");
             OnStealthStateChanged?.Invoke(true);
         }
 
@@ -308,7 +308,7 @@ namespace Roguelite.Inventory
         {
             StealthState.IsPlayerInvisible = false;
             StealthState.InvisibilityDurationRemaining = 0f;
-            Debug.Log("☀️ [SHADOWS FADE] — Player is visible again.");
+            // Debug.Log("☀️ [SHADOWS FADE] — Player is visible again.");
             OnStealthStateChanged?.Invoke(false);
         }
     }

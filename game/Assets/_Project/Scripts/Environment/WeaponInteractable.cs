@@ -43,8 +43,8 @@ namespace Roguelite.Environment
 
         public void Interact(GameObject player)
         {
-            Debug.Log("[Weapon] Interact called");
-            Debug.Log($"[Weapon] Selected class: {targetClass}");
+            // Debug.Log("[Weapon] Interact called");
+            // Debug.Log($"[Weapon] Selected class: {targetClass}");
 
             // Map CharacterType to ClassType
             ClassType pClass = ClassType.Knight;

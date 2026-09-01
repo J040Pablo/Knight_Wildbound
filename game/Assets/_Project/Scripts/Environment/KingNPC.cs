@@ -38,11 +38,11 @@ namespace Roguelite.Environment
 
             if (!HasFinishedDialogue)
             {
-                Debug.Log("[King] Intro dialogue started");
+                // Debug.Log("[King] Intro dialogue started");
                 DialogueSystem.Instance.PlayDialogue(dialogueData.speakerName, dialogueData.introLine, () =>
                 {
                     HasFinishedDialogue = true;
-                    Debug.Log("[King] Intro dialogue completed");
+                    // Debug.Log("[King] Intro dialogue completed");
                 });
             }
             else

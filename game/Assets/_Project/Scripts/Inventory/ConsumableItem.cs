@@ -27,7 +27,7 @@ namespace Roguelite.Inventory
             float cooldownRem = GetCooldownRemaining(item.itemId);
             if (cooldownRem > 0f)
             {
-                Debug.Log($"[Consumable] '{item.itemName}' is on cooldown ({cooldownRem:F1}s remaining).");
+                // Debug.Log($"[Consumable] '{item.itemName}' is on cooldown ({cooldownRem:F1}s remaining).");
                 return false;
             }
 
@@ -37,7 +37,7 @@ namespace Roguelite.Inventory
             if (item.healAmount > 0f && stats.CurrentHP < stats.MaxHP)
             {
                 stats.Heal(item.healAmount);
-                Debug.Log($"[Consumable] Used '{item.itemName}': Healed {item.healAmount} HP.");
+                // Debug.Log($"[Consumable] Used '{item.itemName}': Healed {item.healAmount} HP.");
                 effectApplied = true;
             }
 
@@ -45,14 +45,14 @@ namespace Roguelite.Inventory
             if (item.restoresStaminaFully)
             {
                 stats.RegenerateStamina(stats.MaxStamina);
-                Debug.Log($"[Consumable] Used '{item.itemName}': Fully restored Stamina.");
+                // Debug.Log($"[Consumable] Used '{item.itemName}': Fully restored Stamina.");
                 effectApplied = true;
             }
 
             // Apply Cleanse
             if (item.cleansesDebuffs)
             {
-                Debug.Log($"[Consumable] Used '{item.itemName}': Cleansed poison/debuffs.");
+                // Debug.Log($"[Consumable] Used '{item.itemName}': Cleansed poison/debuffs.");
                 effectApplied = true;
             }
 
@@ -63,7 +63,7 @@ namespace Roguelite.Inventory
             }
             else
             {
-                Debug.Log($"[Consumable] Cannot use '{item.itemName}' right now (HP/Stamina full).");
+                // Debug.Log($"[Consumable] Cannot use '{item.itemName}' right now (HP/Stamina full).");
                 return false;
             }
         }

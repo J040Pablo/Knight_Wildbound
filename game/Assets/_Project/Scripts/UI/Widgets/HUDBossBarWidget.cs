@@ -100,12 +100,28 @@ namespace Roguelite.UI.Widgets
             string title = activeBoss.DisplayName.ToUpper();
             Color barColor = HUDTheme.HPRed;
 
-            if (activeBoss is HollowTreeBossAI treeBoss)
+            if (activeBoss is AwakenedWorldTreeAI worldTree)
+            {
+                if (worldTree.IsPhase2)
+                {
+                    title += "  [FASE 2 — FÚRIA DA FLORESTA]";
+                    barColor = new Color(0.95f, 0.12f, 0.15f);
+                }
+            }
+            else if (activeBoss is HollowTreeBossAI treeBoss)
             {
                 if (treeBoss.IsPhase2)
                 {
                     title += "  [FASE 2]";
                     barColor = new Color(0.95f, 0.15f, 0.25f);
+                }
+            }
+            else if (activeBoss is FairyQueenAI queen)
+            {
+                if (queen.IsPhase2)
+                {
+                    title += "  [FASE 2 — ENFURECIDA]";
+                    barColor = new Color(0.95f, 0.10f, 0.35f);
                 }
             }
             else if (activeBoss is BossAI bossAI)
@@ -140,6 +156,10 @@ namespace Roguelite.UI.Widgets
 
         private bool IsBossValid(EnemyBase enemy)
         {
+            if (enemy is AwakenedWorldTreeAI worldTree)
+            {
+                return worldTree.IsAwakened;
+            }
             if (enemy is StoneGiantAI giant)
             {
                 return giant.IsAwakened;
@@ -147,6 +167,10 @@ namespace Roguelite.UI.Widgets
             if (enemy is HollowTreeBossAI)
             {
                 return Environment.BossActivationTrigger.IsBossActivated;
+            }
+            if (enemy is FairyQueenAI fairyQueen)
+            {
+                return fairyQueen.IsAggroed;
             }
             return true;
         }

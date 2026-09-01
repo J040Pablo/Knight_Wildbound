@@ -105,7 +105,7 @@ namespace Roguelite.Environment
             LootResult rewards = ChestLootTable.GenerateRewards(chestRarity);
             LootDrop.SpawnFromResult(rewards, transform.position + Vector3.up * 0.8f);
 
-            Debug.Log($"[TreasureChest] Opened {chestRarity} chest! Spawned {rewards.droppedItems.Count} items & {rewards.goldAmount} gold.");
+            // Debug.Log($"[TreasureChest] Opened {chestRarity} chest! Spawned {rewards.droppedItems.Count} items & {rewards.goldAmount} gold.");
         }
     }
 }

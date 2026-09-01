@@ -60,7 +60,7 @@ namespace Roguelite.Core
 
         private void HandleGameStateChanged(GameState oldState, GameState newState)
         {
-            Debug.Log($"[InputStateManager] Synced with GameState: {newState}");
+            // Debug.Log($"[InputStateManager] Synced with GameState: {newState}");
         }
 
         public void SetGameplayMode()

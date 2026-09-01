@@ -39,7 +39,7 @@ namespace Roguelite.Loot
             else
             {
                 result.goldAmount += 50; // Duplicate relic conversion to bonus Gold
-                Debug.Log("[LootTable] Boss Relic 'relic_tree_seed' already owned. Converted to +50 Bonus Gold!");
+                // Debug.Log("[LootTable] Boss Relic 'relic_tree_seed' already owned. Converted to +50 Bonus Gold!");
             }
 
             // 2. Guaranteed Boss Equipment (50/50 random roll)

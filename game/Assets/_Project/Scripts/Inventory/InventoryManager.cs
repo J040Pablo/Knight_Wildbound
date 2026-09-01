@@ -89,7 +89,7 @@ namespace Roguelite.Inventory
         {
             if (amount <= 0) return;
             gold += amount;
-            Debug.Log($"[InventoryManager] +{amount} Gold added. Total Gold: {gold}");
+            // Debug.Log($"[InventoryManager] +{amount} Gold added. Total Gold: {gold}");
             OnGoldChanged?.Invoke(gold);
             OnInventoryChanged?.Invoke();
 
@@ -102,7 +102,7 @@ namespace Roguelite.Inventory
             if (gold < amount) return false;
 
             gold -= amount;
-            Debug.Log($"[InventoryManager] -{amount} Gold spent. Total Gold: {gold}");
+            // Debug.Log($"[InventoryManager] -{amount} Gold spent. Total Gold: {gold}");
             OnGoldChanged?.Invoke(gold);
             OnInventoryChanged?.Invoke();
 
@@ -121,7 +121,7 @@ namespace Roguelite.Inventory
             // Route Relics directly to RelicManager (Zero inventory slot rule)
             if (item.isRelic || item.category == ItemCategory.Relic || item.rarity == ItemRarity.Relic)
             {
-                Debug.Log($"[InventoryManager] Item '{item.itemName}' is a Campaign Relic! Routing to RelicManager.");
+                // Debug.Log($"[InventoryManager] Item '{item.itemName}' is a Campaign Relic! Routing to RelicManager.");
                 RelicManager.Instance.CollectRelic(item.itemId);
                 OnItemPickedUp?.Invoke(item, 1, gold);
                 return true;
@@ -165,7 +165,7 @@ namespace Roguelite.Inventory
 
         private void NotifyItemAdded(ItemData item, int count)
         {
-            Debug.Log($"[InventoryManager] Added x{count} '{item.itemName}' to inventory.");
+            // Debug.Log($"[InventoryManager] Added x{count} '{item.itemName}' to inventory.");
             OnItemPickedUp?.Invoke(item, count, gold);
             OnInventoryChanged?.Invoke();
 
@@ -234,7 +234,7 @@ namespace Roguelite.Inventory
             gold = 0;
             OnGoldChanged?.Invoke(gold);
             OnInventoryChanged?.Invoke();
-            Debug.Log("[InventoryManager] Inventory reset to empty for fresh run.");
+            // Debug.Log("[InventoryManager] Inventory reset to empty for fresh run.");
         }
 
         public void LoadInventoryState(List<InventorySlot> loadedItems, int loadedGold)

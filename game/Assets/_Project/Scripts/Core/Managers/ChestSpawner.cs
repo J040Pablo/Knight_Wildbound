@@ -31,7 +31,7 @@ namespace Roguelite.Core.Managers
                 chestComp.chestRarity = rarity;
             }
 
-            Debug.Log($"[ChestSpawner] Spawned chest at {validPos}");
+            // Debug.Log($"[ChestSpawner] Spawned chest at {validPos}");
             return chestGO;
         }
 

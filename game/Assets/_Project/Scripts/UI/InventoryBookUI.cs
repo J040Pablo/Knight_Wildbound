@@ -743,17 +743,17 @@ namespace Roguelite.UI
             btn.interactable = canUnlock;
             btn.onClick.AddListener(() =>
             {
-                Debug.Log("[SPECIALIZATION] Button clicked!");
-                Debug.Log($"[SPECIALIZATION] Selected Node: {upgrade.upgradeTitle} (Path: {upgrade.path}, Tier: {upgrade.tier})");
-                Debug.Log($"[SPECIALIZATION] Current Class: {ProgressionManager.Instance?.CurrentClass}");
-                Debug.Log($"[SPECIALIZATION] Before ChosenSpecializationPath: {ProgressionManager.Instance?.ChosenSpecializationPath}");
-                Debug.Log($"[SPECIALIZATION] PendingLevelUpCount: {ProgressionManager.Instance?.PendingLevelUpCount}");
+                // Debug.Log("[SPECIALIZATION] Button clicked!");
+                // Debug.Log($"[SPECIALIZATION] Selected Node: {upgrade.upgradeTitle} (Path: {upgrade.path}, Tier: {upgrade.tier})");
+                // Debug.Log($"[SPECIALIZATION] Current Class: {ProgressionManager.Instance?.CurrentClass}");
+                // Debug.Log($"[SPECIALIZATION] Before ChosenSpecializationPath: {ProgressionManager.Instance?.ChosenSpecializationPath}");
+                // Debug.Log($"[SPECIALIZATION] PendingLevelUpCount: {ProgressionManager.Instance?.PendingLevelUpCount}");
 
                 if (ProgressionManager.Instance != null)
                 {
                     bool remainingPoints = ProgressionManager.Instance.SelectUpgrade(upgrade);
-                    Debug.Log($"[SPECIALIZATION] After ChosenSpecializationPath: {ProgressionManager.Instance.ChosenSpecializationPath}");
-                    Debug.Log($"[SPECIALIZATION] Remaining Points: {ProgressionManager.Instance.PendingLevelUpCount}");
+                    // Debug.Log($"[SPECIALIZATION] After ChosenSpecializationPath: {ProgressionManager.Instance.ChosenSpecializationPath}");
+                    // Debug.Log($"[SPECIALIZATION] Remaining Points: {ProgressionManager.Instance.PendingLevelUpCount}");
                     RefreshMasteryUI();
                     RefreshUI();
                 }

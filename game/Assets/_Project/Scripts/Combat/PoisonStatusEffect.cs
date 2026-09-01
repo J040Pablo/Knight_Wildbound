@@ -25,13 +25,13 @@ namespace Roguelite.Combat
         {
             poisonDurationTimer = Mathf.Max(poisonDurationTimer, duration);
             dps = damagePerSecond;
-            Debug.Log($"[PoisonStatusEffect] Applied Poison for {duration:F1}s!");
+            // Debug.Log($"[PoisonStatusEffect] Applied Poison for {duration:F1}s!");
         }
 
         public void Cleanse()
         {
             poisonDurationTimer = 0f;
-            Debug.Log("[PoisonStatusEffect] Poison Cleansed!");
+            // Debug.Log("[PoisonStatusEffect] Poison Cleansed!");
         }
 
         private void Update()

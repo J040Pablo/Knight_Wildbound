@@ -18,7 +18,7 @@ namespace Roguelite.Environment
                 }
             }
 
-            Debug.Log($"[WorldDiagnosticTool] World visual state and topology validated cleanly ({chunkCount} terrain chunks, {allMeshRenderers.Length} renderers, ColorSpace: {QualitySettings.activeColorSpace}).");
+            // Debug.Log($"[WorldDiagnosticTool] World visual state and topology validated cleanly ({chunkCount} terrain chunks, {allMeshRenderers.Length} renderers, ColorSpace: {QualitySettings.activeColorSpace}).");
         }
     }
 }

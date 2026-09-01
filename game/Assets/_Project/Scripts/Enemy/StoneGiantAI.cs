@@ -246,7 +246,7 @@ namespace Roguelite.Enemy
         private void TriggerEnrage()
         {
             isEnraged = true;
-            Debug.Log($"🔥 [STONE GIANT ENRAGE] — HP below 30%! Move speed +25%, attack speed +20%!");
+            // Debug.Log($"🔥 [STONE GIANT ENRAGE] — HP below 30%! Move speed +25%, attack speed +20%!");
 
             if (coreRenderer != null)
             {
@@ -260,7 +260,7 @@ namespace Roguelite.Enemy
         private IEnumerator EruptAmbush()
         {
             isAttacking = true;
-            Debug.Log($"🌋 [STONE GIANT] — Awakened at 15m radius!");
+            // Debug.Log($"🌋 [STONE GIANT] — Awakened at 15m radius!");
 
             ThirdPersonCamera cam = FindFirstObjectByType<ThirdPersonCamera>();
             if (cam != null) cam.TriggerShake(0.6f, 0.4f);
@@ -370,7 +370,7 @@ namespace Roguelite.Enemy
                 LootDrop.SpawnFromResult(loot, transform.position);
             }
 
-            Debug.Log($"🪨 [STONE GIANT DEFEATED] — 150 XP awarded!");
+            // Debug.Log($"🪨 [STONE GIANT DEFEATED] — 150 XP awarded!");
             base.Die();
         }
     }

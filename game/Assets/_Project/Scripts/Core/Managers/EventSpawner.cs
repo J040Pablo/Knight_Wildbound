@@ -25,7 +25,7 @@ namespace Roguelite.Core.Managers
             }
 
             activeEvents.Add(eventGO);
-            Debug.Log($"[EventSpawner] Spawned event '{eventDef.eventName}' at {validPos}");
+            // Debug.Log($"[EventSpawner] Spawned event '{eventDef.eventName}' at {validPos}");
             return eventGO;
         }
 

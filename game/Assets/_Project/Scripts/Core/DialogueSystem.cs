@@ -31,14 +31,14 @@ namespace Roguelite.Core
             IsDialogueActive = true;
             onDialogueCompleted = onComplete;
 
-            Debug.Log($"[DialogueSystem] Playing dialogue for: {speaker}");
+            // Debug.Log($"[DialogueSystem] Playing dialogue for: {speaker}");
         }
 
         public void AdvanceOrCloseDialogue()
         {
             if (!IsDialogueActive) return;
 
-            Debug.Log($"[DialogueSystem] Closed dialogue for: {CurrentSpeaker}");
+            // Debug.Log($"[DialogueSystem] Closed dialogue for: {CurrentSpeaker}");
             IsDialogueActive = false;
             CurrentSpeaker = "";
             CurrentText = "";

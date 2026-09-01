@@ -46,10 +46,15 @@ namespace Roguelite.Environment
             }
         }
 
+        public void ExecuteWorldTreeDefeatSequence()
+        {
+            if (hasTriggered) return;
+            hasTriggered = true;
+            StartCoroutine(ExecuteBossDefeatSequence());
+        }
+
         private IEnumerator ExecuteBossDefeatSequence()
         {
-            Debug.Log("[BossDefeatProgression] Hollow Tree Boss defeated! Starting progression sequence...");
-
             // 1. Brief delay for death animation start
             yield return new WaitForSeconds(1.2f);
 
@@ -57,13 +62,13 @@ namespace Roguelite.Environment
             ThirdPersonCamera cam = FindFirstObjectByType<ThirdPersonCamera>();
             if (cam != null)
             {
-                cam.TriggerShake(0.8f, 1.8f);
+                cam.TriggerShake(1.2f, 2.0f);
             }
 
             // 3. Status Banner Message
             if (EncounterManager.Instance != null)
             {
-                EncounterManager.Instance.TriggerBanner("✨ THE PATH AHEAD HAS BEEN OPENED.");
+                EncounterManager.Instance.TriggerBanner("🌿 O CORAÇÃO DA FLORESTA FOI PURIFICADO!\nO caminho para além da floresta foi aberto...");
             }
 
             // 4. Weaken Root Barrier visuals
@@ -73,10 +78,11 @@ namespace Roguelite.Environment
                 exitBarrier.ApplyBossDefeatedWeakening();
             }
 
-            // 5. Unlock Barrier Health to receive attacks
+            // 5. Unlock Barrier Health & set 300 HP
             if (barrierHealth == null) barrierHealth = FindFirstObjectByType<BarrierHealth>();
             if (barrierHealth != null)
             {
+                barrierHealth.SetMaxHealth(300f);
                 barrierHealth.UnlockBarrier();
             }
         }

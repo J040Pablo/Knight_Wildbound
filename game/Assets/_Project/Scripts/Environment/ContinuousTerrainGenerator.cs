@@ -65,12 +65,7 @@ namespace Roguelite.Environment
                     float worldY = heightFunc(worldX, worldZ);
                     int vIdx = zIdx * numX + xIdx;
 
-                    // Enforce flat tutorial sky (no terrain ceilings or spawn walls)
-                    if (worldZ < 80f)
-                    {
-                        worldY = Mathf.Clamp(worldY, 0f, 1.5f);
-                    }
-
+                    // Assign computed terrain height without arbitrary Z-based clamping
                     vertices[vIdx] = new Vector3(worldX, worldY, worldZ);
                     uvs[vIdx] = new Vector2(worldX * 0.05f, worldZ * 0.05f);
 

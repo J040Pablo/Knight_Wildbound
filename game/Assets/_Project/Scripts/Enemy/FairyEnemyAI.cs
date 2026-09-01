@@ -155,7 +155,7 @@ namespace Roguelite.Enemy
             Quaternion rot = transform.rotation;
             rot.Normalize();
             transform.rotation = rot;
-            Debug.Log($"[FairyEnemyAI] {gameObject.name} BLINKED!");
+            // Debug.Log($"[FairyEnemyAI] {gameObject.name} BLINKED!");
         }
 
         private IEnumerator CastDarkBolt()
@@ -213,7 +213,7 @@ namespace Roguelite.Enemy
                 if (ally != null && ally != this && !ally.IsDead && ally.CurrentHP < ally.MaxHP)
                 {
                     ally.Heal(25f);
-                    Debug.Log($"[FairyEnemyAI] Healer Fairy healed {ally.gameObject.name} for 25 HP!");
+                    // Debug.Log($"[FairyEnemyAI] Healer Fairy healed {ally.gameObject.name} for 25 HP!");
                     break;
                 }
             }
@@ -234,7 +234,7 @@ namespace Roguelite.Enemy
             summonCooldownTimer = SUMMON_COOLDOWN;
             totalSummonsExecuted++;
 
-            Debug.Log($"[Forest Witch] Summoning minion! ({totalSummonsExecuted}/{MAX_TOTAL_SUMMONS})");
+            // Debug.Log($"[Forest Witch] Summoning minion! ({totalSummonsExecuted}/{MAX_TOTAL_SUMMONS})");
 
             GameObject minion = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             minion.name = "SummonedFairyMinion";

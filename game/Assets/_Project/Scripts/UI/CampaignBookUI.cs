@@ -79,7 +79,7 @@ namespace Roguelite.UI
 
             if (isOpen)
             {
-                Debug.Log("[Ancient Journal] Toggle Open");
+                // Debug.Log("[Ancient Journal] Toggle Open");
                 if (InputStateManager.Instance != null)
                 {
                     InputStateManager.Instance.SetUIMode();
@@ -87,7 +87,7 @@ namespace Roguelite.UI
             }
             else
             {
-                Debug.Log("[Ancient Journal] Toggle Close");
+                // Debug.Log("[Ancient Journal] Toggle Close");
                 if (InputStateManager.Instance != null)
                 {
                     InputStateManager.Instance.SetGameplayMode();

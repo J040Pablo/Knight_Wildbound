@@ -82,7 +82,7 @@ namespace Roguelite.Core
 
                 if (TryFindNearestValidPosition(targetPosition, clearanceRadius, out validGroundPos))
                 {
-                    Debug.Log($"[SpawnManager] Successfully found fallback spawn position at {validGroundPos}");
+                    // Debug.Log($"[SpawnManager] Successfully found fallback spawn position at {validGroundPos}");
                 }
                 else
                 {
@@ -105,7 +105,7 @@ namespace Roguelite.Core
 
             if (cc != null) cc.enabled = true;
 
-            Debug.Log($"[SpawnManager] Player successfully spawned at {validGroundPos} in scene '{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}'");
+            // Debug.Log($"[SpawnManager] Player successfully spawned at {validGroundPos} in scene '{UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}'");
             return true;
         }
 
@@ -141,7 +141,7 @@ namespace Roguelite.Core
 
             if (cc != null) cc.enabled = true;
 
-            Debug.Log($"[SpawnManager] Companion Horse successfully spawned at {validGroundPos}");
+            // Debug.Log($"[SpawnManager] Companion Horse successfully spawned at {validGroundPos}");
             return true;
         }
 

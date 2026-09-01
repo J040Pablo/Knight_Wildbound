@@ -53,7 +53,7 @@ namespace Roguelite.Core.StateMachine
 
             ApplyStateProperties(newState);
 
-            Debug.Log($"[GameStateManager] State changed: {PreviousState} -> {CurrentState}");
+            // Debug.Log($"[GameStateManager] State changed: {PreviousState} -> {CurrentState}");
             OnGameStateChanged?.Invoke(PreviousState, CurrentState);
         }
 

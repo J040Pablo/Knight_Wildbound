@@ -185,7 +185,7 @@ namespace Roguelite.Player
                 string attackerLayer = damageInfo.attacker != null ? LayerMask.LayerToName(damageInfo.attacker.layer) : "UNKNOWN";
                 string attackerTag = damageInfo.attacker != null ? damageInfo.attacker.tag : "UNKNOWN";
 
-                Debug.Log($"[UNEXPECTED PLAYER DAMAGE]\nAttacker: {attackerName}\nDamage: {damageInfo.amount:F1}\nSource Component: {damageInfo.attacker?.GetType().Name ?? "NULL"}\nCollider: N/A\nGameObject: {attackerName}\nLayer: {attackerLayer}\nTag: {attackerTag}");
+                // Debug.Log($"[UNEXPECTED PLAYER DAMAGE]\nAttacker: {attackerName}\nDamage: {damageInfo.amount:F1}\nSource Component: {damageInfo.attacker?.GetType().Name ?? "NULL"}\nCollider: N/A\nGameObject: {attackerName}\nLayer: {attackerLayer}\nTag: {attackerTag}");
             }
 
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);

@@ -25,6 +25,7 @@ namespace Roguelite.Environment
         TreeDeciduous,
         TreePine,
         TreeWillow,
+        WillowTree = TreeWillow,
         TreeAncient,
         TreeDeadSmall,
         TreeDeadGiant,
@@ -75,6 +76,7 @@ namespace Roguelite.Environment
         AbandonedCamp,
         LoreSignPost,
         DestroyedWagon,
+        FairyHouseRoot,
 
         // ── NPCs / Entities ───────────────────────
         KingNPC,

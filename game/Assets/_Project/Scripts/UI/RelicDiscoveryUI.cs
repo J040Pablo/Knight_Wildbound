@@ -75,7 +75,7 @@ namespace Roguelite.UI
             if (relicItem == null) return;
             activeRelic = relicItem;
             displayTimer = TOTAL_DISPLAY_TIME;
-            Debug.Log($"[RelicDiscoveryUI] Showing 4s relic reward card for '{relicItem.itemName}'");
+            // Debug.Log($"[RelicDiscoveryUI] Showing 4s relic reward card for '{relicItem.itemName}'");
         }
 
         public void TriggerDiscovery(string title, string bonus)

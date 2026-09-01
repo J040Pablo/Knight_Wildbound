@@ -295,7 +295,7 @@ namespace Roguelite.Progression
         public void LoadSpecializationPath(MasteryPath path)
         {
             ChosenSpecializationPath = path;
-            Debug.Log($"[ProgressionManager] Loaded ChosenSpecializationPath: {path}");
+            // Debug.Log($"[ProgressionManager] Loaded ChosenSpecializationPath: {path}");
         }
 
         public void SetClass(ClassType classType)
@@ -317,14 +317,14 @@ namespace Roguelite.Progression
                 default: activeClassDefinition = knightClassDefinition; break;
             }
 
-            Debug.Log($"[ProgressionManager] Base Class selected: {classType} ({activeClassDefinition?.baseClassName}) | Initial Mastery Points: {PendingLevelUpCount}");
+            // Debug.Log($"[ProgressionManager] Base Class selected: {classType} ({activeClassDefinition?.baseClassName}) | Initial Mastery Points: {PendingLevelUpCount}");
 
             OnClassSelected?.Invoke(CurrentClass);
-            Debug.Log("[Progression] OnClassSelected fired");
+            // Debug.Log("[Progression] OnClassSelected fired");
 
             if (PendingLevelUpCount > 0)
             {
-                Debug.Log($"[ProgressionManager] OnLevelUpPending Fired via SetClass (Pending Count: {PendingLevelUpCount})");
+                // Debug.Log($"[ProgressionManager] OnLevelUpPending Fired via SetClass (Pending Count: {PendingLevelUpCount})");
                 OnLevelUpPending?.Invoke();
             }
         }
@@ -335,7 +335,7 @@ namespace Roguelite.Progression
 
             TotalXP += amount;
             CurrentLevelXP += amount;
-            Debug.Log($"[ProgressionManager] XP Added: {amount} | CurrentLevelXP: {CurrentLevelXP} | TotalXP: {TotalXP}");
+            // Debug.Log($"[ProgressionManager] XP Added: {amount} | CurrentLevelXP: {CurrentLevelXP} | TotalXP: {TotalXP}");
 
             int targetXP = GetXPRequired(CurrentLevel);
             while (CurrentLevel < MAX_LEVEL && CurrentLevelXP >= targetXP)
@@ -344,14 +344,14 @@ namespace Roguelite.Progression
                 CurrentLevel++;
                 PendingLevelUpCount++;
 
-                Debug.Log($"[ProgressionManager] Level Up -> {CurrentLevel} | Pending LevelUps -> {PendingLevelUpCount}");
+                // Debug.Log($"[ProgressionManager] Level Up -> {CurrentLevel} | Pending LevelUps -> {PendingLevelUpCount}");
 
                 OnLevelChanged?.Invoke(CurrentLevel);
                 targetXP = GetXPRequired(CurrentLevel);
 
                 if (CurrentClass != ClassType.None)
                 {
-                    Debug.Log($"[ProgressionManager] OnLevelUpPending Fired (Pending LevelUps: {PendingLevelUpCount})");
+                    // Debug.Log($"[ProgressionManager] OnLevelUpPending Fired (Pending LevelUps: {PendingLevelUpCount})");
                     OnLevelUpPending?.Invoke();
                 }
             }
@@ -401,7 +401,7 @@ namespace Roguelite.Progression
                 PendingLevelUpCount = 0; // Consume pending level ups when all paths are maxed
             }
 
-            Debug.Log($"[ProgressionManager] GetUpgradeChoices() returned {choices.Count} choices for class {CurrentClass} (Chosen Path: {ChosenSpecializationPath})");
+            // Debug.Log($"[ProgressionManager] GetUpgradeChoices() returned {choices.Count} choices for class {CurrentClass} (Chosen Path: {ChosenSpecializationPath})");
             return choices;
         }
 
@@ -413,7 +413,7 @@ namespace Roguelite.Progression
             if (ChosenSpecializationPath == MasteryPath.None)
             {
                 ChosenSpecializationPath = upgrade.path;
-                Debug.Log($"[ProgressionManager] Specialization LOCKED: {upgrade.path} ({activeClassDefinition?.GetPathName(upgrade.path)})");
+                // Debug.Log($"[ProgressionManager] Specialization LOCKED: {upgrade.path} ({activeClassDefinition?.GetPathName(upgrade.path)})");
             }
 
             pathTiers[upgrade.path] = upgrade.tier;

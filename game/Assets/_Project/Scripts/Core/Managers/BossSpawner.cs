@@ -34,7 +34,7 @@ namespace Roguelite.Core.Managers
                 HollowTreeBossAI bossAI = bossGO.AddComponent<HollowTreeBossAI>();
             }
 
-            Debug.Log($"[BossSpawner] Spawned boss '{bossDef.bossName}' at {validPos}");
+            // Debug.Log($"[BossSpawner] Spawned boss '{bossDef.bossName}' at {validPos}");
             return bossGO;
         }
 

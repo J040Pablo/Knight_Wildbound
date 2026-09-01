@@ -63,7 +63,7 @@ namespace Roguelite.Environment
                 EncounterManager.Instance.TriggerBanner($"🌄 {completionMessage.ToUpper()} — {subMessage}");
             }
 
-            Debug.Log($"[TransitionArea] Player reached transition end: {completionMessage}");
+            // Debug.Log($"[TransitionArea] Player reached transition end: {completionMessage}");
         }
     }
 

@@ -84,7 +84,7 @@ namespace Roguelite.Environment
                     {
                         EncounterManager.Instance.TriggerBanner($"📍 DISCOVERED: {lm.landmarkName.ToUpper()}");
                     }
-                    Debug.Log($"[ForestLandmarkManager] Discovered landmark: {lm.landmarkName} at {lm.position}");
+                    // Debug.Log($"[ForestLandmarkManager] Discovered landmark: {lm.landmarkName} at {lm.position}");
                 }
             }
         }

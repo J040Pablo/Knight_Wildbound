@@ -108,7 +108,7 @@ namespace Roguelite.Player
 
             if (trigger)
             {
-                Debug.Log($"[DEBUG_FALLBACK] Class selected via key shortcut: {selectedType}");
+                // Debug.Log($"[DEBUG_FALLBACK] Class selected via key shortcut: {selectedType}");
                 Roguelite.Progression.ClassType pClass = selectedType switch
                 {
                     Roguelite.Core.CharacterType.Mage => Roguelite.Progression.ClassType.Mage,
@@ -144,12 +144,12 @@ namespace Roguelite.Player
 #if UNITY_EDITOR
             if (enableDebugLogs && hit.normal.y < 0.7f)
             {
-                Debug.Log($"[COLLISION DEBUG] Name={hit.collider.name} | Tag={hit.collider.tag} | Layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}");
+                // Debug.Log($"[COLLISION DEBUG] Name={hit.collider.name} | Tag={hit.collider.tag} | Layer={LayerMask.LayerToName(hit.collider.gameObject.layer)}");
             }
 
             if (enableDebugLogs && hit.gameObject != null)
             {
-                Debug.LogWarning($"[PLAYER_HIT] Collided with: '{hit.gameObject.name}', Tag: '{hit.gameObject.tag}', Layer: '{LayerMask.LayerToName(hit.gameObject.layer)}', HitPoint: {hit.point}");
+                // Debug.LogWarning($"[PLAYER_HIT] Collided with: '{hit.gameObject.name}', Tag: '{hit.gameObject.tag}', Layer: '{LayerMask.LayerToName(hit.gameObject.layer)}', HitPoint: {hit.point}");
             }
 #endif
         }
