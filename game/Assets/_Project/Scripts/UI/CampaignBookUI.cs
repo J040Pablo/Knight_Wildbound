@@ -61,7 +61,7 @@ namespace Roguelite.UI
         {
             if (instance == this)
             {
-                applicationIsQuitting = true;
+                instance = null;
             }
         }
 
@@ -140,7 +140,7 @@ namespace Roguelite.UI
                 alignment = TextAnchor.MiddleCenter
             };
             headerStyle.normal.textColor = new Color(0.25f, 0.15f, 0.08f);
-            GUI.Label(new Rect(bookX, bookY + 18, bookW, 26), "📖 ANCIENT JOURNAL & CAMPAIGN PROGRESS", headerStyle);
+            GUI.Label(new Rect(bookX, bookY + 18, bookW, 26), "ANCIENT JOURNAL & CAMPAIGN PROGRESS", headerStyle);
 
             GUI.color = new Color(0.4f, 0.3f, 0.2f);
             GUI.Label(new Rect(bookX + bookW - 210, bookY + 18, 190, 22), "Press [J] or [ESC] to Close");
@@ -184,7 +184,7 @@ namespace Roguelite.UI
             };
             titleStyle.normal.textColor = new Color(0.3f, 0.18f, 0.08f);
 
-            GUI.Label(new Rect(leftX, y, halfW, 24), "🛡️ ADVENTURER PROFILE", titleStyle);
+            GUI.Label(new Rect(leftX, y, halfW, 24), "ADVENTURER PROFILE", titleStyle);
 
             string classTitle = pClass == ClassType.None ? "UNBOUND KNIGHT" : $"{pClass.ToString().ToUpper()} HERO";
             GUI.Label(new Rect(leftX, y + 30, halfW, 22), $"Title: {classTitle}");
@@ -199,7 +199,7 @@ namespace Roguelite.UI
             DrawParchmentBar(new Rect(leftX, y + 96, halfW - 20, 12), xpRatio, new Color(0.85f, 0.65f, 0.15f), "");
 
             // Class Mastery Summary
-            GUI.Label(new Rect(leftX, y + 130, halfW, 24), "⚡ MASTERY PATHWAYS", titleStyle);
+            GUI.Label(new Rect(leftX, y + 130, halfW, 24), "MASTERY PATHWAYS", titleStyle);
 
             if (ProgressionManager.Instance != null && pClass != ClassType.None)
             {
@@ -224,17 +224,17 @@ namespace Roguelite.UI
             // -------------------------------------------------------------
             // RIGHT PAGE: Stardew-Style Detailed Combat Stats
             // -------------------------------------------------------------
-            GUI.Label(new Rect(rightX, y, halfW, 24), "⚔️ COMBAT ATTRIBUTES", titleStyle);
+            GUI.Label(new Rect(rightX, y, halfW, 24), "COMBAT ATTRIBUTES", titleStyle);
 
             if (stats != null)
             {
                 bool hasTreeSeed = RelicManager.Instance != null && RelicManager.Instance.HasRelic("relic_tree_seed");
                 string hpRelicText = hasTreeSeed ? " (+25 Relic)" : "";
 
-                DrawStatRow(rightX, y + 35, halfW - 20, "Health (Max HP)", $"{stats.MaxHP:F0}{hpRelicText}", "❤️");
-                DrawStatRow(rightX, y + 70, halfW - 20, "Attack Damage", $"{stats.FlatDamage:F0}", "⚔️");
-                DrawStatRow(rightX, y + 105, halfW - 20, "Stamina", $"{stats.MaxStamina:F0}", "⚡");
-                DrawStatRow(rightX, y + 140, halfW - 20, "Move Speed", $"{stats.MoveSpeedMultiplier * 100f:F0}%", "🏃");
+                DrawStatRow(rightX, y + 35, halfW - 20, "Health (Max HP)", $"{stats.MaxHP:F0}{hpRelicText}", "[HP]");
+                DrawStatRow(rightX, y + 70, halfW - 20, "Attack Damage", $"{stats.FlatDamage:F0}", "[DMG]");
+                DrawStatRow(rightX, y + 105, halfW - 20, "Stamina", $"{stats.MaxStamina:F0}", "[STM]");
+                DrawStatRow(rightX, y + 140, halfW - 20, "Move Speed", $"{stats.MoveSpeedMultiplier * 100f:F0}%", "[SPD]");
             }
         }
 
@@ -274,7 +274,7 @@ namespace Roguelite.UI
             };
             titleStyle.normal.textColor = new Color(0.3f, 0.18f, 0.08f);
 
-            GUI.Label(new Rect(x, y, w, 24), "🏆 DISCOVERED CAMPAIGN RELICS", titleStyle);
+            GUI.Label(new Rect(x, y, w, 24), "DISCOVERED CAMPAIGN RELICS", titleStyle);
 
             GUI.skin.label.fontSize = 11;
             GUI.color = new Color(0.35f, 0.25f, 0.15f);
@@ -286,14 +286,14 @@ namespace Roguelite.UI
             if (collected.Count == 0 && (RelicManager.Instance == null || !RelicManager.Instance.HasRelic("relic_tree_seed")))
             {
                 GUI.color = new Color(0.45f, 0.35f, 0.25f);
-                GUI.Label(new Rect(x + 20, relicY + 20, w - 40, 30), "📜 No campaign relics discovered yet.\nExplore the forest and defeat the Hollow Tree Boss to unlock progression relics!");
+                GUI.Label(new Rect(x + 20, relicY + 20, w - 40, 30), "No campaign relics discovered yet.\nExplore the forest and defeat the Hollow Tree Boss to unlock progression relics!");
                 return;
             }
 
             // Render DISCOVERED Relics ONLY (No spoilers for undiscovered relics!)
             if (RelicManager.Instance != null && RelicManager.Instance.HasRelic("relic_tree_seed"))
             {
-                DrawRelicJournalCard(x + 20, relicY, w - 40, "Seed of the Ancient Tree", "Forest Biome Guardian Relic", "+25 Permanent Max HP", "🌱", "Forest Boss Defeated");
+                DrawRelicJournalCard(x + 20, relicY, w - 40, "Seed of the Ancient Tree", "Forest Biome Guardian Relic", "+25 Permanent Max HP", "[RELIC]", "Forest Boss Defeated");
                 relicY += 95f;
             }
 

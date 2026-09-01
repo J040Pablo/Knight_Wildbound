@@ -118,19 +118,27 @@ namespace Roguelite.Player
                 safeDismountPos = hit.point + Vector3.up * 0.05f;
             }
 
-            player.transform.position = safeDismountPos;
-            player.transform.rotation = transform.rotation;
-
-            // Force PhysX transform sync before re-enabling CharacterController
-            Physics.SyncTransforms();
-
-            // 3. Re-enable player CharacterController & PlayerController
+            // 3. Position player and re-enable CharacterController cleanly
             CharacterController pCC = player.GetComponent<CharacterController>();
+            if (pCC != null)
+            {
+                pCC.enabled = false;
+            }
+
+            player.transform.position = safeDismountPos;
+            Quaternion safeRot = transform.rotation;
+            safeRot.Normalize();
+            player.transform.rotation = safeRot;
+
             if (pCC != null)
             {
                 pCC.enabled = true;
             }
 
+            // Force PhysX transform sync AFTER CharacterController is enabled
+            Physics.SyncTransforms();
+
+            // 4. Re-enable PlayerController
             PlayerController pCtrl = player.GetComponent<PlayerController>();
             if (pCtrl != null)
             {
@@ -138,7 +146,7 @@ namespace Roguelite.Player
                 pCtrl.ResetVelocity();
             }
 
-            // 4. Restore camera target to player and reset aim height
+            // 5. Restore camera target to player and reset aim height
             if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();
             if (tpCam != null)
             {

@@ -25,7 +25,6 @@ namespace Roguelite.Enemy
 
         private bool isAwakened = false;
         private bool isEnraged = false;
-        private float attackTimer = 0f;
         private Vector3 spawnPos;
         private Transform leftArmTransform;
         private Transform rightArmTransform;

@@ -310,7 +310,7 @@ namespace Roguelite.UI.Theme
             tmp.alignment = align;
             tmp.fontStyle = style;
             tmp.raycastTarget = false;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.overflowMode = TextOverflowModes.Overflow;
             return tmp;
         }

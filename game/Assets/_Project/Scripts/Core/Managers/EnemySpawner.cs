@@ -91,11 +91,22 @@ namespace Roguelite.Core.Managers
         private Vector3 GetValidPosition(Vector3 preferredPos)
         {
             Vector3 rayStart = preferredPos + Vector3.up * 10f;
+            Vector3 targetPos = preferredPos;
             if (Physics.Raycast(rayStart, Vector3.down, out RaycastHit hit, 25f))
             {
-                return hit.point + Vector3.up * 0.1f;
+                targetPos = hit.point + Vector3.up * 0.1f;
             }
-            return preferredPos;
+
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player != null && Vector3.Distance(targetPos, player.transform.position) < minPlayerDistance)
+            {
+                Vector3 awayDir = (targetPos - player.transform.position);
+                awayDir.y = 0;
+                if (awayDir.sqrMagnitude < 0.001f) awayDir = Vector3.forward;
+                targetPos = player.transform.position + awayDir.normalized * (minPlayerDistance + minEnemyDistance);
+            }
+
+            return targetPos;
         }
 
         public void ClearEnemies()

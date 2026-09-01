@@ -27,6 +27,7 @@ namespace Roguelite.Core.Save
 
         public string weaponSlotId;
         public string amuletSlotId;
+        public string beltSlotId;
         public string ringSlot1Id;
         public string ringSlot2Id;
 
@@ -36,6 +37,7 @@ namespace Roguelite.Core.Save
         public int masteryPath2Tier;
         public int masteryPath3Tier;
         public int pendingMasteryPoints;
+        public string chosenSpecializationPath = "None";
 
         public float masterVolume = 1f;
         public float musicVolume = 0.8f;
@@ -150,6 +152,7 @@ namespace Roguelite.Core.Save
             {
                 data.weaponSlotId = EquipmentManager.Instance.weaponSlot?.itemId;
                 data.amuletSlotId = EquipmentManager.Instance.amuletSlot?.itemId;
+                data.beltSlotId   = EquipmentManager.Instance.beltSlot?.itemId;
                 data.ringSlot1Id  = EquipmentManager.Instance.ringSlot1?.itemId;
                 data.ringSlot2Id  = EquipmentManager.Instance.ringSlot2?.itemId;
             }
@@ -170,6 +173,7 @@ namespace Roguelite.Core.Save
                 data.masteryPath2Tier = (int)ProgressionManager.Instance.GetTier(MasteryPath.Path2);
                 data.masteryPath3Tier = (int)ProgressionManager.Instance.GetTier(MasteryPath.Path3);
                 data.pendingMasteryPoints = ProgressionManager.Instance.PendingLevelUpCount;
+                data.chosenSpecializationPath = ProgressionManager.Instance.ChosenSpecializationPath.ToString();
             }
 
             string json = JsonUtility.ToJson(data, true);
@@ -228,6 +232,11 @@ namespace Roguelite.Core.Save
                         ItemData a = ItemDatabase.Get(data.amuletSlotId);
                         if (a != null) EquipmentManager.Instance.EquipSilent(a, EquipmentSlot.Amulet);
                     }
+                    if (!string.IsNullOrEmpty(data.beltSlotId))
+                    {
+                        ItemData bl = ItemDatabase.Get(data.beltSlotId);
+                        if (bl != null) EquipmentManager.Instance.EquipSilent(bl, EquipmentSlot.Belt);
+                    }
                     if (!string.IsNullOrEmpty(data.ringSlot1Id))
                     {
                         ItemData r1 = ItemDatabase.Get(data.ringSlot1Id);
@@ -237,6 +246,15 @@ namespace Roguelite.Core.Save
                     {
                         ItemData r2 = ItemDatabase.Get(data.ringSlot2Id);
                         if (r2 != null) EquipmentManager.Instance.EquipSilent(r2, EquipmentSlot.Ring2);
+                    }
+                }
+
+                // 4. Progression Specialization Lock
+                if (ProgressionManager.Instance != null && !string.IsNullOrEmpty(data.chosenSpecializationPath))
+                {
+                    if (Enum.TryParse<MasteryPath>(data.chosenSpecializationPath, out var specPath))
+                    {
+                        ProgressionManager.Instance.LoadSpecializationPath(specPath);
                     }
                 }
 

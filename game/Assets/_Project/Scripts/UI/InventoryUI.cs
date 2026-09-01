@@ -63,7 +63,7 @@ namespace Roguelite.UI
         {
             if (instance == this)
             {
-                applicationIsQuitting = true;
+                instance = null;
             }
             if (GameStateManager.Instance != null)
             {

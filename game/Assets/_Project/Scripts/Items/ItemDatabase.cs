@@ -152,6 +152,25 @@ namespace Roguelite.Items
                         i.flatStaminaBonus = 25f;
                     });
 
+                // ── Belts ───────────────────────────────────────────
+                case "belt_sturdy_leather":
+                    return With(ItemData.Create(id, "Sturdy Leather Belt", "Thick tanned hide, reinforced with iron studs (+20 Max Stamina).", ItemCategory.Belt, ItemRarity.Rare, "🎗️", 40, false, 1), i =>
+                    {
+                        i.flatStaminaBonus = 20f;
+                    });
+
+                case "belt_swift_stride":
+                    return With(ItemData.Create(id, "Belt of Swift Stride", "Woven from wind-touched fibers (+6% Move Speed).", ItemCategory.Belt, ItemRarity.Rare, "🎗️", 40, false, 1), i =>
+                    {
+                        i.moveSpeedBonusPercent = 0.06f;
+                    });
+
+                case "belt_colossus_hide":
+                    return With(ItemData.Create(id, "Colossus Hide Belt", "Cut from ancient stone-hardened leather (+25 Max HP).", ItemCategory.Belt, ItemRarity.Epic, "🎗️", 150, false, 1), i =>
+                    {
+                        i.flatHpBonus = 25f;
+                    });
+
                 // ── Consumables ─────────────────────────────────────
                 case "small_potion":
                     return With(ItemData.Create(id, "Small Potion", "A faint fae brew. Restores 20 HP.", ItemCategory.Consumable, ItemRarity.Common, "🧪", 5), i =>

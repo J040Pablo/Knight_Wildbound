@@ -52,6 +52,7 @@ namespace Roguelite.Progression
 
         // Current Progression State
         public ClassType CurrentClass { get; private set; } = ClassType.None;
+        public MasteryPath ChosenSpecializationPath { get; private set; } = MasteryPath.None;
         public int CurrentLevel { get; private set; } = 1;
         public int CurrentLevelXP { get; private set; } = 0;
         public int TotalXP { get; private set; } = 0;
@@ -100,13 +101,14 @@ namespace Roguelite.Progression
             {
                 knightClassDefinition = ScriptableObject.CreateInstance<ClassDefinition>();
                 knightClassDefinition.classType = ClassType.Knight;
-                knightClassDefinition.className = "Knight";
-                knightClassDefinition.path1Name = "Helmet";
-                knightClassDefinition.path1Abbrev = "HEL";
-                knightClassDefinition.path2Name = "Sword";
-                knightClassDefinition.path2Abbrev = "SW";
-                knightClassDefinition.path3Name = "Armor";
-                knightClassDefinition.path3Abbrev = "ARM";
+                knightClassDefinition.baseClassName = "Guerreiro Base";
+                knightClassDefinition.className = "Guerreiro";
+                knightClassDefinition.path1Name = "Knight";
+                knightClassDefinition.path1Abbrev = "KNI";
+                knightClassDefinition.path2Name = "Berserker";
+                knightClassDefinition.path2Abbrev = "BER";
+                knightClassDefinition.path3Name = "Paladin";
+                knightClassDefinition.path3Abbrev = "PAL";
 
                 PopulateDefaultKnightUpgrades(knightClassDefinition);
             }
@@ -115,13 +117,14 @@ namespace Roguelite.Progression
             {
                 mageClassDefinition = ScriptableObject.CreateInstance<ClassDefinition>();
                 mageClassDefinition.classType = ClassType.Mage;
-                mageClassDefinition.className = "Mage";
-                mageClassDefinition.path1Name = "Elemental";
-                mageClassDefinition.path1Abbrev = "ELE";
+                mageClassDefinition.baseClassName = "Mago Base";
+                mageClassDefinition.className = "Mago";
+                mageClassDefinition.path1Name = "Mage";
+                mageClassDefinition.path1Abbrev = "MAG";
                 mageClassDefinition.path2Name = "Warlock";
                 mageClassDefinition.path2Abbrev = "WAR";
-                mageClassDefinition.path3Name = "Cosmic";
-                mageClassDefinition.path3Abbrev = "COS";
+                mageClassDefinition.path3Name = "Sorcerer";
+                mageClassDefinition.path3Abbrev = "SOR";
 
                 PopulateDefaultMageUpgrades(mageClassDefinition);
             }
@@ -130,13 +133,14 @@ namespace Roguelite.Progression
             {
                 druidClassDefinition = ScriptableObject.CreateInstance<ClassDefinition>();
                 druidClassDefinition.classType = ClassType.Druid;
-                druidClassDefinition.className = "Druid";
-                druidClassDefinition.path1Name = "Shapeshift";
-                druidClassDefinition.path1Abbrev = "SHP";
-                druidClassDefinition.path2Name = "Summoner";
-                druidClassDefinition.path2Abbrev = "SUM";
-                druidClassDefinition.path3Name = "Nature";
-                druidClassDefinition.path3Abbrev = "NAT";
+                druidClassDefinition.baseClassName = "Druida Base";
+                druidClassDefinition.className = "Druida";
+                druidClassDefinition.path1Name = "Druid";
+                druidClassDefinition.path1Abbrev = "DRU";
+                druidClassDefinition.path2Name = "Shaman";
+                druidClassDefinition.path2Abbrev = "SHA";
+                druidClassDefinition.path3Name = "Beastmaster";
+                druidClassDefinition.path3Abbrev = "BEA";
 
                 PopulateDefaultDruidUpgrades(druidClassDefinition);
             }
@@ -288,11 +292,23 @@ namespace Roguelite.Progression
             return activeClassDefinition;
         }
 
+        public void LoadSpecializationPath(MasteryPath path)
+        {
+            ChosenSpecializationPath = path;
+            Debug.Log($"[ProgressionManager] Loaded ChosenSpecializationPath: {path}");
+        }
+
         public void SetClass(ClassType classType)
         {
             if (CurrentClass != ClassType.None) return; // Strict lock once selected!
 
             CurrentClass = classType;
+            ChosenSpecializationPath = MasteryPath.None; // Start in neutral Base Class!
+            if (PendingLevelUpCount == 0)
+            {
+                PendingLevelUpCount = 1; // Grant initial mastery point to choose Specialization!
+            }
+
             switch (classType)
             {
                 case ClassType.Mage: activeClassDefinition = mageClassDefinition; break;
@@ -301,7 +317,7 @@ namespace Roguelite.Progression
                 default: activeClassDefinition = knightClassDefinition; break;
             }
 
-            Debug.Log($"Class selected: {classType}");
+            Debug.Log($"[ProgressionManager] Base Class selected: {classType} ({activeClassDefinition?.baseClassName}) | Initial Mastery Points: {PendingLevelUpCount}");
 
             OnClassSelected?.Invoke(CurrentClass);
             Debug.Log("[Progression] OnClassSelected fired");
@@ -352,17 +368,31 @@ namespace Roguelite.Progression
                 return choices;
             }
 
-            foreach (MasteryPath path in Enum.GetValues(typeof(MasteryPath)))
+            if (ChosenSpecializationPath == MasteryPath.None)
             {
-                MasteryTier currentTier = GetTier(path);
-                if (currentTier >= MasteryTier.N3) continue;
-
-                MasteryTier nextTier = (MasteryTier)((int)currentTier + 1);
-                ClassUpgradeDefinition nextUpgrade = activeClassDefinition.upgrades.Find(u => u.path == path && u.tier == nextTier);
-
-                if (nextUpgrade != null)
+                // Offer Tier N1 for all 3 specialization paths!
+                foreach (MasteryPath path in Enum.GetValues(typeof(MasteryPath)))
                 {
-                    choices.Add(nextUpgrade);
+                    if (path == MasteryPath.None) continue;
+                    ClassUpgradeDefinition n1Upgrade = activeClassDefinition.upgrades.Find(u => u.path == path && u.tier == MasteryTier.N1);
+                    if (n1Upgrade != null)
+                    {
+                        choices.Add(n1Upgrade);
+                    }
+                }
+            }
+            else
+            {
+                // Only offer the next tier upgrade for the chosen specialization!
+                MasteryTier currentTier = GetTier(ChosenSpecializationPath);
+                if (currentTier < MasteryTier.N3)
+                {
+                    MasteryTier nextTier = (MasteryTier)((int)currentTier + 1);
+                    ClassUpgradeDefinition nextUpgrade = activeClassDefinition.upgrades.Find(u => u.path == ChosenSpecializationPath && u.tier == nextTier);
+                    if (nextUpgrade != null)
+                    {
+                        choices.Add(nextUpgrade);
+                    }
                 }
             }
 
@@ -371,13 +401,20 @@ namespace Roguelite.Progression
                 PendingLevelUpCount = 0; // Consume pending level ups when all paths are maxed
             }
 
-            Debug.Log($"[ProgressionManager] GetUpgradeChoices() returned {choices.Count} choices for class {CurrentClass}");
+            Debug.Log($"[ProgressionManager] GetUpgradeChoices() returned {choices.Count} choices for class {CurrentClass} (Chosen Path: {ChosenSpecializationPath})");
             return choices;
         }
 
         public bool SelectUpgrade(ClassUpgradeDefinition upgrade)
         {
             if (upgrade == null) return false;
+
+            // Lock specialization permanently if first upgrade choice
+            if (ChosenSpecializationPath == MasteryPath.None)
+            {
+                ChosenSpecializationPath = upgrade.path;
+                Debug.Log($"[ProgressionManager] Specialization LOCKED: {upgrade.path} ({activeClassDefinition?.GetPathName(upgrade.path)})");
+            }
 
             pathTiers[upgrade.path] = upgrade.tier;
             unlockedUpgrades.Add(upgrade);
@@ -426,6 +463,7 @@ namespace Roguelite.Progression
         public void ResetRun()
         {
             CurrentClass = ClassType.None;
+            ChosenSpecializationPath = MasteryPath.None;
             CurrentLevel = 1;
             CurrentLevelXP = 0;
             TotalXP = 0;

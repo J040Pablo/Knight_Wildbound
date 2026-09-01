@@ -87,7 +87,7 @@ namespace Roguelite.Core
             GUI.skin.label.fontStyle = FontStyle.Bold;
             GUI.skin.label.alignment = TextAnchor.MiddleCenter;
             GUI.color = new Color(1.0f, 0.88f, 0.40f);
-            GUI.Label(speakerRect, $"👑 {CurrentSpeaker.ToUpper()}");
+            GUI.Label(speakerRect, CurrentSpeaker.ToUpper());
 
             // Dialogue Body Text
             Rect textRect = new Rect(posX + 25f, posY + 22f, boxWidth - 50f, boxHeight - 55f);

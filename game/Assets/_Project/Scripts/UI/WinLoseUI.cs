@@ -42,7 +42,7 @@ namespace Roguelite.UI
             GUI.skin.label.fontStyle = FontStyle.Bold;
             GUI.skin.label.alignment = TextAnchor.MiddleCenter;
             GUI.color = isVictory ? new Color(0.3f, 1.0f, 0.4f) : new Color(1.0f, 0.3f, 0.3f);
-            string titleText = isVictory ? "🏆 VICTORY! 🏆" : "☠️ GAME OVER ☠️";
+            string titleText = isVictory ? "VICTORY!" : "GAME OVER";
             GUI.Label(new Rect(boxRect.x, boxRect.y + 20, boxWidth, 40), titleText);
 
             // Subtitle
@@ -58,9 +58,9 @@ namespace Roguelite.UI
             int level = playerStats != null ? playerStats.Level : 1;
 
             GUI.skin.label.fontSize = 14;
-            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 110, boxWidth - 80, 25), $"⏱️ Run Duration: {mins:D2}:{secs:D2}");
-            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 135, boxWidth - 80, 25), $"⚔️ Total Enemies Killed: {runManager.TotalKills}");
-            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 160, boxWidth - 80, 25), $"⭐ Level Reached: {level}");
+            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 110, boxWidth - 80, 25), $"Run Duration: {mins:D2}:{secs:D2}");
+            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 135, boxWidth - 80, 25), $"Total Enemies Killed: {runManager.TotalKills}");
+            GUI.Label(new Rect(boxRect.x + 40, boxRect.y + 160, boxWidth - 80, 25), $"Level Reached: {level}");
 
             // Action Button: Play Again / Restart
             GUI.color = isVictory ? new Color(0.2f, 0.8f, 0.3f) : new Color(0.9f, 0.3f, 0.2f);

@@ -81,6 +81,12 @@ namespace Roguelite.Core
                 charWinObj.AddComponent<CharacterWindowUI>();
             }
 
+            if (InventoryBookUI.Instance == null)
+            {
+                GameObject bookUiObj = new GameObject("InventoryBookUI");
+                bookUiObj.AddComponent<InventoryBookUI>();
+            }
+
             if (InventoryUI.Instance == null)
             {
                 GameObject invUiObj = new GameObject("InventoryUI");
@@ -256,6 +262,12 @@ namespace Roguelite.Core
             if (tracker != null)
             {
                 tracker.LogAfterBootstrap(playerObj.transform.position);
+            }
+
+            // Explicitly force GameState to Gameplay on run startup
+            if (StateMachine.GameStateManager.Instance != null)
+            {
+                StateMachine.GameStateManager.Instance.SetState(StateMachine.GameState.Gameplay);
             }
         }
     }

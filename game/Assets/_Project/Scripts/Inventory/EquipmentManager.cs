@@ -9,6 +9,7 @@ namespace Roguelite.Inventory
     {
         Weapon,
         Amulet,
+        Belt,
         Ring1,
         Ring2
     }
@@ -23,21 +24,25 @@ namespace Roguelite.Inventory
     }
 
     /// <summary>
-    /// Manages the 4 active player equipment slots (Weapon, Amulet, Ring 1, Ring 2).
+    /// Manages active player equipment slots (Weapon, Amulet, Belt, Ring 1, Ring 2).
     /// Dynamically applies and reverts passive stat bonuses on PlayerStats.
     /// Manages the Legendary Ring of Shadows active ability [R].
     /// </summary>
     public class EquipmentManager : MonoBehaviour
     {
         private static EquipmentManager instance;
+        private static bool applicationIsQuitting = false;
+
         public static EquipmentManager Instance
         {
             get
             {
+                if (applicationIsQuitting) return null;
+
                 if (instance == null)
                 {
                     instance = FindFirstObjectByType<EquipmentManager>();
-                    if (instance == null)
+                    if (instance == null && !applicationIsQuitting)
                     {
                         GameObject go = new GameObject("EquipmentManager");
                         instance = go.AddComponent<EquipmentManager>();
@@ -47,9 +52,23 @@ namespace Roguelite.Inventory
             }
         }
 
+        private void OnApplicationQuit()
+        {
+            applicationIsQuitting = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (instance == this)
+            {
+                instance = null;
+            }
+        }
+
         [Header("Equipped Slots")]
         public ItemData weaponSlot;
         public ItemData amuletSlot;
+        public ItemData beltSlot;
         public ItemData ringSlot1;
         public ItemData ringSlot2;
 
@@ -109,6 +128,7 @@ namespace Roguelite.Inventory
             {
                 case EquipmentSlot.Weapon: return weaponSlot;
                 case EquipmentSlot.Amulet: return amuletSlot;
+                case EquipmentSlot.Belt:   return beltSlot;
                 case EquipmentSlot.Ring1:  return ringSlot1;
                 case EquipmentSlot.Ring2:  return ringSlot2;
                 default: return null;
@@ -122,6 +142,7 @@ namespace Roguelite.Inventory
             // Validate category matching
             if (slot == EquipmentSlot.Weapon && item.category != ItemCategory.Weapon) return false;
             if (slot == EquipmentSlot.Amulet && item.category != ItemCategory.Amulet) return false;
+            if (slot == EquipmentSlot.Belt   && item.category != ItemCategory.Belt)   return false;
             if ((slot == EquipmentSlot.Ring1 || slot == EquipmentSlot.Ring2) && item.category != ItemCategory.Ring) return false;
 
             // Unequip currently equipped item in this slot
@@ -140,6 +161,37 @@ namespace Roguelite.Inventory
             OnEquipmentChanged?.Invoke(slot, item);
 
             // Save state
+            PlayerInventorySave.Instance?.SaveEquipment(this);
+            return true;
+        }
+
+        /// <summary>
+        /// Moves an already-equipped item from one slot to another (e.g. dragging Ring 1 onto Ring 2).
+        /// If the destination slot is occupied, the two items swap places.
+        /// </summary>
+        public bool MoveEquipped(EquipmentSlot from, EquipmentSlot to)
+        {
+            if (from == to) return false;
+
+            ItemData movingItem = GetEquipped(from);
+            if (movingItem == null) return false;
+
+            // Validate category fits destination slot
+            bool categoryFits =
+                (to == EquipmentSlot.Weapon && movingItem.category == ItemCategory.Weapon) ||
+                (to == EquipmentSlot.Amulet && movingItem.category == ItemCategory.Amulet) ||
+                (to == EquipmentSlot.Belt   && movingItem.category == ItemCategory.Belt) ||
+                ((to == EquipmentSlot.Ring1 || to == EquipmentSlot.Ring2) && movingItem.category == ItemCategory.Ring);
+            if (!categoryFits) return false;
+
+            ItemData destinationItem = GetEquipped(to);
+
+            SetSlot(from, destinationItem);
+            SetSlot(to, movingItem);
+
+            OnEquipmentChanged?.Invoke(from, destinationItem);
+            OnEquipmentChanged?.Invoke(to, movingItem);
+
             PlayerInventorySave.Instance?.SaveEquipment(this);
             return true;
         }
@@ -182,6 +234,7 @@ namespace Roguelite.Inventory
         {
             weaponSlot = null;
             amuletSlot = null;
+            beltSlot = null;
             ringSlot1 = null;
             ringSlot2 = null;
             Debug.Log("[EquipmentManager] Equipment reset to empty for fresh run.");
@@ -193,6 +246,7 @@ namespace Roguelite.Inventory
             {
                 case EquipmentSlot.Weapon: weaponSlot = item; break;
                 case EquipmentSlot.Amulet: amuletSlot = item; break;
+                case EquipmentSlot.Belt:   beltSlot = item; break;
                 case EquipmentSlot.Ring1:  ringSlot1 = item; break;
                 case EquipmentSlot.Ring2:  ringSlot2 = item; break;
             }

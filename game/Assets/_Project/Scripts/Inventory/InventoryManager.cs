@@ -61,7 +61,7 @@ namespace Roguelite.Inventory
         }
 
         [Header("Inventory Settings")]
-        public int maxInventoryCapacity = 30;
+        public int maxInventoryCapacity = 25;
 
         [Header("Runtime Storage")]
         private readonly List<InventorySlot> items = new List<InventorySlot>();
@@ -202,6 +202,23 @@ namespace Roguelite.Inventory
             if (string.IsNullOrEmpty(itemId)) return 0;
             InventorySlot slot = items.Find(s => s.item != null && s.item.itemId == itemId);
             return slot != null ? slot.quantity : 0;
+        }
+
+        /// <summary>
+        /// Swaps the two grid slots at the given list indices (used by drag-and-drop reordering
+        /// in the inventory grid). No-op if either index is out of range.
+        /// </summary>
+        public bool SwapSlots(int indexA, int indexB)
+        {
+            if (indexA == indexB) return false;
+            if (indexA < 0 || indexA >= items.Count) return false;
+            if (indexB < 0 || indexB >= items.Count) return false;
+
+            (items[indexA], items[indexB]) = (items[indexB], items[indexA]);
+
+            OnInventoryChanged?.Invoke();
+            PlayerInventorySave.Instance?.SaveInventory(this);
+            return true;
         }
 
         public void SetGoldDirect(int newGold)

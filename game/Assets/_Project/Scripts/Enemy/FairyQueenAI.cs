@@ -24,7 +24,6 @@ namespace Roguelite.Enemy
         [SerializeField] private float chaseLimit = 18.0f;     // 18m maximum chase distance
         [SerializeField] private float returnRadius = 20.0f;    // 20m return radius threshold
 
-        private float attackTimer = 0f;
         private float summonCooldownTimer = 0f;
         private float hoverTime = 0f;
         private Vector3 arenaCenterPos;

@@ -7,6 +7,10 @@ using Roguelite.Core.StateMachine;
 
 namespace Roguelite.UI
 {
+    /// <summary>
+    /// Legacy wrapper for Mastery state toggling. Delegates window controls
+    /// to CharacterWindowUI and InventoryBookUI.
+    /// </summary>
     public class MasteryScreenUI : MonoBehaviour
     {
         public static bool IsAnyMenuOpen { get; set; } = false;
@@ -98,15 +102,15 @@ namespace Roguelite.UI
 
         public void Refresh()
         {
-            if (CharacterWindowUI.Instance != null)
+            if (InventoryBookUI.Instance != null)
             {
-                CharacterWindowUI.Instance.RefreshMastery();
+                InventoryBookUI.Instance.RefreshUI();
             }
         }
 
         private void OnGUI()
         {
-            // CharacterWindowUI handles unified tabbed OnGUI rendering.
+            // Legacy OnGUI disabled - InventoryBookUI renders Mastery inside the UGUI book.
         }
     }
 }

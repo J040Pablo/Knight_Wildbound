@@ -8,6 +8,7 @@ namespace Roguelite.Items
         Weapon,
         Amulet,
         Ring,
+        Belt,
         Consumable,
         QuestItem,
         Relic
@@ -40,7 +41,7 @@ namespace Roguelite.Items
 
     /// <summary>
     /// Generic runtime item definition. Icons are represented with a short text/emoji glyph
-    /// drawn directly by the OnGUI-based Inventory UI.
+    /// drawn directly by the Inventory UI, or an optional procedural Sprite.
     /// </summary>
     [CreateAssetMenu(fileName = "NewItemData", menuName = "Roguelite/Data/Item Data")]
     public class ItemData : ScriptableObject
@@ -50,6 +51,9 @@ namespace Roguelite.Items
         public string itemName = "Unknown Item";
         [TextArea] public string description = "";
         public string iconGlyph = "❔";
+
+        [Header("Visuals (optional — falls back to procedural glyph icon if null)")]
+        public Sprite customIcon;
 
         [Header("Classification")]
         public ItemCategory category = ItemCategory.Consumable;
@@ -61,7 +65,7 @@ namespace Roguelite.Items
         public int maxStack = 99;
         public int goldValue = 5;
 
-        [Header("Equipment Passive Bonuses (Weapon, Amulet, Ring)")]
+        [Header("Equipment Passive Bonuses (Weapon, Amulet, Belt, Ring)")]
         public float flatDamageBonus = 0f;
         public float flatHpBonus = 0f;
         public float flatStaminaBonus = 0f;
@@ -74,6 +78,22 @@ namespace Roguelite.Items
         public float useCooldown = 10f;
 
         public Color RarityColor => rarity.GetColor();
+
+        /// <summary>
+        /// Human-readable one-line summary of this item's passive/consumable bonuses, used by tooltips.
+        /// </summary>
+        public string GetBonusSummary()
+        {
+            List<string> parts = new List<string>();
+            if (flatDamageBonus > 0f) parts.Add($"+{flatDamageBonus:F0} Dano");
+            if (flatHpBonus > 0f) parts.Add($"+{flatHpBonus:F0} HP");
+            if (flatStaminaBonus > 0f) parts.Add($"+{flatStaminaBonus:F0} Stamina");
+            if (moveSpeedBonusPercent > 0f) parts.Add($"+{moveSpeedBonusPercent * 100f:F0}% Vel.");
+            if (healAmount > 0f) parts.Add($"Cura {healAmount:F0}");
+            if (restoresStaminaFully) parts.Add("Stamina Total");
+            if (cleansesDebuffs) parts.Add("Remove Debuffs");
+            return parts.Count > 0 ? string.Join("  ", parts) : "";
+        }
 
         public static ItemData Create(string id, string name, string desc, ItemCategory cat, ItemRarity rar,
             string glyph, int gold = 5, bool stackable = true, int maxStack = 99)

@@ -21,6 +21,7 @@ namespace Roguelite.Inventory
         public List<SavedItemData> inventoryItems = new List<SavedItemData>();
         public string weaponSlotId;
         public string amuletSlotId;
+        public string beltSlotId;
         public string ringSlot1Id;
         public string ringSlot2Id;
         public List<string> collectedRelics = new List<string>();
@@ -87,6 +88,7 @@ namespace Roguelite.Inventory
             {
                 packet.weaponSlotId = EquipmentManager.Instance.weaponSlot?.itemId;
                 packet.amuletSlotId = EquipmentManager.Instance.amuletSlot?.itemId;
+                packet.beltSlotId   = EquipmentManager.Instance.beltSlot?.itemId;
                 packet.ringSlot1Id  = EquipmentManager.Instance.ringSlot1?.itemId;
                 packet.ringSlot2Id  = EquipmentManager.Instance.ringSlot2?.itemId;
             }
@@ -168,6 +170,11 @@ namespace Roguelite.Inventory
                     {
                         ItemData a = ItemDatabase.Get(packet.amuletSlotId);
                         if (a != null) EquipmentManager.Instance.EquipSilent(a, EquipmentSlot.Amulet);
+                    }
+                    if (!string.IsNullOrEmpty(packet.beltSlotId))
+                    {
+                        ItemData bl = ItemDatabase.Get(packet.beltSlotId);
+                        if (bl != null) EquipmentManager.Instance.EquipSilent(bl, EquipmentSlot.Belt);
                     }
                     if (!string.IsNullOrEmpty(packet.ringSlot1Id))
                     {

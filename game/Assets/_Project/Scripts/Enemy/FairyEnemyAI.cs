@@ -22,7 +22,6 @@ namespace Roguelite.Enemy
 
         [SerializeField] private float detectionRange = 14f;
 
-        private float attackTimer = 0f;
         private float hoverTime = 0f;
         private Vector3 targetHoverPos;
         private Vector3 spawnPosition;

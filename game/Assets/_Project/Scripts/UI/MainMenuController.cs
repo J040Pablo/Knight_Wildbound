@@ -27,7 +27,7 @@ namespace Roguelite.UI
             GUI.skin.label.fontStyle = FontStyle.Bold;
             GUI.skin.label.alignment = TextAnchor.MiddleCenter;
             GUI.color = new Color(1.0f, 0.85f, 0.2f);
-            GUI.Label(new Rect(panelRect.x, panelRect.y + 25, panelWidth, 40), "⚔️ KNIGHT'S FOREST ROGUELITE ⚔️");
+            GUI.Label(new Rect(panelRect.x, panelRect.y + 25, panelWidth, 40), "KNIGHT'S FOREST ROGUELITE");
 
             GUI.skin.label.fontSize = 15;
             GUI.skin.label.fontStyle = FontStyle.Normal;

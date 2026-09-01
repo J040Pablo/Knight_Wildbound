@@ -163,7 +163,7 @@ namespace Roguelite.UI.Widgets
             item.Text.font = HUDTheme.DefaultFont;
             item.Text.alignment = TextAlignmentOptions.Center;
             item.Text.raycastTarget = false;
-            item.Text.enableWordWrapping = false;
+            item.Text.textWrappingMode = TextWrappingModes.NoWrap;
             item.Text.overflowMode = TextOverflowModes.Overflow;
 
             return item;

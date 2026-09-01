@@ -8,6 +8,7 @@ namespace Roguelite.Progression
     {
         [Header("Class Type")]
         public ClassType classType = ClassType.Knight;
+        public string baseClassName = "Guerreiro Base";
         public string className = "Knight";
         [TextArea(2, 4)]
         public string description = "A resilient warrior specializing in melee combat and heavy armor.";
