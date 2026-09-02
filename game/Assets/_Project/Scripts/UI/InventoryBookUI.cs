@@ -558,7 +558,7 @@ namespace Roguelite.UI
                 {
                     string specName = classDef.GetPathName(pm.ChosenSpecializationPath);
                     MasteryTier tier = pm.GetTier(pm.ChosenSpecializationPath);
-                    className = $"{classDef.baseClassName}  ▸  {specName} (N{(int)tier})";
+                    className = $"{classDef.baseClassName}  ->  {specName} (N{(int)tier})";
                 }
             }
 

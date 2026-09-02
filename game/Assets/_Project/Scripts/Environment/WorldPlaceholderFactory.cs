@@ -135,6 +135,12 @@ namespace Roguelite.Environment
                 PlaceholderAssetKey.CorruptedRootBarrier => MakeCorruptedRootBarrier("PH_CorruptedBarrier", parent, scale),
                 PlaceholderAssetKey.TransitionGateSign   => MakeTransitionSign("PH_TransitionSign", parent, scale),
 
+                // Stone Biome Storytelling & Boss
+                PlaceholderAssetKey.GiantSkeleton       => MakeGiantSkeleton("PH_GiantSkeleton", parent, scale),
+                PlaceholderAssetKey.AncientRuinsSegment => MakeAncientRuinsSegment("PH_AncientRuins", parent, colorOverride ?? new Color(0.48f, 0.46f, 0.44f), scale),
+                PlaceholderAssetKey.BrokenTitanStatue   => MakeBrokenTitanStatue("PH_BrokenTitan", parent, colorOverride ?? new Color(0.38f, 0.40f, 0.42f), scale),
+                PlaceholderAssetKey.StoneTitanBossModel => MakeStoneTitanBossModel("PH_StoneTitanModel", parent, scale),
+
                 _ => new GameObject($"PH_Unhandled_{key}")
             };
         }
@@ -778,6 +784,196 @@ namespace Roguelite.Environment
 
             var glowingRune = MakeSphere("GlowingRune", root.transform, new Vector3(0.5f, 0.5f, 0.1f), new Color(0.3f, 0.8f, 1.0f), scale);
             glowingRune.transform.localPosition = new Vector3(0, 2.5f * scale, -0.36f * scale);
+
+            return root;
+        }
+
+        // ── STONE BIOME STORYTELLING & BOSS MODELS ───────────────────────────
+        private static GameObject MakeGiantSkeleton(string name, Transform parent, float scale = 1f)
+        {
+            GameObject root = new GameObject(name);
+            if (parent != null) root.transform.SetParent(parent, false);
+            Color boneColor = new Color(0.88f, 0.86f, 0.78f);
+
+            // Ribcage Arches (5 massive curved rib slabs protruding from ground)
+            for (int i = -2; i <= 2; i++)
+            {
+                GameObject ribL = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Strip(ribL);
+                ribL.transform.SetParent(root.transform, false);
+                ribL.transform.localPosition = new Vector3(-3.5f, 2.5f, i * 2.2f);
+                ribL.transform.localRotation = Quaternion.Euler(0, 0, 35f);
+                ribL.transform.localScale = new Vector3(0.4f * scale, 3.8f * scale, 0.4f * scale);
+                Apply(ribL, boneColor);
+
+                GameObject ribR = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                Strip(ribR);
+                ribR.transform.SetParent(root.transform, false);
+                ribR.transform.localPosition = new Vector3(3.5f, 2.5f, i * 2.2f);
+                ribR.transform.localRotation = Quaternion.Euler(0, 0, -35f);
+                ribR.transform.localScale = new Vector3(0.4f * scale, 3.8f * scale, 0.4f * scale);
+                Apply(ribR, boneColor);
+            }
+
+            // Skull half-buried at one end
+            GameObject skull = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(skull);
+            skull.transform.SetParent(root.transform, false);
+            skull.transform.localPosition = new Vector3(0, 1.8f, 6.5f);
+            skull.transform.localRotation = Quaternion.Euler(20f, 15f, 0);
+            skull.transform.localScale = new Vector3(3.2f * scale, 2.6f * scale, 3.5f * scale);
+            Apply(skull, boneColor);
+
+            return root;
+        }
+
+        private static GameObject MakeAncientRuinsSegment(string name, Transform parent, Color color, float scale = 1f)
+        {
+            GameObject root = new GameObject(name);
+            if (parent != null) root.transform.SetParent(parent, false);
+
+            // Broken Archway & Weathered Pillars
+            GameObject p1 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Strip(p1);
+            p1.transform.SetParent(root.transform, false);
+            p1.transform.localPosition = new Vector3(-4f, 4f, 0);
+            p1.transform.localScale = new Vector3(1.2f * scale, 4f * scale, 1.2f * scale);
+            Apply(p1, color);
+
+            GameObject p2 = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Strip(p2);
+            p2.transform.SetParent(root.transform, false);
+            p2.transform.localPosition = new Vector3(4f, 3.2f, 0);
+            p2.transform.localScale = new Vector3(1.2f * scale, 3.2f * scale, 1.2f * scale);
+            Apply(p2, color);
+
+            GameObject beam = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(beam);
+            beam.transform.SetParent(root.transform, false);
+            beam.transform.localPosition = new Vector3(-0.5f, 7.5f, 0);
+            beam.transform.localRotation = Quaternion.Euler(0, 0, -10f);
+            beam.transform.localScale = new Vector3(9.5f * scale, 1.4f * scale, 1.8f * scale);
+            Apply(beam, color);
+
+            return root;
+        }
+
+        private static GameObject MakeBrokenTitanStatue(string name, Transform parent, Color color, float scale = 1f)
+        {
+            GameObject root = new GameObject(name);
+            if (parent != null) root.transform.SetParent(parent, false);
+
+            // Colossal Head emerging at an angle from ground
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(head);
+            head.transform.SetParent(root.transform, false);
+            head.transform.localPosition = new Vector3(0, 2.5f, 0);
+            head.transform.localRotation = Quaternion.Euler(25f, -30f, 15f);
+            head.transform.localScale = new Vector3(3.5f * scale, 4.5f * scale, 3.5f * scale);
+            Apply(head, color);
+
+            // Crown / Ridge on Head
+            GameObject crown = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(crown);
+            crown.transform.SetParent(head.transform, false);
+            crown.transform.localPosition = new Vector3(0, 0.55f, 0);
+            crown.transform.localScale = new Vector3(1.1f, 0.25f, 1.1f);
+            Apply(crown, new Color(0.6f, 0.55f, 0.4f));
+
+            return root;
+        }
+
+        private static GameObject MakeStoneTitanBossModel(string name, Transform parent, float scale = 1f)
+        {
+            GameObject root = new GameObject(name);
+            if (parent != null) root.transform.SetParent(parent, false);
+
+            Color stoneColor = new Color(0.35f, 0.35f, 0.38f);
+            Color armorColor = new Color(0.25f, 0.25f, 0.28f);
+            Color crystalColor = new Color(0.2f, 0.85f, 0.95f);
+
+            // Left Leg (With BoxCollider + TitanHitZone)
+            GameObject legL = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Strip(legL);
+            legL.name = "TitanLeftLeg";
+            legL.transform.SetParent(root.transform, false);
+            legL.transform.localPosition = new Vector3(-2.2f * scale, 3.5f * scale, 0);
+            legL.transform.localScale = new Vector3(1.8f * scale, 3.5f * scale, 1.8f * scale);
+            Apply(legL, stoneColor);
+            CapsuleCollider legLCol = legL.AddComponent<CapsuleCollider>();
+            legLCol.height = 2.0f;
+            legLCol.radius = 0.5f;
+
+            // Right Leg (With BoxCollider + TitanHitZone)
+            GameObject legR = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Strip(legR);
+            legR.name = "TitanRightLeg";
+            legR.transform.SetParent(root.transform, false);
+            legR.transform.localPosition = new Vector3(2.2f * scale, 3.5f * scale, 0);
+            legR.transform.localScale = new Vector3(1.8f * scale, 3.5f * scale, 1.8f * scale);
+            Apply(legR, stoneColor);
+            CapsuleCollider legRCol = legR.AddComponent<CapsuleCollider>();
+            legRCol.height = 2.0f;
+            legRCol.radius = 0.5f;
+
+            // Heavy Torso (90% Armor Reduction)
+            GameObject torso = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(torso);
+            torso.name = "TitanTorso";
+            torso.transform.SetParent(root.transform, false);
+            torso.transform.localPosition = new Vector3(0, 9.5f * scale, 0);
+            torso.transform.localScale = new Vector3(6.5f * scale, 5.5f * scale, 4.5f * scale);
+            Apply(torso, armorColor);
+            torso.AddComponent<BoxCollider>();
+
+            // Broad Shoulder Armor Plates
+            GameObject shoulderL = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(shoulderL);
+            shoulderL.name = "TitanShoulderL";
+            shoulderL.transform.SetParent(root.transform, false);
+            shoulderL.transform.localPosition = new Vector3(-4.2f * scale, 12f * scale, 0);
+            shoulderL.transform.localScale = new Vector3(3.2f * scale, 2.5f * scale, 3.8f * scale);
+            Apply(shoulderL, stoneColor);
+            shoulderL.AddComponent<BoxCollider>();
+
+            GameObject shoulderR = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(shoulderR);
+            shoulderR.name = "TitanShoulderR";
+            shoulderR.transform.SetParent(root.transform, false);
+            shoulderR.transform.localPosition = new Vector3(4.2f * scale, 12f * scale, 0);
+            shoulderR.transform.localScale = new Vector3(3.2f * scale, 2.5f * scale, 3.8f * scale);
+            Apply(shoulderR, stoneColor);
+            shoulderR.AddComponent<BoxCollider>();
+
+            // Head
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Strip(head);
+            head.name = "TitanHead";
+            head.transform.SetParent(root.transform, false);
+            head.transform.localPosition = new Vector3(0, 13.8f * scale, 0.4f * scale);
+            head.transform.localScale = new Vector3(2.8f * scale, 2.6f * scale, 2.8f * scale);
+            Apply(head, stoneColor);
+            head.AddComponent<BoxCollider>();
+
+            // Nape Crystal Weakspot (embedded at back of neck)
+            GameObject crystal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            crystal.name = "NapeCrystal_Visual";
+            Strip(crystal);
+            crystal.transform.SetParent(root.transform, false);
+            crystal.transform.localPosition = new Vector3(0, 12.8f * scale, -2.4f * scale);
+            crystal.transform.localScale = new Vector3(1.6f * scale, 2.2f * scale, 1.6f * scale);
+            Apply(crystal, crystalColor);
+            SphereCollider cryCol = crystal.AddComponent<SphereCollider>();
+            cryCol.radius = 0.6f;
+
+            // Ground Level Leg Climb Anchors
+            GameObject climbNodeL = new GameObject("LeftLegClimbAnchor");
+            climbNodeL.transform.SetParent(root.transform, false);
+            climbNodeL.transform.localPosition = new Vector3(-2.2f * scale, 1.5f * scale, 0.5f * scale);
+
+            GameObject climbNodeR = new GameObject("RightLegClimbAnchor");
+            climbNodeR.transform.SetParent(root.transform, false);
+            climbNodeR.transform.localPosition = new Vector3(2.2f * scale, 1.5f * scale, 0.5f * scale);
 
             return root;
         }

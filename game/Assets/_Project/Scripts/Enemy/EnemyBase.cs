@@ -145,9 +145,15 @@ namespace Roguelite.Enemy
             ApplyKnockbackDecay();
         }
 
+        /// <summary>The attacker from the most recent TakeDamage call — used by Die() to tell
+        /// on-kill relic effects (e.g. Bloomheart) whether the player landed the killing blow.</summary>
+        protected GameObject lastDamageSource;
+
         public virtual void TakeDamage(DamageInfo damageInfo)
         {
             if (IsDead) return;
+
+            if (damageInfo.attacker != null) lastDamageSource = damageInfo.attacker;
 
             CurrentHP = Mathf.Max(CurrentHP - damageInfo.amount, 0f);
 
@@ -261,6 +267,10 @@ namespace Roguelite.Enemy
             }
 
             OnEnemyDied?.Invoke(this);
+
+            // On-kill relic effects (e.g. Bloomheart) — no-ops if nothing relevant is equipped
+            // or the kill wasn't the player's.
+            Roguelite.Combat.OnHitRelicEffects.TryTriggerBloomheart(this, lastDamageSource);
 
             // Evaluate & Spawn Loot Drop
             SpawnEnemyLoot();

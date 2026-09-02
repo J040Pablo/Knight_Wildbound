@@ -6,7 +6,7 @@ namespace Roguelite.Player
     public class PlayerFallRecovery : MonoBehaviour
     {
         [Header("Fall Threshold Settings")]
-        [SerializeField] private float fallYThreshold = -10.0f;
+        [SerializeField] private float fallYThreshold = -25.0f;
         [SerializeField] private bool enableRecovery = true;
 
         public float FallYThreshold
@@ -36,7 +36,7 @@ namespace Roguelite.Player
 
         public void RecoverPlayer()
         {
-            Debug.LogWarning($"[PlayerFallRecovery] Player fell below safe Y threshold ({transform.position.y:F1} < {fallYThreshold}). Teleporting to valid spawn point.");
+            Debug.LogWarning($"[PlayerFallRecovery] Player fell below safe Y threshold ({transform.position.y:F1} < {fallYThreshold}). Recovering to valid trail position.");
 
             if (characterController != null) characterController.enabled = false;
 
@@ -45,14 +45,15 @@ namespace Roguelite.Player
                 playerController.ResetVelocity();
             }
 
-            if (PlayerSpawnManager.Instance != null)
-            {
-                PlayerSpawnManager.Instance.SpawnPlayer(gameObject);
-            }
-            else
-            {
-                transform.position = new Vector3(0, 0.5f, 2.0f);
-            }
+            // Calculate safe recovery position on main trail near current Z progression
+            float safeZ = Mathf.Clamp(transform.position.z, 0f, 750f);
+            float pathX = Environment.SceneEnvironmentBuilder.GetForestPathXOffset(safeZ);
+            float terrainY = Environment.SceneEnvironmentBuilder.GetTerrainHeightY(pathX, safeZ);
+            Vector3 safePos = new Vector3(pathX, terrainY + 0.8f, safeZ);
+
+            transform.position = safePos;
+
+            Physics.SyncTransforms();
 
             if (characterController != null) characterController.enabled = true;
 

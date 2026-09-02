@@ -150,7 +150,7 @@ namespace Roguelite.Player
 
             if (!IsMounted)
             {
-                if (characterController.isGrounded && verticalVelocity.y < 0)
+                if (characterController != null && characterController.isGrounded && verticalVelocity.y < 0)
                 {
                     verticalVelocity.y = -2f;
                 }
@@ -168,6 +168,12 @@ namespace Roguelite.Player
 
         public void TryJump()
         {
+            MountSystem mount = GetComponent<MountSystem>();
+            if (!IsMounted || MountSystem.ActiveMount != mount)
+            {
+                return;
+            }
+
             if (SafeCanMove() && characterController.isGrounded)
             {
                 verticalVelocity.y = jumpForce;
@@ -176,6 +182,18 @@ namespace Roguelite.Player
 
         public void ProcessMovementInput(Vector3 inputDir, bool wantsSprint, Camera mainCam)
         {
+            MountSystem mount = GetComponent<MountSystem>();
+            if (!IsMounted || MountSystem.ActiveMount != mount)
+            {
+                if (inputDir.sqrMagnitude > 0.01f)
+                {
+                    Debug.LogWarning("[HorseController] Input Ignored (Not Mounted)");
+                }
+                CurrentState = HorseState.Idle;
+                ResetLegs();
+                return;
+            }
+
             Vector3 horizontalMove = Vector3.zero;
             float speed = 0f;
 

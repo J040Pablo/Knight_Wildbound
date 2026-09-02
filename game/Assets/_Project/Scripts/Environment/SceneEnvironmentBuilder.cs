@@ -218,26 +218,28 @@ namespace Roguelite.Environment
             ForestLandmarkManager landmarkMgr = root.GetComponent<ForestLandmarkManager>();
             if (landmarkMgr == null) landmarkMgr = root.AddComponent<ForestLandmarkManager>();
             landmarkMgr.ClearLandmarks();
-
             // Pre-register structure foundations for flat bases
             FlattenTerrainUnderStructure(new Vector3(0, 0, 15f), 45f, 0f);               // Ruins Courtyard
             FlattenTerrainUnderStructure(new Vector3(0, 0, 56f), 14f, 0f);               // Exit Gate
             FlattenTerrainUnderStructure(new Vector3(0, 0, 6f), 6f, 0f);                 // King Campfire
             FlattenTerrainUnderStructure(new Vector3(GetForestPathXOffset(85f) - 10f, 0, 85f), 16f); // Horse Meadow
-            FlattenTerrainUnderStructure(new Vector3(0, 0, 660f), 45f, 0f);              // Royal Court Arena (Z: 660, radius 45m)
-            FlattenTerrainUnderStructure(new Vector3(0, 0, 730f), 35f, 0f);              // Transition Pass
+            FlattenTerrainUnderStructure(new Vector3(GetForestPathXOffset(300f) + 45f, 0, 300f), 90f); // Stone Titan Arena (Z: 300, X: path+45, radius 90m)
+            FlattenTerrainUnderStructure(new Vector3(0, 0, 950f), 65f, 0f);              // Giant World Tree Clearing (Z: 950, radius 65m)
+            FlattenTerrainUnderStructure(new Vector3(0, 0, 1250f), 45f, 0f);             // Royal Court Arena (Z: 1250, radius 45m)
+            FlattenTerrainUnderStructure(new Vector3(0, 0, 1370f), 35f, 0f);             // Transition Pass (Z: 1370)
 
-            // Generate 4 Continuous 3D Mesh Chunks (Spanning Z: -40 to 760, X: -160 to 160)
+            // Generate 7 Continuous 3D Mesh Chunks (Spanning Z: -40 to 1400, X: -160 to 160)
             BuildContinuousTerrainMesh();
 
-            // Build 7 Biome Environment Content & Props (World Design V2 Flow)
+            // Build 8 Biome Environment Regions (Expanded 1400m Map Progression)
             BuildRuinsRegion();          // 1. Santuário das Ruínas (Z: -40 a 60)
-            BuildForestEntranceRegion(); // 2. Floresta dos Sussurros (Z: 60 a 200)
-            BuildDeepForestRegion();     // 3. Pântano Profundo (Z: 200 a 340)
-            BuildLakeAndRiverRegion();   // 4. Bacia do Lago & Cachoeira (Z: 340 a 480)
-            BuildStoneValleyRegion();    // 5. Vale das Pedras & Canyon (Z: 480 a 600)
-            BuildFairyKingdomRegion();   // 6. Reino das Fadas & Corte Real (Z: 600 a 720)
-            BuildBossApproachAndArena(); // 7. Passagem Final & Barreira Corrompida (Z: 720 a 760)
+            BuildForestEntranceRegion(); // 2. Floresta dos Sussurros (Z: 60 a 180)
+            BuildDeepForestRegion();     // 3. Pântano Profundo (Z: 180 a 280)
+            BuildTitanArenaRegion();     // 4. ANCIENT STONE TITAN ARENA (Z: 300)
+            BuildStoneValleyRegion();    // 5. Vale das Pedras & Canyon Midlands/Highlands (Z: 320 a 880)
+            BuildWorldTreeRegion();      // 6. Região da Árvore Ancestral do Mundo (Z: 880 a 1040)
+            BuildFairyKingdomRegion();   // 7. Reino das Fadas & Corte Real (Z: 1040 a 1280)
+            BuildBossApproachAndArena(); // 8. Passagem Corrompida de Transição (Z: 1280 a 1400)
 
             // Perform Forest Environment Density & Cluster Pass
             ForestEnvironmentSpawner envSpawner = root.AddComponent<ForestEnvironmentSpawner>();
@@ -258,8 +260,8 @@ namespace Roguelite.Environment
             // Comprehensive World Validation Pass
             ValidateWorld();
 
-            // Continuous World Boundary (Z: -40 to 760, X width 320m)
-            CreateWorldBoundary(new Vector3(0, 15f, 360f), new Vector3(320f, 50f, 820f));
+            // Continuous World Boundary (Z: -40 to 1440, X width 320m)
+            CreateWorldBoundary(new Vector3(0, 15f, 680f), new Vector3(320f, 50f, 1480f));
 
             // Apply initial atmosphere (Ruins)
             var startingRegion = GameObject.Find("RegionTrigger_Ruins")?.GetComponent<BiomeRegionTrigger>();
@@ -274,19 +276,25 @@ namespace Roguelite.Environment
 
         private void BuildContinuousTerrainMesh()
         {
-            // Create 4 seamless contiguous 3D mesh chunks across the world
+            // Create 7 seamless contiguous 3D mesh chunks across the world (Z: -40 to 1400m)
             Vector2[] chunkMin = {
                 new Vector2(-160f, -40f),
                 new Vector2(-160f, 160f),
                 new Vector2(-160f, 360f),
-                new Vector2(-160f, 560f)
+                new Vector2(-160f, 560f),
+                new Vector2(-160f, 760f),
+                new Vector2(-160f, 960f),
+                new Vector2(-160f, 1160f)
             };
 
             Vector2[] chunkMax = {
                 new Vector2(160f, 160f),
                 new Vector2(160f, 360f),
                 new Vector2(160f, 560f),
-                new Vector2(160f, 760f)
+                new Vector2(160f, 760f),
+                new Vector2(160f, 960f),
+                new Vector2(160f, 1160f),
+                new Vector2(160f, 1400f)
             };
 
             for (int i = 0; i < chunkMin.Length; i++)
@@ -367,7 +375,7 @@ namespace Roguelite.Environment
             }
             else
             {
-                obj.transform.rotation = rot.normalized;
+                obj.transform.rotation = rot;
             }
             return obj;
         }
@@ -584,6 +592,23 @@ namespace Roguelite.Environment
             float obX = GetForestPathXOffset(110f) - 30f;
             SpawnProp(PlaceholderAssetKey.LandmarkGiantObelisk, new Vector3(obX, 0, 110f), Quaternion.identity, 2.0f);
 
+            // ── EARLY GAME VIGNETTE 1: Destroyed Scout Wagon & Early Ring Stash (Z: 75, X: path + 18) ──
+            float wagonX = GetForestPathXOffset(75f) + 18f;
+            float wagonY = GetTerrainHeightY(wagonX, 75f);
+            Vector3 wagonPos = new Vector3(wagonX, wagonY, 75f);
+            SpawnProp(PlaceholderAssetKey.DestroyedWagon, wagonPos, Quaternion.Euler(0, -35f, 0), 1.1f);
+            SpawnProp(PlaceholderAssetKey.Campfire, wagonPos + new Vector3(-2f, 0, 1.5f), Quaternion.identity, 0.9f);
+            var earlyChest1 = SpawnInteractiveTreasureChest(wagonPos + new Vector3(2.5f, 0, -1f), Quaternion.Euler(0, 15f, 0), ChestRarity.Common);
+            if (earlyChest1 != null) earlyChest1.name = "EarlyWagonScoutChest";
+
+            // ── EARLY GAME VIGNETTE 2: Ruined Watchtower Outpost (Z: 105, X: path - 22) ──
+            float towerX = GetForestPathXOffset(105f) - 22f;
+            float towerY = GetTerrainHeightY(towerX, 105f);
+            Vector3 towerPos = new Vector3(towerX, towerY, 105f);
+            SpawnProp(PlaceholderAssetKey.RuinWatchtower, towerPos, Quaternion.identity, 1.2f);
+            var earlyChest2 = SpawnInteractiveTreasureChest(towerPos + new Vector3(1.5f, 0, 2f), Quaternion.Euler(0, -45f, 0), ChestRarity.Rare);
+            if (earlyChest2 != null) earlyChest2.name = "RuinedOutpostTreasureChest";
+
             // ── AMBIENT VIGNETTE 4: Fairy Ritual Glade (Z: 140, X: -42) ──
             Vector3 ritualPos = new Vector3(GetForestPathXOffset(140f) - 42f, GetTerrainHeightY(GetForestPathXOffset(140f) - 42f, 140f), 140f);
             SpawnProp(PlaceholderAssetKey.LandmarkGiantObelisk, ritualPos, Quaternion.identity, 1.5f);
@@ -593,7 +618,10 @@ namespace Roguelite.Environment
             CreateFriendlyHorse(new Vector3(meadowX, 0f, 85f));
             SpawnProp(PlaceholderAssetKey.LoreSignPost, new Vector3(meadowX + 5f, 0, 80f), Quaternion.identity);
 
-            CreateEncounterZone("ForestEntranceZone", GetForestPathXOffset(120f), 120f, EncounterDifficulty.Easy);
+            // Early Forest Combat Encounters (Increased density)
+            CreateEncounterZone("ForestEntranceZone_Early", GetForestPathXOffset(75f), 75f, EncounterDifficulty.Easy);
+            CreateEncounterZone("ForestEntranceZone_Mid", GetForestPathXOffset(105f), 105f, EncounterDifficulty.Easy);
+            CreateEncounterZone("ForestEntranceZone_Late", GetForestPathXOffset(135f), 135f, EncounterDifficulty.Easy);
 
             CreateRegionTrigger("RegionTrigger_ForestEntrance", "Forest Entrance", new Vector3(0, 5f, 110f), new Vector3(300f, 30f, 100f),
                 new Color(0.95f, 0.95f, 0.85f), 0.85f, new Color(0.23f, 0.32f, 0.20f), 0.008f, new Color(0.23f, 0.32f, 0.20f));
@@ -714,71 +742,154 @@ namespace Roguelite.Environment
         }
 
         // ==========================================
-        // 5. STONE VALLEY & CANYON (Z: 480 to 600)
+        // 4. ANCIENT STONE TITAN ARENA (Z: 300)
+        // ==========================================
+        private void BuildTitanArenaRegion()
+        {
+            float titanArenaX = GetForestPathXOffset(300f) + 45f;
+            float titanArenaY = GetTerrainHeightY(titanArenaX, 300f);
+            Vector3 titanArenaPos = new Vector3(titanArenaX, titanArenaY, 300f);
+
+            // Ring of 8 Colossal Stone Pillars surrounding 90m Radius Titan Arena
+            for (int i = 0; i < 8; i++)
+            {
+                float angle = i * (Mathf.PI * 2f / 8f);
+                Vector3 pPos = titanArenaPos + new Vector3(Mathf.Cos(angle) * 65f, 0, Mathf.Sin(angle) * 65f);
+                pPos.y = GetTerrainHeightY(pPos.x, pPos.z);
+                var pillar = SpawnProp(PlaceholderAssetKey.RockPillarGiant, pPos, Quaternion.identity, 2.5f);
+                if (pillar != null) pillar.AddComponent<BoxCollider>();
+            }
+
+            // Spawn Ancient Stone Titan Boss GameObject
+            GameObject titanBossObj = new GameObject("AncientStoneTitan_WorldBoss");
+            titanBossObj.transform.position = titanArenaPos;
+
+            CharacterController tCC = titanBossObj.AddComponent<CharacterController>();
+            tCC.height = 14f;
+            tCC.radius = 3.5f;
+            tCC.center = new Vector3(0, 7f, 0);
+
+            titanBossObj.AddComponent<Enemy.AncientStoneTitanAI>();
+
+            // Arena Lock Trigger (180m x 180m Volume)
+            GameObject titanTrgObj = new GameObject("StoneTitan_ArenaTriggerVolume");
+            titanTrgObj.transform.position = titanArenaPos;
+            BoxCollider titanBox = titanTrgObj.AddComponent<BoxCollider>();
+            titanBox.isTrigger = true;
+            titanBox.size = new Vector3(180f, 40f, 180f);
+            titanTrgObj.AddComponent<StoneTitanArenaTrigger>();
+
+            if (ForestLandmarkManager.Instance != null)
+            {
+                ForestLandmarkManager.Instance.RegisterLandmark("Ancient Titan Arena", LandmarkType.StoneTitanArena, titanArenaPos, null, 90f);
+            }
+        }
+
+        // ==========================================
+        // 5. STONE VALLEY MIDLANDS & HIGHLANDS (Z: 320 to 880)
         // ==========================================
         private void BuildStoneValleyRegion()
         {
-            float startZ = 480f;
-            float endZ = 600f;
+            float startZ = 320f;
+            float endZ = 880f;
 
-            for (float z = startZ; z < endZ; z += 12f)
+            for (float z = startZ; z < endZ; z += 16f)
             {
                 float xMid = GetForestPathXOffset(z);
 
-                var pL = SpawnProp(PlaceholderAssetKey.RockPillarGiant, new Vector3(xMid - 22f, 0, z + 3f), Quaternion.identity, Random.Range(1.4f, 2.0f));
+                var pL = SpawnProp(PlaceholderAssetKey.RockPillarGiant, new Vector3(xMid - 26f, 0, z + 3f), Quaternion.identity, Random.Range(1.5f, 2.2f));
                 if (pL != null) pL.AddComponent<BoxCollider>();
 
-                var pR = SpawnProp(PlaceholderAssetKey.RockPillarGiant, new Vector3(xMid + 22f, 0, z + 8f), Quaternion.identity, Random.Range(1.4f, 2.0f));
+                var pR = SpawnProp(PlaceholderAssetKey.RockPillarGiant, new Vector3(xMid + 26f, 0, z + 8f), Quaternion.identity, Random.Range(1.5f, 2.2f));
                 if (pR != null) pR.AddComponent<BoxCollider>();
             }
 
-            // Embedded Rock Clusters
-            SpawnRockCluster(new Vector3(GetForestPathXOffset(510f) - 30f, 0, 510f), 8, 10f, 1.4f);
-            SpawnRockCluster(new Vector3(GetForestPathXOffset(550f) + 35f, 0, 550f), 12, 14f, 1.6f);
+            // 1. Titan Graveyard (Z: 380)
+            float skelX = GetForestPathXOffset(380f) - 35f;
+            SpawnProp(PlaceholderAssetKey.GiantSkeleton, new Vector3(skelX, 0, 380f), Quaternion.Euler(0, 25f, 0), 1.8f);
+            SpawnRockCluster(new Vector3(skelX + 10f, 0, 380f), 6, 8f, 1.3f);
 
-            float archX = GetForestPathXOffset(530f);
-            SpawnProp(PlaceholderAssetKey.LandmarkStoneArch, new Vector3(archX, 0, 530f), Quaternion.identity, 1.8f);
+            // 2. Ancient Ruined Highway (Z: 480)
+            float ruinX = GetForestPathXOffset(480f) + 38f;
+            SpawnProp(PlaceholderAssetKey.AncientRuinsSegment, new Vector3(ruinX, 0, 480f), Quaternion.Euler(0, -15f, 0), 1.6f);
+            float archX = GetForestPathXOffset(490f);
+            SpawnProp(PlaceholderAssetKey.LandmarkStoneArch, new Vector3(archX, 0, 490f), Quaternion.identity, 1.8f);
 
-            float caveX = GetForestPathXOffset(560f) - 35f;
-            SpawnProp(PlaceholderAssetKey.RockCaveEntrance, new Vector3(caveX, 0, 560f), Quaternion.identity, 1.8f);
+            // 3. Canyon Crossings & Elevated Shelves (Z: 620)
+            SpawnRockCluster(new Vector3(GetForestPathXOffset(620f) - 30f, 0, 620f), 8, 10f, 1.4f);
+            SpawnRockCluster(new Vector3(GetForestPathXOffset(650f) + 35f, 0, 650f), 12, 14f, 1.6f);
+            SpawnProp(PlaceholderAssetKey.RockShelf, new Vector3(GetForestPathXOffset(630f) + 32f, 1.5f, 630f), Quaternion.identity, 2.2f);
+            SpawnProp(PlaceholderAssetKey.RockShelf, new Vector3(GetForestPathXOffset(660f) - 34f, 2.0f, 660f), Quaternion.identity, 2.4f);
 
-            // Sleeping Stone Giant Alcove (Z: 540, X: -48)
-            Vector3 giantAlcovePos = new Vector3(GetForestPathXOffset(540f) - 48f, GetTerrainHeightY(GetForestPathXOffset(540f) - 48f, 540f), 540f);
+            // 4. Broken Titan Statue Colossus (Z: 750)
+            float statueX = GetForestPathXOffset(750f) - 42f;
+            SpawnProp(PlaceholderAssetKey.BrokenTitanStatue, new Vector3(statueX, 0, 750f), Quaternion.Euler(0, 40f, 0), 1.8f);
+            float caveX = GetForestPathXOffset(770f) - 35f;
+            SpawnProp(PlaceholderAssetKey.RockCaveEntrance, new Vector3(caveX, 0, 770f), Quaternion.identity, 1.8f);
+
+            // 5. Sleeping Stone Giant Alcove (Z: 820)
+            Vector3 giantAlcovePos = new Vector3(GetForestPathXOffset(820f) - 48f, GetTerrainHeightY(GetForestPathXOffset(820f) - 48f, 820f), 820f);
             GameObject giantObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
             giantObj.name = "StoneGiant_SleepingDisguise";
             giantObj.transform.position = giantAlcovePos;
             giantObj.transform.localScale = new Vector3(2.2f, 2.8f, 2.2f);
-            Enemy.StoneGiantAI giantAI = giantObj.AddComponent<Enemy.StoneGiantAI>();
-
-            // Ancient Colossus Mini-Boss (Z: 580, X: +52)
-            Vector3 colossusPos = new Vector3(GetForestPathXOffset(580f) + 52f, GetTerrainHeightY(GetForestPathXOffset(580f) + 52f, 580f), 580f);
-            GameObject colossusObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            colossusObj.name = "AncientColossus_MiniBoss";
-            colossusObj.transform.position = colossusPos;
-            Enemy.StoneGiantAI colossusAI = colossusObj.AddComponent<Enemy.StoneGiantAI>();
-            colossusAI.SetAsColossusMiniBoss();
+            giantObj.AddComponent<Enemy.StoneGiantAI>();
 
             if (ForestLandmarkManager.Instance != null)
             {
-                ForestLandmarkManager.Instance.RegisterLandmark("Ancient Stone Arch", LandmarkType.StoneArchFormation, new Vector3(archX, 0, 530f), null, 20f);
-                ForestLandmarkManager.Instance.RegisterLandmark("Crystal Cave Entrance", LandmarkType.CaveEntrance, new Vector3(caveX, 0, 560f), null, 18f);
+                ForestLandmarkManager.Instance.RegisterLandmark("Giant Titan Skeleton", LandmarkType.GiantSkeleton, new Vector3(skelX, 0, 380f), null, 25f);
+                ForestLandmarkManager.Instance.RegisterLandmark("Ancient Titan Ruins", LandmarkType.AncientRuins, new Vector3(ruinX, 0, 480f), null, 25f);
+                ForestLandmarkManager.Instance.RegisterLandmark("Broken Titan Head", LandmarkType.BrokenTitanStatue, new Vector3(statueX, 0, 750f), null, 25f);
             }
 
-            CreateEncounterZone("StoneValleyCombatZone", GetForestPathXOffset(540f), 540f, EncounterDifficulty.Hard);
+            CreateEncounterZone("StoneValleyCombatZone", GetForestPathXOffset(550f), 550f, EncounterDifficulty.Hard);
 
-            CreateRegionTrigger("RegionTrigger_StoneValley", "Stone Valley", new Vector3(0, 5f, 540f), new Vector3(320f, 30f, 120f),
+            CreateRegionTrigger("RegionTrigger_StoneValley", "VALE DAS PEDRAS - CANYON DOS TITAS", new Vector3(0, 5f, 540f), new Vector3(320f, 30f, 300f),
                 new Color(0.88f, 0.85f, 0.82f), 0.80f, new Color(0.35f, 0.32f, 0.28f), 0.010f, new Color(0.35f, 0.32f, 0.28f));
         }
 
         // ==========================================
-        // 6. FAIRY KINGDOM & ROYAL COURT (Z: 600 to 720)
+        // 6. GIANT WORLD TREE REGION (Z: 880 to 1040)
+        // ==========================================
+        private void BuildWorldTreeRegion()
+        {
+            float treeZ = 950f;
+            float treeX = GetForestPathXOffset(treeZ);
+            float treeY = GetTerrainHeightY(treeX, treeZ);
+            Vector3 worldTreePos = new Vector3(treeX, treeY, treeZ);
+
+            // Giant Ancestral World Tree (Scale: 6.0x) - Visible from miles away across canyon!
+            var worldTreeObj = WorldPlaceholderFactory.Build(PlaceholderAssetKey.LandmarkGiantAncestralTree, worldParent, null, 6.0f);
+            if (worldTreeObj != null)
+            {
+                worldTreeObj.name = "GiantWorldTree_ColossalLandmark";
+                worldTreeObj.transform.position = worldTreePos;
+                worldTreeObj.AddComponent<AwakenedWorldTreeAI>();
+            }
+
+            // Lore Sign Post & Glowing Crystal Clusters at base of World Tree
+            SpawnProp(PlaceholderAssetKey.LoreSignPost, worldTreePos + new Vector3(-8f, 0, -12f), Quaternion.identity, 1.4f);
+            SpawnProp(PlaceholderAssetKey.GlowingCrystal, worldTreePos + new Vector3(12f, 0, 10f), Quaternion.identity, 2.2f);
+            SpawnProp(PlaceholderAssetKey.GlowingCrystal, worldTreePos + new Vector3(-14f, 0, 8f), Quaternion.identity, 2.2f);
+
+            if (ForestLandmarkManager.Instance != null)
+            {
+                ForestLandmarkManager.Instance.RegisterLandmark("Giant World Tree", LandmarkType.GiantWorldTree, worldTreePos, null, 65f);
+            }
+
+            CreateRegionTrigger("RegionTrigger_WorldTree", "REGIÃO DA ÁRVORE ANCESTRAL DO MUNDO", new Vector3(0, 5f, 950f), new Vector3(320f, 30f, 160f),
+                new Color(0.40f, 0.90f, 0.60f), 0.85f, new Color(0.15f, 0.45f, 0.25f), 0.012f, new Color(0.15f, 0.45f, 0.25f));
+        }
+
+        // ==========================================
+        // 7. FAIRY KINGDOM & ROYAL COURT (Z: 1040 to 1280)
         // ==========================================
         private void BuildFairyKingdomRegion()
         {
-            float startZ = 600f;
+            float startZ = 1050f;
 
-            // ── 1. EXPLORABLE FAIRY VILLAGE & RUINS (Z: 600 to 640) ──
-            for (float z = startZ; z < 640f; z += 10f)
+            // ── 1. EXPLORABLE FAIRY VILLAGE & RUINS (Z: 1050 to 1200) ──
+            for (float z = startZ; z < 1200f; z += 15f)
             {
                 float xMid = GetForestPathXOffset(z);
                 SpawnTreeValidated(PlaceholderAssetKey.TreeWillow, new Vector3(xMid - 28f, 0, z + 4f), Quaternion.identity, 1.3f, 8f);
@@ -786,49 +897,20 @@ namespace Roguelite.Environment
                 SpawnProp(PlaceholderAssetKey.GlowingCrystal, new Vector3(xMid - 16f, 0, z + 6f), Quaternion.identity, 1.4f);
                 SpawnProp(PlaceholderAssetKey.FairyHouseRoot, new Vector3(xMid + 18f, 0, z + 3f), Quaternion.identity, 1.3f);
                 SpawnProp(PlaceholderAssetKey.MushroomGroup, new Vector3(xMid + 14f, 0, z + 2f), Quaternion.identity, 1.3f);
-                SpawnProp(PlaceholderAssetKey.FlowerCluster, new Vector3(xMid - 12f, 0, z + 4f), Quaternion.identity, 1.2f);
             }
 
-            // Central Gathering Plaza with Wooden Bridge over stream (Z: 620, X: path offset)
-            float plazaZ = 620f;
+            // Central Gathering Plaza with Wooden Bridge (Z: 1120)
+            float plazaZ = 1120f;
             float plazaX = GetForestPathXOffset(plazaZ);
             var plazaBridge = SpawnProp(PlaceholderAssetKey.WoodenBridge, new Vector3(plazaX, 0.2f, plazaZ), Quaternion.Euler(0, 90f, 0), 2.0f);
             if (plazaBridge != null) plazaBridge.AddComponent<BoxCollider>();
-            SpawnProp(PlaceholderAssetKey.FairyHouseRoot, new Vector3(plazaX - 22f, 0, plazaZ - 5f), Quaternion.identity, 1.4f);
-            SpawnProp(PlaceholderAssetKey.FairyHouseRoot, new Vector3(plazaX - 24f, 0, plazaZ + 5f), Quaternion.identity, 1.4f);
-            SpawnProp(PlaceholderAssetKey.FairyHouseRoot, new Vector3(plazaX + 22f, 0, plazaZ), Quaternion.identity, 1.4f);
-
-            // Crystal Garden (Z: 610, X: -32)
-            Vector3 cryGardenPos = new Vector3(GetForestPathXOffset(610f) - 32f, GetTerrainHeightY(GetForestPathXOffset(610f) - 32f, 610f), 610f);
-            SpawnProp(PlaceholderAssetKey.GlowingCrystal, cryGardenPos, Quaternion.identity, 2.0f);
-            SpawnProp(PlaceholderAssetKey.GlowingCrystal, cryGardenPos + new Vector3(3f, 0, 3f), Quaternion.identity, 1.5f);
-            SpawnProp(PlaceholderAssetKey.GlowingCrystal, cryGardenPos + new Vector3(-3f, 0, 2f), Quaternion.identity, 1.5f);
-            var gardenChest = SpawnInteractiveTreasureChest(cryGardenPos + new Vector3(0, 0, 4f), Quaternion.Euler(0, 40f, 0), ChestRarity.Rare);
-            if (gardenChest != null) gardenChest.name = "CrystalGardenHiddenChest";
-
-            // Sacred Pond & Hidden Chest (Z: 625, X: +35)
-            Vector3 pondPos = new Vector3(GetForestPathXOffset(625f) + 35f, GetTerrainHeightY(GetForestPathXOffset(625f) + 35f, 625f), 625f);
-            SpawnProp(PlaceholderAssetKey.Pond, pondPos, Quaternion.identity, 1.8f);
-            SpawnProp(PlaceholderAssetKey.TreeWillow, pondPos + new Vector3(-4f, 0, 4f), Quaternion.identity, 1.6f);
-            SpawnProp(PlaceholderAssetKey.FlowerCluster, pondPos + new Vector3(2f, 0, -2f), Quaternion.identity, 1.4f);
-            var sacredChest = SpawnInteractiveTreasureChest(pondPos + new Vector3(3f, 0, 3f), Quaternion.Euler(0, 30f, 0), ChestRarity.Epic);
-            if (sacredChest != null) sacredChest.name = "FairySacredPondChest";
-
-            // Fairy Ruins & Lore Signs (Z: 635, X: -25)
-            float ruinX = GetForestPathXOffset(635f) - 25f;
-            float ruinY = GetTerrainHeightY(ruinX, 635f);
-            SpawnProp(PlaceholderAssetKey.LandmarkStoneArch, new Vector3(ruinX, ruinY, 635f), Quaternion.identity, 1.4f);
-            SpawnProp(PlaceholderAssetKey.RuinStatue, new Vector3(ruinX + 6f, ruinY, 633f), Quaternion.Euler(0, -30f, 0), 1.4f);
-            SpawnProp(PlaceholderAssetKey.ForgottenShrine, new Vector3(ruinX - 5f, ruinY, 637f), Quaternion.identity, 1.5f);
-            SpawnProp(PlaceholderAssetKey.LoreSignPost, new Vector3(ruinX - 2f, ruinY, 632f), Quaternion.identity, 1.2f);
 
             // Region Discovery Trigger: REINO DAS FADAS DESCOBERTO
-            CreateRegionTrigger("RegionTrigger_FairyKingdom", "REINO DAS FADAS DESCOBERTO\nDomínio da Rainha Encantada", new Vector3(0, 5f, 630f), new Vector3(320f, 30f, 120f),
+            CreateRegionTrigger("RegionTrigger_FairyKingdom", "REINO DAS FADAS DESCOBERTO\nDomínio da Rainha Encantada", new Vector3(0, 5f, 1150f), new Vector3(320f, 30f, 160f),
                 new Color(0.95f, 0.70f, 0.95f), 0.85f, new Color(0.35f, 0.15f, 0.40f), 0.014f, new Color(0.35f, 0.15f, 0.40f));
 
-            // ── 2. PRE-COURT MINI-BOSS & LOCKED ROYAL BRIDGE (Z: 645 to 650) ──
-            // Mini-Boss: Sentinela de Cristal (450 HP) guarding the Royal Bridge entrance
-            Vector3 sentinelPos = new Vector3(0, GetTerrainHeightY(0, 645f) + 0.5f, 645f);
+            // ── 2. PRE-COURT MINI-BOSS & LOCKED ROYAL BRIDGE (Z: 1220 to 1230) ──
+            Vector3 sentinelPos = new Vector3(0, GetTerrainHeightY(0, 1220f) + 0.5f, 1220f);
             GameObject sentinelObj = new GameObject("SentinelaDeCristal_MiniBoss");
             sentinelObj.transform.position = sentinelPos;
             CharacterController sCC = sentinelObj.AddComponent<CharacterController>();
@@ -840,8 +922,8 @@ namespace Roguelite.Environment
             var sHpField = typeof(EnemyBase).GetField("MaxHP", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (sHpField != null) sHpField.SetValue(sentinelAI, 450f);
 
-            // Locked Royal Bridge Gate (Z: 650)
-            Vector3 bridgeGatePos = new Vector3(0, GetTerrainHeightY(0, 650f), 650f);
+            // Locked Royal Bridge Gate (Z: 1230)
+            Vector3 bridgeGatePos = new Vector3(0, GetTerrainHeightY(0, 1230f), 1230f);
             GameObject bridgeGateObj = new GameObject("RoyalBridgeGate_Interactive");
             bridgeGateObj.transform.position = bridgeGatePos;
             bridgeGateObj.AddComponent<RoyalBridgeGate>();
@@ -849,9 +931,9 @@ namespace Roguelite.Environment
             GameObject gateVis = WorldPlaceholderFactory.Build(PlaceholderAssetKey.RuinPillar, bridgeGateObj.transform, new Color(0.9f, 0.4f, 0.95f), 2.2f);
             if (gateVis != null) gateVis.name = "GateVisual";
 
-            // ── 3. REBALANCED 45M ROYAL COURT ARENA (Z: 660 to 720) ──
-            Vector3 arenaCenter = new Vector3(0, 0, 660f);
-            arenaCenter.y = GetTerrainHeightY(0, 660f);
+            // ── 3. REBALANCED 45M ROYAL COURT ARENA (Z: 1250) ──
+            Vector3 arenaCenter = new Vector3(0, 0, 1250f);
+            arenaCenter.y = GetTerrainHeightY(0, 1250f);
 
             // Perimeter Ring of 8 Crystal Obelisks & Ruined Pillars (radius 30m)
             for (int i = 0; i < 8; i++)
@@ -868,28 +950,12 @@ namespace Roguelite.Environment
                 if (obelisk != null) obelisk.transform.position = cryObeliskPos;
             }
 
-            // Royal Throne Platform behind court center (Z: 700, X: 0)
+            // Royal Throne Platform behind court center (Z: 1270, X: 0)
             Vector3 thronePos = arenaCenter + new Vector3(0, 0, 20f);
             SpawnProp(PlaceholderAssetKey.RuinStatue, thronePos, Quaternion.identity, 1.8f);
 
-            // Rebalanced Great Fae Palace Tree (Scale: 4.5x) behind throne (Z: 706, X: 0)
-            Vector3 palaceTreePos = thronePos + new Vector3(0, 0, 6f);
-            palaceTreePos.y = GetTerrainHeightY(palaceTreePos.x, palaceTreePos.z);
-            var palaceTree = WorldPlaceholderFactory.Build(PlaceholderAssetKey.LandmarkGiantAncestralTree, worldParent, null, 4.5f);
-            if (palaceTree != null)
-            {
-                palaceTree.name = "GreatFaePalaceTree_SacredLocalTree";
-                palaceTree.transform.position = palaceTreePos;
-                palaceTree.AddComponent<AwakenedWorldTreeAI>();
-            }
-
-            // Pre-combat Fairy Queen Boss hovering safely in front of throne (Z: 668, X: 0)
-            Vector3 queenSpawnPos = new Vector3(0f, GetTerrainHeightY(0f, 668f) + 2.0f, 668f);
-            if (Physics.CheckSphere(queenSpawnPos, 1.2f, LayerMask.GetMask("Default", "Environment", "Obstacle")))
-            {
-                queenSpawnPos.y += 1.5f;
-            }
-
+            // Pre-combat Fairy Queen Boss hovering safely in front of throne (Z: 1258, X: 0)
+            Vector3 queenSpawnPos = new Vector3(0f, GetTerrainHeightY(0f, 1258f) + 2.0f, 1258f);
             GameObject queenObj = new GameObject("FairyQueen_Boss");
             queenObj.transform.position = queenSpawnPos;
 
@@ -900,9 +966,9 @@ namespace Roguelite.Environment
 
             queenObj.AddComponent<FairyQueenAI>();
 
-            // Arena Barrier Lock Trigger at Court Entrance (Z: 652)
+            // Arena Barrier Lock Trigger at Court Entrance (Z: 1242)
             GameObject arenaTrgObj = new GameObject("FairyCourt_ArenaTriggerVolume");
-            arenaTrgObj.transform.position = new Vector3(0, 2f, 652f);
+            arenaTrgObj.transform.position = new Vector3(0, 2f, 1242f);
             BoxCollider arenaBox = arenaTrgObj.AddComponent<BoxCollider>();
             arenaBox.isTrigger = true;
             arenaBox.size = new Vector3(35f, 12f, 10f);
@@ -914,25 +980,26 @@ namespace Roguelite.Environment
                 ForestLandmarkManager.Instance.RegisterLandmark("Royal Fairy Court", LandmarkType.AncientAltar, arenaCenter, null, 30f);
             }
 
-            CreateEncounterZone("FairyKingdomCombatZone", GetForestPathXOffset(620f), 620f, EncounterDifficulty.Hard);
+            CreateEncounterZone("FairyKingdomCombatZone", GetForestPathXOffset(1220f), 1220f, EncounterDifficulty.Hard);
         }
+
         // ==========================================
-        // 7. CORRUPTED PASS & REGIONAL EXIT (Z: 720 to 760)
+        // 8. CORRUPTED PASS & REGIONAL EXIT (Z: 1280 to 1400)
         // ==========================================
         private void BuildBossApproachAndArena()
         {
-            float startZ = 720f;
-            float endZ = 760f;
+            float startZ = 1280f;
+            float endZ = 1400f;
 
-            for (float z = startZ; z < endZ; z += 10f)
+            for (float z = startZ; z < endZ; z += 15f)
             {
                 float xMid = GetForestPathXOffset(z);
                 SpawnTreeValidated(PlaceholderAssetKey.TreeDeadGiant, new Vector3(xMid - 22f, 0, z + 3f), Quaternion.identity, 1.3f, 6f);
                 SpawnTreeValidated(PlaceholderAssetKey.TreeDeadGiant, new Vector3(xMid + 22f, 0, z + 7f), Quaternion.identity, 1.3f, 6f);
             }
 
-            Vector3 passCenter = new Vector3(0, 0, 740f);
-            passCenter.y = GetTerrainHeightY(0, 740f);
+            Vector3 passCenter = new Vector3(0, 0, 1370f);
+            passCenter.y = GetTerrainHeightY(0, 1370f);
 
             SpawnProp(PlaceholderAssetKey.CorruptedRootBarrier, passCenter, Quaternion.identity, 2.5f);
             SpawnProp(PlaceholderAssetKey.RuinStatue, passCenter + new Vector3(-8f, 0, 0), Quaternion.Euler(0, 45f, 0), 1.6f);
@@ -943,12 +1010,12 @@ namespace Roguelite.Environment
                 ForestLandmarkManager.Instance.RegisterLandmark("Region Transition Arch", LandmarkType.StoneArchFormation, passCenter, null, 25f);
             }
 
-            CreateEncounterZone("TransitionCombatZone", GetForestPathXOffset(740f), 740f, EncounterDifficulty.Hard);
+            CreateEncounterZone("TransitionCombatZone", GetForestPathXOffset(1370f), 1370f, EncounterDifficulty.Hard);
 
             // ==========================================
-            // BIOME EXIT GATE & DESTRUCTIBLE ROOT BARRIER (Z: 755)
+            // BIOME EXIT GATE & DESTRUCTIBLE ROOT BARRIER (Z: 1380)
             // ==========================================
-            Vector3 barrierPos = new Vector3(0, GetTerrainHeightY(0, 755f), 755f);
+            Vector3 barrierPos = new Vector3(0, GetTerrainHeightY(0, 1380f), 1380f);
             GameObject barrierObj = WorldPlaceholderFactory.Build(PlaceholderAssetKey.CorruptedRootBarrier, worldParent, null, 1.0f);
             barrierObj.name = "CorruptedRootExitBarrier";
             barrierObj.transform.position = barrierPos;
@@ -1027,8 +1094,8 @@ namespace Roguelite.Environment
 
         private void ValidateTerrainConnectivity()
         {
-            // Verify seamless continuity across chunk boundaries (Z = 160, 360, 560)
-            float[] checkZs = { 160f, 360f, 560f };
+            // Verify seamless continuity across chunk boundaries (Z = 160, 360, 560, 760, 960, 1160)
+            float[] checkZs = { 160f, 360f, 560f, 760f, 960f, 1160f };
             lastConnectivityPass = true;
             lastMaxEdgeDiff = 0f;
 

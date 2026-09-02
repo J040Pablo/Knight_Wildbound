@@ -282,6 +282,13 @@ namespace Roguelite.Inventory
                    (ringSlot2 != null && ringSlot2.itemId == "ring_of_shadows");
         }
 
+        /// <summary>Bloomheart (Giant Toxic Mushroom mini-boss relic) — checked by
+        /// OnHitRelicEffects.TryTriggerBloomheart on every kill.</summary>
+        public bool IsBloomheartEquipped()
+        {
+            return amuletSlot != null && amuletSlot.itemId == "relic_bloomheart";
+        }
+
         public void TryActivateRingOfShadows()
         {
             if (!IsRingOfShadowsEquipped())

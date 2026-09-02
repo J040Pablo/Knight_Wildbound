@@ -138,6 +138,57 @@ namespace Roguelite.Loot
         }
 
         /// <summary>
+        /// Giant Toxic Mushroom / Mushroom Colossus Mini-Boss Drops:
+        /// - 100% Toxic Spore material
+        /// - 100% Living Bark material
+        /// - 100% a Rune-tier accessory (common Belt or Ring)
+        /// - 100% Gold (20-35)
+        /// - 20% chance for the Bloomheart relic
+        /// </summary>
+        public static LootResult ForGiantToxicMushroom()
+        {
+            LootResult result = new LootResult();
+            result.goldAmount = Random.Range(20, 36);
+            result.droppedItems.Add(ItemDatabase.Get("material_toxic_spore"));
+            result.droppedItems.Add(ItemDatabase.Get("material_living_bark"));
+
+            string runeId = (Random.value < 0.5f) ? "belt_sturdy_leather" : "ring_swiftness";
+            result.droppedItems.Add(ItemDatabase.Get(runeId));
+
+            if (Random.value <= 0.20f)
+            {
+                ItemData relic = ItemDatabase.Get("relic_bloomheart");
+                if (relic != null) result.droppedItems.Add(relic);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Ancient Stone Titan World Boss Drops:
+        /// - 100% Gold (150-250)
+        /// - 100% Titan Core (Legendary Material)
+        /// - 100% Titan Heart Relic (Legendary Relic)
+        /// - 100% Dawnbringer Greatsword (Legendary Weapon)
+        /// </summary>
+        public static LootResult ForAncientStoneTitan()
+        {
+            LootResult result = new LootResult();
+            result.goldAmount = Random.Range(150, 251);
+
+            ItemData core = ItemDatabase.Get("material_titan_core");
+            if (core != null) result.droppedItems.Add(core);
+
+            ItemData relic = ItemDatabase.Get("relic_titan_heart");
+            if (relic != null) result.droppedItems.Add(relic);
+
+            ItemData sword = ItemDatabase.Get("weapon_dawnbringer");
+            if (sword != null) result.droppedItems.Add(sword);
+
+            return result;
+        }
+
+        /// <summary>
         /// Ancient Colossus Optional Mini-Boss Drops:
         /// - 100% Gold (40-70)
         /// - 100% Unique Equipment (50% Ancient Colossus Ring / 50% Colossus Stone Amulet)

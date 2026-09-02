@@ -105,5 +105,11 @@ namespace Roguelite.Environment
         MossStone,
         CorruptedRootBarrier,
         TransitionGateSign,
+
+        // ── Stone Biome Storytelling & Boss ────────
+        GiantSkeleton,
+        AncientRuinsSegment,
+        BrokenTitanStatue,
+        StoneTitanBossModel,
     }
 }

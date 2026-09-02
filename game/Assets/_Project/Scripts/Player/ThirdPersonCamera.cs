@@ -17,8 +17,10 @@ namespace Roguelite.Player
     {
         [Header("Target Settings")]
         public Transform target;
-        [SerializeField] private float heightOffset = 1.3f;
-        [SerializeField] private float mountedHeightOffset = 2.6f;
+        [SerializeField] private float defaultHeightOffset = 1.3f;
+        [SerializeField] private float defaultDistance = 6.0f;
+        [SerializeField] private float mountedHeightOffset = 0.5f;
+        [SerializeField] private float mountedDistance = 7.0f;
         [SerializeField] private float rightOffset = 1.6f;
 
         [Header("Distance & Angles")]
@@ -43,6 +45,41 @@ namespace Roguelite.Player
 
         public bool IsMounted { get; set; } = false;
 
+        public float HeightOffset => IsMounted ? mountedHeightOffset : defaultHeightOffset;
+        public float MountedHeightOffset => mountedHeightOffset;
+        public float DefaultHeightOffset => defaultHeightOffset;
+        public float Distance => distance;
+
+        public void SetMountedCameraOffset()
+        {
+            IsMounted = true;
+            distance = mountedDistance;
+            currentCollisionDistance = mountedDistance;
+            pivotDampVelocity = Vector3.zero;
+            collisionDistVelocity = 0f;
+
+            if (target != null)
+            {
+                currentPivotPos = target.position + Vector3.up * mountedHeightOffset;
+            }
+
+        }
+
+        public void RestorePlayerCameraOffset()
+        {
+            IsMounted = false;
+            distance = defaultDistance;
+            currentCollisionDistance = defaultDistance;
+            pivotDampVelocity = Vector3.zero;
+            collisionDistVelocity = 0f;
+
+            if (target != null)
+            {
+                currentPivotPos = target.position + Vector3.up * defaultHeightOffset;
+            }
+
+        }
+
         private Camera cachedCamera;
         private Transform cachedTargetRoot;
         
@@ -65,8 +102,21 @@ namespace Roguelite.Player
             shakeTimer = duration;
         }
 
+        private void Awake()
+        {
+            if (transform.parent != null)
+            {
+                transform.SetParent(null);
+            }
+        }
+
         private void Start()
         {
+            if (transform.parent != null)
+            {
+                transform.SetParent(null);
+            }
+
             cachedCamera = GetComponent<Camera>();
             if (cachedCamera != null)
             {
@@ -91,6 +141,11 @@ namespace Roguelite.Player
 
             CacheTargetReferences();
             currentCollisionDistance = distance;
+
+            if (CameraManager.Instance != null)
+            {
+                CameraManager.Instance.RegisterCamera(this);
+            }
         }
 
         public void CacheTargetReferences()
@@ -98,6 +153,10 @@ namespace Roguelite.Player
             if (target != null)
             {
                 cachedTargetRoot = target.root;
+            }
+            else
+            {
+                cachedTargetRoot = null;
             }
         }
 
@@ -120,10 +179,11 @@ namespace Roguelite.Player
             pitch -= Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f).normalized;
+            Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
 
-            // 2. Pivot Target Position Handling (Smooth follow player target without position/rotation phase disconnect)
-            float activeHeight = IsMounted ? mountedHeightOffset : heightOffset;
+            // 2. Pivot Target Position Handling (Smooth follow player target)
+            float activeHeight = IsMounted ? mountedHeightOffset : defaultHeightOffset;
+            float activeDistance = IsMounted ? mountedDistance : defaultDistance;
             Vector3 rawTargetPivot = target.position + Vector3.up * activeHeight;
 
             if (!isInitialized)
@@ -140,7 +200,7 @@ namespace Roguelite.Player
             Vector3 shoulderOffset = rotation * Vector3.right * rightOffset;
             Vector3 pivotWithShoulder = currentPivotPos + shoulderOffset;
 
-            distance = Mathf.Clamp(distance, minDistance, maxDistance);
+            distance = Mathf.Clamp(activeDistance, minDistance, maxDistance);
             Vector3 unconstrainedCamPos = pivotWithShoulder - (rotation * Vector3.forward * distance);
 
             // 4. Non-allocating Obstacle Collision Check & Distance Smoothing
@@ -162,7 +222,8 @@ namespace Roguelite.Player
 
                     // Fast non-allocating hierarchy & tag filter
                     Transform colTransform = col.transform;
-                    if (colTransform == target || colTransform == cachedTargetRoot || colTransform.root == cachedTargetRoot || col.CompareTag("Player"))
+                    if (colTransform == target || colTransform == cachedTargetRoot || colTransform.root == cachedTargetRoot || 
+                        col.CompareTag("Player") || col.GetComponent<HorseController>() != null || col.GetComponent<MountSystem>() != null)
                     {
                         continue;
                     }
@@ -216,7 +277,7 @@ namespace Roguelite.Player
             // 8. Lockstep Transform Update (Position & Rotation applied simultaneously)
             transform.position = finalCamPos;
             Quaternion finalRot = rotation * bobRotOffset;
-            transform.rotation = finalRot.normalized;
+            transform.rotation = finalRot;
         }
 
         public Vector3 GetForwardVector()

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Roguelite.Core;
+using Roguelite.Core.StateMachine;
 using Roguelite.Combat;
 
 namespace Roguelite.Player
@@ -10,14 +11,18 @@ namespace Roguelite.Player
         private GameObject mountedPlayer;
         private ThirdPersonCamera tpCam;
         private CapsuleCollider mountedPlayerCollider;
+        private float remountBlockUntil = 0f;
+
+        public static MountSystem ActiveMount { get; private set; }
+        public GameObject MountedPlayer => mountedPlayer;
 
         public bool IsPlayerMounted => mountedPlayer != null;
 
         public string InteractionPrompt => IsPlayerMounted ? "F — Desmontar" : "F — Montar no Cavalo";
 
-        public float CurrentHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().CurrentHP : 100f;
-        public float MaxHP => mountedPlayer != null ? mountedPlayer.GetComponent<PlayerStats>().MaxHP : 100f;
-        public bool IsDead => mountedPlayer != null && mountedPlayer.GetComponent<PlayerStats>().IsDead;
+        public float CurrentHP => (mountedPlayer != null && mountedPlayer.TryGetComponent<PlayerStats>(out var stats)) ? stats.CurrentHP : 100f;
+        public float MaxHP => (mountedPlayer != null && mountedPlayer.TryGetComponent<PlayerStats>(out var stats)) ? stats.MaxHP : 100f;
+        public bool IsDead => mountedPlayer != null && mountedPlayer.TryGetComponent<PlayerStats>(out var stats) && stats.IsDead;
 
         private void Awake()
         {
@@ -35,6 +40,10 @@ namespace Roguelite.Player
 
         public bool CanInteract(GameObject player)
         {
+            if (Time.time < remountBlockUntil)
+            {
+                return false;
+            }
             return true;
         }
 
@@ -42,7 +51,7 @@ namespace Roguelite.Player
         {
             if (IsPlayerMounted)
             {
-                DismountPlayer();
+                ForceDismount();
             }
             else if (player != null)
             {
@@ -52,12 +61,18 @@ namespace Roguelite.Player
 
         public void MountPlayer(GameObject player)
         {
-            if (IsPlayerMounted) return;
+            if (Time.time < remountBlockUntil)
+            {
+                return;
+            }
 
+            if (IsPlayerMounted || player == null) return;
+
+            ActiveMount = this;
             mountedPlayer = player;
             horseController.SetMountedState(true);
 
-            // 1. Disable player CharacterController but add/enable a CapsuleCollider for hit detection while mounted
+            // 1. Disable player CharacterController & PlayerController while mounted
             CharacterController pCC = player.GetComponent<CharacterController>();
             if (pCC != null) pCC.enabled = false;
 
@@ -81,77 +96,183 @@ namespace Roguelite.Player
             player.transform.localPosition = new Vector3(0, -0.2f, 0); // Sitting socket alignment
             player.transform.localRotation = Quaternion.identity;
 
-            // 3. Set camera target to horse mount and raise aim height
-            if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();
-            if (tpCam != null)
-            {
-                tpCam.target = transform;
-                tpCam.IsMounted = true;
-            }
-        }
-
-        public void DismountPlayer()
-        {
-            if (!IsPlayerMounted) return;
-
-            GameObject player = mountedPlayer;
-            mountedPlayer = null;
-            horseController.SetMountedState(false);
-
-            if (mountedPlayerCollider != null)
-            {
-                mountedPlayerCollider.enabled = false;
-                Destroy(mountedPlayerCollider);
-                mountedPlayerCollider = null;
-            }
-
-            // 1. Unparent player
-            player.transform.SetParent(null);
-
-            // 2. Validate dismount position safely clear of horse body (2.2m right offset)
-            Vector3 candidatePos = transform.position + transform.right * 2.2f + Vector3.up * 0.4f;
-            Vector3 safeDismountPos = candidatePos;
-
-            int mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
-            if (Physics.Raycast(candidatePos + Vector3.up * 3.0f, Vector3.down, out RaycastHit hit, 10.0f, mask))
-            {
-                safeDismountPos = hit.point + Vector3.up * 0.05f;
-            }
-
-            // 3. Position player and re-enable CharacterController cleanly
-            CharacterController pCC = player.GetComponent<CharacterController>();
-            if (pCC != null)
-            {
-                pCC.enabled = false;
-            }
-
-            player.transform.position = safeDismountPos;
-            Quaternion safeRot = transform.rotation;
-            safeRot.Normalize();
-            player.transform.rotation = safeRot;
-
-            if (pCC != null)
-            {
-                pCC.enabled = true;
-            }
-
-            // Force PhysX transform sync AFTER CharacterController is enabled
-            Physics.SyncTransforms();
-
-            // 4. Re-enable PlayerController
-            PlayerController pCtrl = player.GetComponent<PlayerController>();
-            if (pCtrl != null)
-            {
-                pCtrl.enabled = true;
-                pCtrl.ResetVelocity();
-            }
-
-            // 5. Restore camera target to player and reset aim height
+            // 3. Set camera offset for horse mount while keeping target strictly on player
             if (tpCam == null) tpCam = FindFirstObjectByType<ThirdPersonCamera>();
             if (tpCam != null)
             {
                 tpCam.target = player.transform;
-                tpCam.IsMounted = false;
+                tpCam.SetMountedCameraOffset();
+            }
+
+            if (CameraManager.Instance != null)
+            {
+                CameraManager.Instance.RequestOwnership(CameraOwnerType.Horse, player.transform, "MountSystem.MountPlayer");
+            }
+
+        }
+
+        public void DismountPlayer()
+        {
+
+            if (!IsPlayerMounted && ActiveMount != this) return;
+
+            // Set 1.0s remount block cooldown immediately upon dismounting
+            remountBlockUntil = Time.time + 1.0f;
+
+            // Cache player reference defensively before clearing
+            GameObject player = mountedPlayer;
+            if (player == null)
+            {
+                PlayerController pc = FindFirstObjectByType<PlayerController>();
+                if (pc != null) player = pc.gameObject;
+                else player = GameObject.FindWithTag("Player");
+            }
+
+            if (ActiveMount == this) ActiveMount = null;
+            mountedPlayer = null;
+            if (horseController != null)
+            {
+                horseController.SetMountedState(false);
+            }
+
+            // 1. Instantly destroy mounted temporary CapsuleCollider
+            if (mountedPlayerCollider != null)
+            {
+                mountedPlayerCollider.enabled = false;
+                DestroyImmediate(mountedPlayerCollider);
+                mountedPlayerCollider = null;
+            }
+
+            // 2. Force transform cleanup on player (ALWAYS UNPARENT)
+            if (player != null)
+            {
+                CapsuleCollider[] extraCapsules = player.GetComponents<CapsuleCollider>();
+                foreach (var cap in extraCapsules)
+                {
+                    if (cap != null) DestroyImmediate(cap);
+                }
+
+                // UNPARENT PLAYER FROM HORSE SOCKET ALWAYS
+                player.transform.SetParent(null);
+                player.transform.localScale = Vector3.one;
+
+                // 3. Calculate safe dismount position (2.5m to the right of horse)
+                Vector3 candidatePos = transform.position + transform.right * 2.5f + Vector3.up * 0.5f;
+                Vector3 safeDismountPos = candidatePos;
+
+                int mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
+                if (Physics.Raycast(candidatePos + Vector3.up * 3.0f, Vector3.down, out RaycastHit hit, 10.0f, mask))
+                {
+                    safeDismountPos = hit.point + Vector3.up * 0.15f;
+                }
+
+                player.transform.position = safeDismountPos;
+                Quaternion safeRot = transform.rotation;
+                safeRot.Normalize();
+                player.transform.rotation = safeRot;
+
+                Physics.SyncTransforms();
+            }
+
+            // 4. Restore Player Control & Camera Offset cleanly
+            RestorePlayerControl(player);
+
+
+            // 5. Validation Logging
+            ValidateDismountState(player);
+        }
+
+        /// <summary>
+        /// Simple, direct input & control restoration method.
+        /// Re-enables player controllers and restores camera ownership.
+        /// </summary>
+        public static void RestorePlayerControl(GameObject player = null)
+        {
+            ActiveMount = null;
+
+            if (player == null)
+            {
+                PlayerController pc = FindFirstObjectByType<PlayerController>();
+                if (pc != null) player = pc.gameObject;
+                else player = GameObject.FindWithTag("Player");
+            }
+
+            if (player != null)
+            {
+                if (player.transform.parent != null)
+                {
+                    player.transform.SetParent(null);
+                }
+                player.transform.localScale = Vector3.one;
+
+                CharacterController pCC = player.GetComponent<CharacterController>();
+                if (pCC != null)
+                {
+                    pCC.enabled = true;
+                }
+
+                PlayerController pCtrl = player.GetComponent<PlayerController>();
+                if (pCtrl != null)
+                {
+                    pCtrl.enabled = true;
+                    pCtrl.ResetVelocity();
+                }
+
+            }
+
+            if (CameraManager.Instance != null)
+            {
+                CameraManager.Instance.ForceRestorePlayerCamera("MountSystem.RestorePlayerControl");
+            }
+            else
+            {
+                ThirdPersonCamera tpCam = FindFirstObjectByType<ThirdPersonCamera>();
+                if (tpCam != null)
+                {
+                    tpCam.RestorePlayerCameraOffset();
+                }
+            }
+        }
+
+        private void ValidateDismountState(GameObject player)
+        {
+            Transform parentTransform = player != null ? player.transform.parent : null;
+            bool isPlayerMounted = (mountedPlayer != null);
+            bool isHorseMounted = (horseController != null && horseController.IsMounted);
+
+            ThirdPersonCamera cam = tpCam != null ? tpCam : FindFirstObjectByType<ThirdPersonCamera>();
+            float camHeight = cam != null ? cam.HeightOffset : 0f;
+            float camDist = cam != null ? cam.Distance : 0f;
+
+
+            if (parentTransform != null)
+            {
+                Debug.LogWarning("[Dismount Validation WARNING] Player transform parent is NOT null! Forcing null parent.");
+                player.transform.SetParent(null);
+            }
+
+            if (isPlayerMounted)
+            {
+                Debug.LogWarning("[Dismount Validation WARNING] mountedPlayer is NOT null! Clearing reference.");
+                mountedPlayer = null;
+            }
+
+            if (ActiveMount != null)
+            {
+                Debug.LogWarning("[Dismount Validation WARNING] ActiveMount is NOT null! Clearing ActiveMount.");
+                ActiveMount = null;
+            }
+
+            if (isHorseMounted)
+            {
+                Debug.LogWarning("[Dismount Validation WARNING] HorseController.IsMounted is STILL true! Forcing false.");
+                if (horseController != null) horseController.SetMountedState(false);
+            }
+
+            if (cam != null && cam.IsMounted)
+            {
+                Debug.LogWarning("[Dismount Validation WARNING] ThirdPersonCamera.IsMounted is STILL true! Forcing false.");
+                cam.RestorePlayerCameraOffset();
             }
         }
 
@@ -174,7 +295,7 @@ namespace Roguelite.Player
                 return;
             }
 
-            if (IsPlayerMounted && mountedPlayer != null)
+            if (IsPlayerMounted && mountedPlayer != null && ActiveMount == this)
             {
                 // Handle Horse Movement Inputs while mounted
                 float moveX = Input.GetAxisRaw("Horizontal");
@@ -183,13 +304,37 @@ namespace Roguelite.Player
                 bool sprint = Input.GetKey(KeyCode.LeftShift);
 
                 Camera mainCam = Camera.main;
-                horseController.ProcessMovementInput(inputDir, sprint, mainCam);
-
-                // Jump Input Forwarding
-                if (Input.GetButtonDown("Jump"))
+                if (horseController != null)
                 {
-                    horseController.TryJump();
+                    horseController.ProcessMovementInput(inputDir, sprint, mainCam);
+
+                    // Jump Input Forwarding
+                    if (Input.GetButtonDown("Jump"))
+                    {
+                        horseController.TryJump();
+                    }
                 }
+
+                // Direct Dismount Key (ONLY 'F' key while mounted)
+                if (Input.GetKeyDown(KeyCode.F))
+                {
+                    ForceDismount();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Failsafe force dismount that guarantees complete restoration of player transform, movement, and camera ownership.
+        /// </summary>
+        public void ForceDismount()
+        {
+            if (IsPlayerMounted)
+            {
+                DismountPlayer();
+            }
+            else
+            {
+                RestorePlayerControl(mountedPlayer);
             }
         }
     }

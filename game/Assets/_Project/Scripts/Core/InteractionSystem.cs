@@ -1,4 +1,5 @@
 using UnityEngine;
+using Roguelite.Player;
 
 namespace Roguelite.Core
 {
@@ -13,13 +14,24 @@ namespace Roguelite.Core
 
         private void Update()
         {
+            // 1. If currently mounted, pressing interactKey (F) MUST ALWAYS prioritize dismounting the horse!
+            MountSystem activeMount = MountSystem.ActiveMount;
+            if (activeMount != null && activeMount.IsPlayerMounted)
+            {
+                if (Input.GetKeyDown(interactKey))
+                {
+                    activeMount.ForceDismount();
+                    return;
+                }
+            }
+
+            // 2. On-foot interaction handling
             FindNearestInteractable();
 
             if (CurrentInteractable != null && Input.GetKeyDown(interactKey))
             {
                 if (CurrentInteractable.CanInteract(gameObject))
                 {
-                    // Debug.Log("[Interaction] Hit interactable");
                     CurrentInteractable.Interact(gameObject);
                 }
             }

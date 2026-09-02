@@ -14,6 +14,7 @@ namespace Roguelite.Environment
         // Forest zones
         GiantDeadTree,
         AncestralTree,
+        GiantWorldTree,
 
         // River zone
         WaterfallCascade,
@@ -31,5 +32,14 @@ namespace Roguelite.Environment
 
         // Boss zone
         BossHollowTree,
+
+        // Deep Forest mini-boss zone
+        ToxicGrove,
+
+        // Stone Biome storytelling & boss zones
+        GiantSkeleton,
+        AncientRuins,
+        BrokenTitanStatue,
+        StoneTitanArena,
     }
 }

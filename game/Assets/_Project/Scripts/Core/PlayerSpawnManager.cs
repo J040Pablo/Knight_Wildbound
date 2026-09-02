@@ -132,6 +132,13 @@ namespace Roguelite.Core
 
             if (tracker != null) tracker.LogCCDetails(cc, posBeforeCCEnable, posAfterCCEnable);
 
+            // Register spawned player with CameraManager and force restore camera target
+            if (CameraManager.Instance != null)
+            {
+                CameraManager.Instance.RegisterPlayer(player.transform);
+                CameraManager.Instance.ForceRestorePlayerCamera("PlayerSpawnManager.SpawnPlayer");
+            }
+
             // Debug.Log($"[PlayerSpawnManager] Player successfully spawned at ({validGroundPos.x:F2}, {validGroundPos.y:F2}, {validGroundPos.z:F2}) in scene '{SceneManager.GetActiveScene().name}'");
             return true;
         }

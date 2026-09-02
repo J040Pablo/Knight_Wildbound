@@ -7,6 +7,10 @@ namespace Roguelite.Player.Mage.Spells.Warlock
 {
     public class SpectralHandSpell : MageSpell
     {
+        // Per-cast noise seed so multiple hands (re-casts, or future upgrade interactions)
+        // don't wobble in lockstep with each other.
+        private float noiseSeed;
+
         public override void Cast(Vector3 aimDirection, float chargeRatio)
         {
             if (IsOnCooldown) return;
@@ -14,18 +18,19 @@ namespace Roguelite.Player.Mage.Spells.Warlock
 
             if (playerCombat != null)
             {
+                noiseSeed = Random.Range(0f, 100f);
                 playerCombat.StartCoroutine(TrackAndExecuteSpectralHand(chargeRatio));
             }
         }
 
         private IEnumerator TrackAndExecuteSpectralHand(float chargeRatio)
         {
-            float duration = 1.4f;
+            float duration = 1.75f;      // was 1.4f — slightly longer lifetime, per design brief
             float elapsed = 0f;
-            float tickInterval = 0.2f;
+            float tickInterval = 0.2f;   // unchanged — damage/balance untouched
             float tickTimer = 0f;
-            float radius = 3.5f;
-            float damage = CalculateDamage(chargeRatio) * 0.35f;
+            float radius = 3.5f;         // unchanged — damage/balance untouched
+            float damage = CalculateDamage(chargeRatio) * 0.35f; // unchanged — damage/balance untouched
 
             if (playerCombat == null) yield break;
 
@@ -46,11 +51,27 @@ namespace Roguelite.Player.Mage.Spells.Warlock
                 elapsed += Time.deltaTime;
                 tickTimer += Time.deltaTime;
 
-                // Continuously track mouse reticle position
+                // Continuously track the player's aim/reticle position, but pursue it like a
+                // hunting entity rather than snapping straight to it: a slower convergence
+                // rate (was factor 10 — near-instant) makes the hand visibly lag and chase,
+                // and a small Perlin-noise-driven lateral drift gives it a "searching" wobble
+                // instead of a perfectly smooth curve. It still reliably reaches and stays
+                // near the reticle, so aiming stays readable and skill-based — it just doesn't
+                // teleport there.
                 Vector3 currentTargetPos = playerCombat.GetReticleTargetWorldPosition();
                 if (handVFX != null)
                 {
-                    handVFX.transform.position = Vector3.Lerp(handVFX.transform.position, currentTargetPos, Time.deltaTime * 10f);
+                    Vector3 pursued = Vector3.Lerp(handVFX.transform.position, currentTargetPos, Time.deltaTime * 3.2f);
+
+                    Vector3 toTarget = currentTargetPos - handVFX.transform.position;
+                    if (toTarget.sqrMagnitude > 0.0001f)
+                    {
+                        Vector3 lateral = Vector3.Cross(toTarget.normalized, Vector3.up);
+                        float wobble = (Mathf.PerlinNoise(elapsed * 1.6f, noiseSeed) - 0.5f) * 1.2f;
+                        pursued += lateral * wobble * Time.deltaTime * 4f;
+                    }
+
+                    handVFX.transform.position = pursued;
                 }
 
                 if (tickTimer >= tickInterval)

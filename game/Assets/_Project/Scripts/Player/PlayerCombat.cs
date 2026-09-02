@@ -77,7 +77,7 @@ namespace Roguelite.Player
                 int mask = LayerMask.GetMask("Enemy", "Boss", "Destructible");
                 if (mask == 0)
                 {
-                    Debug.LogWarning("[PlayerCombat] Default enemy layers (Enemy, Boss, Destructible) are not assigned in Layer Manager! Falling back to Non-Player layers.");
+                    // Fall back cleanly to all non-player layers without warning spam
                     mask = ~LayerMask.GetMask("Player", "PlayerHitbox", "Ignore Raycast", "UI", "Water");
                 }
                 enemyLayerMask = mask;

@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Roguelite.Core;
 using Roguelite.Loot;
+using Roguelite.Player;
 
 namespace Roguelite.Environment
 {
@@ -74,6 +75,30 @@ namespace Roguelite.Environment
         public void Interact(GameObject player)
         {
             if (!CanInteract(player)) return;
+
+            // 1. Retrieve current active mount (or mount from player hierarchy)
+            MountSystem mount = MountSystem.ActiveMount;
+            if (mount == null && player != null)
+            {
+                mount = player.GetComponentInParent<MountSystem>();
+            }
+            if (mount == null)
+            {
+                mount = FindFirstObjectByType<MountSystem>();
+            }
+
+            // 2. Force dismount if player is mounted
+            if (mount != null && mount.IsPlayerMounted)
+            {
+                mount.ForceDismount();
+            }
+
+            // 3. Guarantee camera focus and ownership are restored to player
+            if (CameraManager.Instance != null)
+            {
+                CameraManager.Instance.ForceRestorePlayerCamera("TreasureChest.Interact");
+            }
+
             StartCoroutine(OpenSequence());
         }
 

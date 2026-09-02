@@ -25,6 +25,10 @@ namespace Roguelite.Player
 
         private float dodgeTimer = 0f;
 
+        // Shadow Helm (Knight Helmet N3 passive) tuning.
+        private const float SHADOW_HELM_COOLDOWN_BONUS = 0.2f; // small cooldown tax vs. a normal dodge
+        private const float SHADOW_HELM_SETTLE_TIME = 0.12f;   // brief i-frame window around the blink
+
         private void Awake()
         {
             Quaternion rot = transform.rotation;
@@ -42,6 +46,11 @@ namespace Roguelite.Player
             if (cam == null)
             {
                 cam = FindFirstObjectByType<ThirdPersonCamera>();
+            }
+
+            if (Roguelite.Core.CameraManager.Instance != null)
+            {
+                Roguelite.Core.CameraManager.Instance.RegisterPlayer(transform);
             }
         }
 
@@ -79,6 +88,32 @@ namespace Roguelite.Player
             HandleDebugClassSelectShortcuts();
             if (enableDebugLogs) Debug.Log($"[PLAYER_UPDATE] END pos: {transform.position}");
 #endif
+        }
+
+        private void LateUpdate()
+        {
+            // Defensive recovery watchdog: prevent player scale locking or orphaned parent lock
+            if (transform.localScale.sqrMagnitude < 0.01f)
+            {
+                transform.localScale = Vector3.one;
+            }
+
+            if (transform.parent != null)
+            {
+                MountSystem mount = FindFirstObjectByType<MountSystem>();
+                Enemy.TitanClimbNode climb = FindFirstObjectByType<Enemy.TitanClimbNode>();
+
+                bool isLegitimatelyMounted = (mount != null && mount.IsPlayerMounted) || (climb != null && climb.IsMounted);
+                if (!isLegitimatelyMounted)
+                {
+                    transform.SetParent(null, true);
+                    transform.localScale = Vector3.one;
+                    if (characterController != null && !characterController.enabled)
+                    {
+                        characterController.enabled = true;
+                    }
+                }
+            }
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -257,13 +292,25 @@ namespace Roguelite.Player
                 }
             }
 
-            // Check for Wind Dash override (Helmet N3)
-            bool isWindDash = Progression.ProgressionManager.Instance != null &&
-                              Progression.ProgressionManager.Instance.GetTier(Progression.MasteryPath.Path1) >= Progression.MasteryTier.N3;
+            // Check for Shadow Helm override (Helmet N3) — replaces the old "Wind Dash" passive.
+            // Dodge Roll becomes a short-range teleport instead of a faster/longer slide.
+            bool isShadowHelm = Progression.ProgressionManager.Instance != null &&
+                                Progression.ProgressionManager.Instance.GetTier(Progression.MasteryPath.Path1) >= Progression.MasteryTier.N3;
 
-            float duration = isWindDash ? 0.3f : 0.4f;
+            if (isShadowHelm)
+            {
+                // Shadow Helm applies its own small cooldown tax (see below) — override the
+                // base cooldown that was already set above before this branch runs.
+                dodgeTimer = playerStats.CharacterData.dodgeCooldown + SHADOW_HELM_COOLDOWN_BONUS;
+                yield return PerformShadowHelmTeleport(dodgeDir);
+                playerStats.IsInvulnerable = false;
+                IsDodging = false;
+                yield break;
+            }
+
+            float duration = 0.4f;
             float elapsed = 0f;
-            float baseDistance = playerStats.CharacterData.dodgeDistance * (isWindDash ? 1.4f : 1.0f);
+            float baseDistance = playerStats.CharacterData.dodgeDistance;
             float speed = baseDistance / duration;
 
             while (elapsed < duration)
@@ -276,6 +323,31 @@ namespace Roguelite.Player
 
             playerStats.IsInvulnerable = false;
             IsDodging = false;
+        }
+
+        /// <summary>
+        /// Shadow Helm (Knight Helmet N3 passive): blinks the player directly to a point
+        /// "dodgeDistance" away in the chosen direction using a single CharacterController.Move
+        /// sweep (so it still can't pass through walls/geometry), with a shadow-puff VFX at both
+        /// the origin and landing spot and a short settle window that keeps the existing full
+        /// invulnerability coverage around the blink.
+        /// </summary>
+        private IEnumerator PerformShadowHelmTeleport(Vector3 dodgeDir)
+        {
+            float distance = playerStats.CharacterData.dodgeDistance; // same distance as a normal dodge
+
+            KnightVFXHelper.CreateShadowPuff(transform.position, 1.0f, 0.35f);
+
+            if (SafeCanMove())
+            {
+                characterController.Move(dodgeDir * distance);
+            }
+
+            // Small settle window so the teleport reads as a deliberate beat rather than an
+            // instant jump-cut, and keeps a moment of i-frames on both sides of the blink.
+            yield return new WaitForSeconds(SHADOW_HELM_SETTLE_TIME);
+
+            KnightVFXHelper.CreateShadowPuff(transform.position, 1.0f, 0.35f);
         }
 
         public void ResetVelocity()
